@@ -1,0 +1,34 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+/ffi/lib/
+/ffi/*.zip
+
+# Generated binaries (produced by mojo build or mojo run)
+# Root level test/example executables
+/compute_add
+/enumerate_adapters
+/clear_screen
+/triangle_window
+/input_demo
+/test_types
+/test_structs
+/test_native_ext
+/test_glfw_constants
+/test_input_state
+/test_handle_newtypes
+/test_lifetimes_string_view
+/test_device
+/test_instance
+/test_shader
+/test_buffer
+/test_bind_group
+/test_texture
+/test_sampler
+/test_query_set
+/test_command_encoder
+/test_compute_pipeline
+/test_render_pipeline
+/test_pipeline_layout
+/test_debug_groups
