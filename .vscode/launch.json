@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Mojo: Debug current Mojo file",
+            "type": "mojo-lldb",
+            "request": "launch",
+            "mojoFile": "${file}",
+            "args": [],
+            "env": [],
+            "cwd": "${workspaceFolder}",
+            "modularHomePath": "${workspaceFolder}/.pixi/envs/default/share/max",
+            "runInTerminal": false
+        }
+    ]
+}
