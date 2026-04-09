@@ -645,6 +645,9 @@ struct WGPUColorWriteMask(TrivialRegisterPassable):
     def __eq__(self, rhs: WGPUColorWriteMask) -> Bool:
         return self.value == rhs.value
 
+    def contains(self, flag: WGPUColorWriteMask) -> Bool:
+        return (self.value & flag.value) == flag.value
+
 
 @fieldwise_init
 struct WGPUMapMode(TrivialRegisterPassable):
@@ -662,6 +665,9 @@ struct WGPUMapMode(TrivialRegisterPassable):
 
     def __eq__(self, rhs: WGPUMapMode) -> Bool:
         return self.value == rhs.value
+
+    def contains(self, flag: WGPUMapMode) -> Bool:
+        return (self.value & flag.value) == flag.value
 
 
 @fieldwise_init
@@ -681,6 +687,9 @@ struct WGPUShaderStage(TrivialRegisterPassable):
 
     def __eq__(self, rhs: WGPUShaderStage) -> Bool:
         return self.value == rhs.value
+
+    def contains(self, flag: WGPUShaderStage) -> Bool:
+        return (self.value & flag.value) == flag.value
 
 
 @fieldwise_init

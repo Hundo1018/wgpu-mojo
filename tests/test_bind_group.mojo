@@ -3,7 +3,7 @@ tests/test_bind_group.mojo — Tests for BindGroupLayout and BindGroup creation.
 Requires GPU hardware.
 """
 
-from testing import assert_true
+from std.testing import assert_true
 from wgpu.gpu import request_adapter
 from wgpu._ffi.types import (
     OpaquePtr, WGPUBufferUsage, WGPUShaderStage,
@@ -23,12 +23,12 @@ def make_storage_bgl_entry(
     read_only: Bool = False,
 ) -> WGPUBindGroupLayoutEntry:
     """Create a BindGroupLayoutEntry for a storage buffer binding."""
-    var buf_type: UInt32 = 3 if read_only else 2  # ReadOnlyStorage or Storage
+    var buf_type: UInt32 = 3 if read_only else 2
     return WGPUBindGroupLayoutEntry(
-        OpaquePtr(),      # next_in_chain
+        OpaquePtr(),
         binding,
-        WGPUShaderStage.Compute.value,
-        UInt32(0),        # binding_array_size
+        WGPUShaderStage.COMPUTE.value,
+        UInt32(0),
         WGPUBufferBindingLayout(OpaquePtr(), buf_type, UInt32(0), UInt64(0)),
         WGPUSamplerBindingLayout(OpaquePtr(), UInt32(0)),
         WGPUTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
@@ -59,27 +59,24 @@ def test_create_bind_group_with_buffer() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
 
-    # Create a buffer to bind
     var buf = device.create_buffer(
-        UInt64(256), WGPUBufferUsage.Storage | WGPUBufferUsage.CopyDst, False
+        UInt64(256), WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False
     )
 
-    # Create layout
     var entries_layout = List[WGPUBindGroupLayoutEntry](make_storage_bgl_entry(UInt32(0)))
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
         OpaquePtr(), WGPUStringView.null_view(), UInt(1), entries_layout.unsafe_ptr()
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
 
-    # Create bind group
     var entry = WGPUBindGroupEntry(
         OpaquePtr(),
-        UInt32(0),       # binding
-        buf,             # buffer
-        UInt64(0),       # offset
-        WGPU_WHOLE_SIZE, # size
-        OpaquePtr(),     # sampler (null)
-        OpaquePtr(),     # texture_view (null)
+        UInt32(0),
+        buf,
+        UInt64(0),
+        WGPU_WHOLE_SIZE,
+        OpaquePtr(),
+        OpaquePtr(),
     )
     var bg_entries = List[WGPUBindGroupEntry](entry)
     var bg_desc = WGPUBindGroupDescriptor(
@@ -91,3 +88,9 @@ def test_create_bind_group_with_buffer() raises:
     device._lib.bind_group_release(bg)
     device._lib.bind_group_layout_release(bgl)
     device._lib.buffer_release(buf)
+
+
+def main() raises:
+    test_create_bind_group_layout()
+    test_create_bind_group_with_buffer()
+    print("test_bind_group: ALL PASSED")

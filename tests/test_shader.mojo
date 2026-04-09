@@ -1,13 +1,12 @@
 """
-tests/test_shader.mojo — Tests for shader module creation (WGSL + SPIRV).
+tests/test_shader.mojo — Tests for shader module creation (WGSL).
 Requires GPU hardware.
 """
 
-from testing import assert_true
+from std.testing import assert_true
 from wgpu.gpu import request_adapter
 
 
-# Minimal valid WGSL that does nothing — used for compilation testing
 comptime NOOP_WGSL = """
 @compute @workgroup_size(1)
 fn main() {}
@@ -53,3 +52,10 @@ def test_shader_module_handle_nonnull() raises:
     var shader = device.create_shader_module_wgsl(NOOP_WGSL)
     assert_true(Bool(shader))
     device._lib.shader_module_release(shader)
+
+
+def main() raises:
+    test_create_shader_module_wgsl_noop()
+    test_create_shader_module_wgsl_add()
+    test_shader_module_handle_nonnull()
+    print("test_shader: ALL PASSED")

@@ -12,6 +12,11 @@ from wgpu._ffi.types import (
 from wgpu._ffi.structs import WGPUStringView, str_to_sv
 
 
+def _sizeof[T: AnyType]() -> Int:
+    var p = UnsafePointer[T, MutExternalOrigin]()
+    return Int(p + 1) - Int(p)
+
+
 struct Buffer(Movable):
     """RAII wrapper around a WGPUBuffer."""
 
@@ -77,7 +82,7 @@ struct Buffer(Movable):
             self._instance,
             self._device,
             self._handle,
-            WGPUMapMode.Read.value,
+            WGPUMapMode.READ.value,
             UInt(offset),
             byte_size,
         )
@@ -94,7 +99,7 @@ struct Buffer(Movable):
             self._instance,
             self._device,
             self._handle,
-            WGPUMapMode.Write.value,
+            WGPUMapMode.WRITE.value,
             UInt(offset),
             byte_size,
         )
@@ -111,22 +116,22 @@ struct Buffer(Movable):
     # Convenience typed read/write helpers
     # ------------------------------------------------------------------
 
-    def read_data[T: AnyType](self, offset: UInt64 = 0) raises -> List[T]:
+    def read_data[T: ImplicitlyCopyable & Movable](self, offset: UInt64 = 0) raises -> List[T]:
         """Map, copy data into a List[T], then unmap."""
-        var count = UInt(self._size - offset) // sizeof[T]()
+        var count = Int(self._size - offset) // _sizeof[T]()
         var raw = self.map_read(offset)
         var out = List[T](capacity=count)
         var src = raw.bitcast[T]()
         for i in range(count):
             out.append(src[i])
         self.unmap()
-        return out
+        return out^
 
-    def write_data[T: AnyType](self, data: List[T], offset: UInt64 = 0) raises:
+    def write_data[T: ImplicitlyCopyable & Movable](self, data: List[T], offset: UInt64 = 0) raises:
         """Map for write, copy List[T] data, then unmap."""
-        var byte_size = UInt64(len(data) * sizeof[T]())
+        var byte_size = UInt64(len(data) * _sizeof[T]())
         var raw = self.map_write(offset, byte_size)
         var dst = raw.bitcast[T]()
         for i in range(len(data)):
-            dst[i] = data[i]
+            (dst + i).init_pointee_copy(data[i])
         self.unmap()

@@ -310,7 +310,7 @@ struct WGPUBindGroupLayoutDescriptor(TrivialRegisterPassable):
 
 
 @fieldwise_init
-struct WGPUBindGroupEntry:
+struct WGPUBindGroupEntry(TrivialRegisterPassable):
     var next_in_chain: WGPUChainedStructPtr
     var binding: UInt32
     var buffer: WGPUBufferHandle

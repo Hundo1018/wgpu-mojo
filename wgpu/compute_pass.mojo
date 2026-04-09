@@ -41,7 +41,7 @@ struct ComputePassEncoder(Movable):
         bind_group: WGPUBindGroupHandle,
         offsets: List[UInt32],
     ):
-        var ptr = offsets.unsafe_ptr().bitcast[NoneType]()
+        var ptr = OpaquePtr(unsafe_from_address=Int(offsets.unsafe_ptr()))
         self._lib.compute_pass_set_bind_group(
             self._handle, index, bind_group, ptr, UInt(len(offsets))
         )

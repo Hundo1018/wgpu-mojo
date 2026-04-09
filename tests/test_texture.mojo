@@ -3,11 +3,12 @@ tests/test_texture.mojo — Tests for Texture and TextureView creation.
 Requires GPU hardware.
 """
 
-from testing import assert_true, assert_equal
+from std.testing import assert_true, assert_equal
 from wgpu.gpu import request_adapter
 from wgpu._ffi.types import (
     OpaquePtr, WGPUTextureUsage, WGPUTextureFormat,
 )
+from wgpu._ffi.structs import WGPUTextureViewDescriptor
 
 
 def test_create_2d_texture() raises:
@@ -17,7 +18,7 @@ def test_create_2d_texture() raises:
     var handle = device.create_texture(
         UInt32(256), UInt32(256), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopySrc,
+        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_SRC,
         2, 1, 1, "tex2d"
     )
     assert_true(Bool(handle))
@@ -35,7 +36,7 @@ def test_create_texture_view() raises:
     var tex = device.create_texture(
         UInt32(64), UInt32(64), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst,
+        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
         2, 1, 1
     )
     var view = device._lib.texture_create_view(
@@ -56,10 +57,17 @@ def test_texture_dimensions() raises:
     var tex = device.create_texture(
         w, h, UInt32(1),
         WGPUTextureFormat.BGRA8Unorm,
-        WGPUTextureUsage.CopyDst | WGPUTextureUsage.CopySrc,
+        WGPUTextureUsage.COPY_DST | WGPUTextureUsage.COPY_SRC,
         2, 1, 1
     )
     assert_equal(device._lib.texture_get_width(tex), w)
     assert_equal(device._lib.texture_get_height(tex), h)
     device._lib.texture_destroy(tex)
     device._lib.texture_release(tex)
+
+
+def main() raises:
+    test_create_2d_texture()
+    test_create_texture_view()
+    test_texture_dimensions()
+    print("test_texture: ALL PASSED")
