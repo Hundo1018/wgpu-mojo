@@ -1,5 +1,8 @@
 """
-examples/enumerate_adapters.mojo — List all available GPU adapters synchronously.
+examples/enumerate_adapters.mojo — List all available GPU adapters.
+
+Uses the high-level wgpu API for instance creation, then the native
+wgpuInstanceEnumerateAdapters extension to list all backends.
 
 Run from project root:
     pixi run example-enumerate
@@ -7,7 +10,7 @@ Run from project root:
 
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import OpaquePtr, WGPUAdapterType, WGPUBackendType
-from wgpu._ffi.structs import WGPUInstanceDescriptor, WGPUAdapterInfo
+from wgpu._ffi.structs import WGPUInstanceDescriptor, WGPUAdapterInfo, WGPUStringView
 
 
 def backend_name(t: UInt32) -> String:
@@ -31,7 +34,6 @@ def adapter_type_name(t: UInt32) -> String:
 def print_sv(label: String, sv: WGPUStringView):
     """Print a WGPUStringView field safely."""
     if Bool(sv.data):
-        # Reinterpret as char pointer and read bytes
         var cstr = sv.data.bitcast[UInt8]()
         var i = UInt(0)
         var result = String()
@@ -75,7 +77,7 @@ def main() raises:
         return
 
     # Fill adapter list
-    var adapters = alloc[OpaquePtr](count)
+    var adapters = alloc[OpaquePtr](Int(count))
     _ = lib.enumerate_adapters(inst, OpaquePtr(), adapters)
 
     for i in range(count):
