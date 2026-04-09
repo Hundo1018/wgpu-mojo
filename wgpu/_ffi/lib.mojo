@@ -41,8 +41,12 @@ from wgpu._ffi.structs import (
     WGPUTexelCopyBufferInfo, WGPUTexelCopyTextureInfo,
     WGPUTextureDescriptor, WGPUTextureViewDescriptor,
     WGPULimits, WGPUSupportedFeatures,
+    WGPUSupportedWGSLLanguageFeatures,
+    WGPUCompilationInfoCallbackInfo,
+    WGPUPopErrorScopeCallbackInfo,
     WGPUQueueWorkDoneCallbackInfo,
     WGPUExtent3D,
+    WGPUColor,
 )
 
 # ---------------------------------------------------------------------------
@@ -71,6 +75,14 @@ struct _WorkDoneResult(TrivialRegisterPassable):
     var status: UInt32
 
 
+@fieldwise_init
+struct _PopErrorResult(TrivialRegisterPassable):
+    var status: UInt32
+    var type: UInt32
+    var message_data: OpaquePtr
+    var message_len: UInt
+
+
 # ---------------------------------------------------------------------------
 # Path constants — relative to cwd (typically project root)
 # ---------------------------------------------------------------------------
@@ -94,6 +106,7 @@ struct WGPULib(Movable):
     var _device_cb_ptr: OpaquePtr
     var _map_cb_ptr: OpaquePtr
     var _done_cb_ptr: OpaquePtr
+    var _pop_error_cb_ptr: OpaquePtr
 
     def __init__(out self) raises:
         self._wgpu = OwnedDLHandle(_WGPU_LIB_PATH)
@@ -102,6 +115,7 @@ struct WGPULib(Movable):
         self._device_cb_ptr  = self._cb.call["wgpu_mojo_get_device_callback",  OpaquePtr]()
         self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePtr]()
         self._done_cb_ptr    = self._cb.call["wgpu_mojo_get_queue_done_callback", OpaquePtr]()
+        self._pop_error_cb_ptr = self._cb.call["wgpu_mojo_get_pop_error_callback", OpaquePtr]()
 
     def __init__(out self, *, deinit take: Self):
         self._wgpu = take._wgpu^
@@ -110,6 +124,7 @@ struct WGPULib(Movable):
         self._device_cb_ptr  = take._device_cb_ptr
         self._map_cb_ptr     = take._map_cb_ptr
         self._done_cb_ptr    = take._done_cb_ptr
+        self._pop_error_cb_ptr = take._pop_error_cb_ptr
 
     # ------------------------------------------------------------------
     # Global functions
@@ -918,3 +933,604 @@ struct WGPULib(Movable):
         caps: UnsafePointer[WGPUSurfaceCapabilities, MutExternalOrigin],
     ):
         self._wgpu.call["wgpuSurfaceCapabilitiesFreeMembers"](caps[])
+
+    # ------------------------------------------------------------------
+    # Missing standard WebGPU functions — Instance / global
+    # ------------------------------------------------------------------
+
+    def instance_get_wgsl_language_features(
+        self,
+        instance: WGPUInstanceHandle,
+        features: UnsafePointer[WGPUSupportedWGSLLanguageFeatures, MutExternalOrigin],
+    ):
+        self._wgpu.call["wgpuInstanceGetWGSLLanguageFeatures"](instance, features)
+
+    def instance_has_wgsl_language_feature(
+        self,
+        instance: WGPUInstanceHandle,
+        feature: UInt32,
+    ) -> UInt32:
+        return self._wgpu.call["wgpuInstanceHasWGSLLanguageFeature", UInt32](instance, feature)
+
+    # ------------------------------------------------------------------
+    # Missing Device methods
+    # ------------------------------------------------------------------
+
+    def device_get_adapter_info(
+        self,
+        device: WGPUDeviceHandle,
+        info: UnsafePointer[WGPUAdapterInfo, MutExternalOrigin],
+    ) -> UInt32:
+        return self._wgpu.call["wgpuDeviceGetAdapterInfo", UInt32](device, info)
+
+    def device_get_features(
+        self,
+        device: WGPUDeviceHandle,
+        features: UnsafePointer[WGPUSupportedFeatures, MutExternalOrigin],
+    ):
+        self._wgpu.call["wgpuDeviceGetFeatures"](device, features)
+
+    def device_get_lost_future(self, device: WGPUDeviceHandle) -> WGPUFuture:
+        return self._wgpu.call["wgpuDeviceGetLostFuture", WGPUFuture](device)
+
+    def device_set_label(self, device: WGPUDeviceHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuDeviceSetLabel"](device, label)
+
+    def device_pop_error_scope(
+        self,
+        device: WGPUDeviceHandle,
+        callback_info: WGPUPopErrorScopeCallbackInfo,
+    ):
+        self._wgpu.call["wgpuDevicePopErrorScope"](device, callback_info)
+
+    def device_create_render_bundle_encoder(
+        self,
+        device: WGPUDeviceHandle,
+        desc: UnsafePointer[WGPURenderBundleEncoderDescriptor, MutExternalOrigin],
+    ) -> WGPURenderBundleEncoderHandle:
+        return self._wgpu.call["wgpuDeviceCreateRenderBundleEncoder", WGPURenderBundleEncoderHandle](
+            device, desc
+        )
+
+    # ------------------------------------------------------------------
+    # Missing Buffer methods
+    # ------------------------------------------------------------------
+
+    def buffer_set_label(self, buffer: WGPUBufferHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuBufferSetLabel"](buffer, label)
+
+    # ------------------------------------------------------------------
+    # Missing CommandEncoder methods
+    # ------------------------------------------------------------------
+
+    def command_encoder_copy_texture_to_texture(
+        self,
+        encoder: WGPUCommandEncoderHandle,
+        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
+        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
+        size: UnsafePointer[WGPUExtent3D, MutExternalOrigin],
+    ):
+        self._wgpu.call["wgpuCommandEncoderCopyTextureToTexture"](encoder, src, dst, size)
+
+    def command_encoder_insert_debug_marker(
+        self,
+        encoder: WGPUCommandEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuCommandEncoderInsertDebugMarker"](encoder, label)
+
+    def command_encoder_push_debug_group(
+        self,
+        encoder: WGPUCommandEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuCommandEncoderPushDebugGroup"](encoder, label)
+
+    def command_encoder_pop_debug_group(self, encoder: WGPUCommandEncoderHandle):
+        self._wgpu.call["wgpuCommandEncoderPopDebugGroup"](encoder)
+
+    def command_encoder_write_timestamp(
+        self,
+        encoder: WGPUCommandEncoderHandle,
+        query_set: WGPUQuerySetHandle,
+        query_index: UInt32,
+    ):
+        self._wgpu.call["wgpuCommandEncoderWriteTimestamp"](encoder, query_set, query_index)
+
+    def command_encoder_set_label(
+        self,
+        encoder: WGPUCommandEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuCommandEncoderSetLabel"](encoder, label)
+
+    # ------------------------------------------------------------------
+    # Missing ComputePassEncoder methods
+    # ------------------------------------------------------------------
+
+    def compute_pass_insert_debug_marker(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuComputePassEncoderInsertDebugMarker"](pass_enc, label)
+
+    def compute_pass_push_debug_group(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuComputePassEncoderPushDebugGroup"](pass_enc, label)
+
+    def compute_pass_pop_debug_group(self, pass_enc: WGPUComputePassEncoderHandle):
+        self._wgpu.call["wgpuComputePassEncoderPopDebugGroup"](pass_enc)
+
+    def compute_pass_set_label(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuComputePassEncoderSetLabel"](pass_enc, label)
+
+    # ------------------------------------------------------------------
+    # Missing RenderPassEncoder methods
+    # ------------------------------------------------------------------
+
+    def render_pass_draw_indirect(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderDrawIndirect"](pass_enc, buffer, offset)
+
+    def render_pass_draw_indexed_indirect(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderDrawIndexedIndirect"](pass_enc, buffer, offset)
+
+    def render_pass_begin_occlusion_query(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        query_index: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderBeginOcclusionQuery"](pass_enc, query_index)
+
+    def render_pass_end_occlusion_query(self, pass_enc: WGPURenderPassEncoderHandle):
+        self._wgpu.call["wgpuRenderPassEncoderEndOcclusionQuery"](pass_enc)
+
+    def render_pass_execute_bundles(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        bundle_count: UInt,
+        bundles: UnsafePointer[WGPURenderBundleHandle, MutExternalOrigin],
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderExecuteBundles"](pass_enc, bundle_count, bundles)
+
+    def render_pass_insert_debug_marker(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderInsertDebugMarker"](pass_enc, label)
+
+    def render_pass_push_debug_group(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderPushDebugGroup"](pass_enc, label)
+
+    def render_pass_pop_debug_group(self, pass_enc: WGPURenderPassEncoderHandle):
+        self._wgpu.call["wgpuRenderPassEncoderPopDebugGroup"](pass_enc)
+
+    def render_pass_set_label(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderSetLabel"](pass_enc, label)
+
+    def render_pass_set_stencil_reference(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        reference: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderSetStencilReference"](pass_enc, reference)
+
+    # ------------------------------------------------------------------
+    # Missing Queue methods
+    # ------------------------------------------------------------------
+
+    def queue_on_submitted_work_done_sync(
+        self,
+        instance: WGPUInstanceHandle,
+        queue: WGPUQueueHandle,
+    ) raises -> UInt32:
+        """Block until submitted queue work is done. Returns status."""
+        var result = alloc[_WorkDoneResult](1)
+        result[] = _WorkDoneResult(0)
+        var cb_info = WGPUQueueWorkDoneCallbackInfo(
+            OpaquePtr(),
+            WGPUCallbackMode.WaitAnyOnly,
+            self._done_cb_ptr,
+            result.bitcast[NoneType](),
+            OpaquePtr(),
+        )
+        var future = self._wgpu.call["wgpuQueueOnSubmittedWorkDone", WGPUFuture](queue, cb_info)
+        var wait_info_p = alloc[WGPUFutureWaitInfo](1)
+        wait_info_p[] = WGPUFutureWaitInfo(future, WGPU_FALSE)
+        _ = self._wgpu.call["wgpuInstanceWaitAny", UInt32](
+            instance,
+            UInt(1),
+            wait_info_p.bitcast[NoneType](),
+            UInt64.MAX,
+        )
+        var status = result[].status
+        result.free()
+        wait_info_p.free()
+        return status
+
+    def queue_set_label(self, queue: WGPUQueueHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuQueueSetLabel"](queue, label)
+
+    # ------------------------------------------------------------------
+    # Missing Texture methods
+    # ------------------------------------------------------------------
+
+    def texture_get_dimension(self, texture: WGPUTextureHandle) -> UInt32:
+        return self._wgpu.call["wgpuTextureGetDimension", UInt32](texture)
+
+    def texture_get_mip_level_count(self, texture: WGPUTextureHandle) -> UInt32:
+        return self._wgpu.call["wgpuTextureGetMipLevelCount", UInt32](texture)
+
+    def texture_get_sample_count(self, texture: WGPUTextureHandle) -> UInt32:
+        return self._wgpu.call["wgpuTextureGetSampleCount", UInt32](texture)
+
+    def texture_set_label(self, texture: WGPUTextureHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuTextureSetLabel"](texture, label)
+
+    def texture_add_ref(self, texture: WGPUTextureHandle):
+        self._wgpu.call["wgpuTextureAddRef"](texture)
+
+    # ------------------------------------------------------------------
+    # Missing setLabel methods on remaining objects
+    # ------------------------------------------------------------------
+
+    def texture_view_set_label(self, view: WGPUTextureViewHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuTextureViewSetLabel"](view, label)
+
+    def sampler_set_label(self, sampler: WGPUSamplerHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuSamplerSetLabel"](sampler, label)
+
+    def shader_module_set_label(self, shader: WGPUShaderModuleHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuShaderModuleSetLabel"](shader, label)
+
+    def shader_module_get_compilation_info(
+        self,
+        shader: WGPUShaderModuleHandle,
+        callback_info: WGPUCompilationInfoCallbackInfo,
+    ):
+        self._wgpu.call["wgpuShaderModuleGetCompilationInfo"](shader, callback_info)
+
+    def bind_group_set_label(self, bg: WGPUBindGroupHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuBindGroupSetLabel"](bg, label)
+
+    def bind_group_layout_set_label(self, bgl: WGPUBindGroupLayoutHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuBindGroupLayoutSetLabel"](bgl, label)
+
+    def pipeline_layout_set_label(self, pl: WGPUPipelineLayoutHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuPipelineLayoutSetLabel"](pl, label)
+
+    def compute_pipeline_set_label(self, pipeline: WGPUComputePipelineHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuComputePipelineSetLabel"](pipeline, label)
+
+    def render_pipeline_set_label(self, pipeline: WGPURenderPipelineHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuRenderPipelineSetLabel"](pipeline, label)
+
+    # ------------------------------------------------------------------
+    # Missing QuerySet methods
+    # ------------------------------------------------------------------
+
+    def query_set_get_count(self, qs: WGPUQuerySetHandle) -> UInt32:
+        return self._wgpu.call["wgpuQuerySetGetCount", UInt32](qs)
+
+    def query_set_get_type(self, qs: WGPUQuerySetHandle) -> UInt32:
+        return self._wgpu.call["wgpuQuerySetGetType", UInt32](qs)
+
+    def query_set_destroy(self, qs: WGPUQuerySetHandle):
+        self._wgpu.call["wgpuQuerySetDestroy"](qs)
+
+    def query_set_set_label(self, qs: WGPUQuerySetHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuQuerySetSetLabel"](qs, label)
+
+    # ------------------------------------------------------------------
+    # RenderBundleEncoder methods
+    # ------------------------------------------------------------------
+
+    def render_bundle_encoder_set_pipeline(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        pipeline: WGPURenderPipelineHandle,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderSetPipeline"](encoder, pipeline)
+
+    def render_bundle_encoder_set_bind_group(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        index: UInt32,
+        bind_group: WGPUBindGroupHandle,
+        dynamic_offset_count: UInt,
+        dynamic_offsets: OpaquePtr,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderSetBindGroup"](
+            encoder, index, bind_group, dynamic_offset_count, dynamic_offsets
+        )
+
+    def render_bundle_encoder_set_vertex_buffer(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        slot: UInt32,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+        size: UInt64,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderSetVertexBuffer"](
+            encoder, slot, buffer, offset, size
+        )
+
+    def render_bundle_encoder_set_index_buffer(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        buffer: WGPUBufferHandle,
+        format: UInt32,
+        offset: UInt64,
+        size: UInt64,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderSetIndexBuffer"](
+            encoder, buffer, format, offset, size
+        )
+
+    def render_bundle_encoder_draw(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        vertex_count: UInt32,
+        instance_count: UInt32,
+        first_vertex: UInt32,
+        first_instance: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderDraw"](
+            encoder, vertex_count, instance_count, first_vertex, first_instance
+        )
+
+    def render_bundle_encoder_draw_indexed(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        index_count: UInt32,
+        instance_count: UInt32,
+        first_index: UInt32,
+        base_vertex: Int32,
+        first_instance: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderDrawIndexed"](
+            encoder, index_count, instance_count, first_index, base_vertex, first_instance
+        )
+
+    def render_bundle_encoder_draw_indirect(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderDrawIndirect"](encoder, buffer, offset)
+
+    def render_bundle_encoder_draw_indexed_indirect(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderDrawIndexedIndirect"](encoder, buffer, offset)
+
+    def render_bundle_encoder_insert_debug_marker(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderInsertDebugMarker"](encoder, label)
+
+    def render_bundle_encoder_push_debug_group(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderPushDebugGroup"](encoder, label)
+
+    def render_bundle_encoder_pop_debug_group(self, encoder: WGPURenderBundleEncoderHandle):
+        self._wgpu.call["wgpuRenderBundleEncoderPopDebugGroup"](encoder)
+
+    def render_bundle_encoder_set_label(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        label: WGPUStringView,
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderSetLabel"](encoder, label)
+
+    def render_bundle_encoder_finish(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        desc: UnsafePointer[WGPURenderBundleDescriptor, MutExternalOrigin],
+    ) -> WGPURenderBundleHandle:
+        return self._wgpu.call["wgpuRenderBundleEncoderFinish", WGPURenderBundleHandle](
+            encoder, desc
+        )
+
+    def render_bundle_encoder_release(self, encoder: WGPURenderBundleEncoderHandle):
+        self._wgpu.call["wgpuRenderBundleEncoderRelease"](encoder)
+
+    def render_bundle_set_label(self, bundle: WGPURenderBundleHandle, label: WGPUStringView):
+        self._wgpu.call["wgpuRenderBundleSetLabel"](bundle, label)
+
+    def render_bundle_release(self, bundle: WGPURenderBundleHandle):
+        self._wgpu.call["wgpuRenderBundleRelease"](bundle)
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: generate report
+    # ------------------------------------------------------------------
+
+    def generate_report(
+        self,
+        instance: WGPUInstanceHandle,
+        report: OpaquePtr,  # WGPUGlobalReport*
+    ):
+        self._wgpu.call["wgpuGenerateReport"](instance, report)
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: queue submit with index
+    # ------------------------------------------------------------------
+
+    def queue_submit_for_index(
+        self,
+        queue: WGPUQueueHandle,
+        count: UInt,
+        commands: UnsafePointer[WGPUCommandBufferHandle, MutExternalOrigin],
+    ) -> UInt64:
+        return self._wgpu.call["wgpuQueueSubmitForIndex", UInt64](queue, count, commands)
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: push constants
+    # ------------------------------------------------------------------
+
+    def render_pass_set_push_constants(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        stages: UInt64,   # WGPUShaderStage
+        offset: UInt32,
+        size_bytes: UInt32,
+        data: OpaquePtr,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderSetPushConstants"](
+            pass_enc, stages, offset, size_bytes, data
+        )
+
+    def compute_pass_set_push_constants(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+        offset: UInt32,
+        size_bytes: UInt32,
+        data: OpaquePtr,
+    ):
+        self._wgpu.call["wgpuComputePassEncoderSetPushConstants"](
+            pass_enc, offset, size_bytes, data
+        )
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: multi-draw indirect
+    # ------------------------------------------------------------------
+
+    def render_pass_multi_draw_indirect(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+        count: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderMultiDrawIndirect"](
+            pass_enc, buffer, offset, count
+        )
+
+    def render_pass_multi_draw_indexed_indirect(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+        count: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderMultiDrawIndexedIndirect"](
+            pass_enc, buffer, offset, count
+        )
+
+    def render_pass_multi_draw_indirect_count(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+        count_buffer: WGPUBufferHandle,
+        count_buffer_offset: UInt64,
+        max_count: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderMultiDrawIndirectCount"](
+            pass_enc, buffer, offset, count_buffer, count_buffer_offset, max_count
+        )
+
+    def render_pass_multi_draw_indexed_indirect_count(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+        count_buffer: WGPUBufferHandle,
+        count_buffer_offset: UInt64,
+        max_count: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderMultiDrawIndexedIndirectCount"](
+            pass_enc, buffer, offset, count_buffer, count_buffer_offset, max_count
+        )
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: pipeline statistics queries
+    # ------------------------------------------------------------------
+
+    def compute_pass_begin_pipeline_statistics_query(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+        query_set: WGPUQuerySetHandle,
+        query_index: UInt32,
+    ):
+        self._wgpu.call["wgpuComputePassEncoderBeginPipelineStatisticsQuery"](
+            pass_enc, query_set, query_index
+        )
+
+    def compute_pass_end_pipeline_statistics_query(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+    ):
+        self._wgpu.call["wgpuComputePassEncoderEndPipelineStatisticsQuery"](pass_enc)
+
+    def render_pass_begin_pipeline_statistics_query(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        query_set: WGPUQuerySetHandle,
+        query_index: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderBeginPipelineStatisticsQuery"](
+            pass_enc, query_set, query_index
+        )
+
+    def render_pass_end_pipeline_statistics_query(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderEndPipelineStatisticsQuery"](pass_enc)
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: timestamp writes in passes
+    # ------------------------------------------------------------------
+
+    def compute_pass_write_timestamp(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+        query_set: WGPUQuerySetHandle,
+        query_index: UInt32,
+    ):
+        self._wgpu.call["wgpuComputePassEncoderWriteTimestamp"](pass_enc, query_set, query_index)
+
+    def render_pass_write_timestamp(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        query_set: WGPUQuerySetHandle,
+        query_index: UInt32,
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderWriteTimestamp"](pass_enc, query_set, query_index)

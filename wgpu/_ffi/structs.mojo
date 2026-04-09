@@ -743,6 +743,24 @@ struct WGPUSupportedFeatures:
     var features: UnsafePointer[UInt32, MutExternalOrigin]
 
 
+@fieldwise_init
+struct WGPUSupportedInstanceFeatures:
+    var next_in_chain: WGPUChainedStructPtr
+    var feature_name_count: UInt
+    var feature_names: UnsafePointer[UInt32, MutExternalOrigin]
+
+
+@fieldwise_init
+struct WGPUInstanceLimits:
+    var next_in_chain: WGPUChainedStructPtr
+
+
+@fieldwise_init
+struct WGPUSupportedWGSLLanguageFeatures:
+    var feature_count: UInt
+    var features: UnsafePointer[UInt32, MutExternalOrigin]
+
+
 # ---------------------------------------------------------------------------
 # Surface source structs for platform window integration (Linux/Wayland)
 # ---------------------------------------------------------------------------

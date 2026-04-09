@@ -154,3 +154,99 @@ struct WGPUNativeLimits:
 struct WGPUInstanceEnumerateAdapterOptions:
     var next_in_chain: OpaquePtr  # WGPUChainedStruct* nullable
     var backends:      UInt64    # WGPUInstanceBackend
+
+
+# ---------------------------------------------------------------------------
+# wgpu-native extension structs (report, push constants, extras)
+# ---------------------------------------------------------------------------
+
+@fieldwise_init
+struct WGPURegistryReport(TrivialRegisterPassable):
+    var num_allocated: UInt
+    var num_kept_from_user: UInt
+    var num_released_from_user: UInt
+    var num_destroyed_from_user: UInt
+    var num_error: UInt
+    var element_size: UInt
+
+
+@fieldwise_init
+struct WGPUHubReport(TrivialRegisterPassable):
+    var adapters: WGPURegistryReport
+    var devices: WGPURegistryReport
+    var queues: WGPURegistryReport
+    var pipeline_layouts: WGPURegistryReport
+    var shader_modules: WGPURegistryReport
+    var bind_group_layouts: WGPURegistryReport
+    var bind_groups: WGPURegistryReport
+    var command_buffers: WGPURegistryReport
+    var render_bundles: WGPURegistryReport
+    var render_pipelines: WGPURegistryReport
+    var compute_pipelines: WGPURegistryReport
+    var pipeline_caches: WGPURegistryReport
+    var query_sets: WGPURegistryReport
+    var buffers: WGPURegistryReport
+    var textures: WGPURegistryReport
+    var texture_views: WGPURegistryReport
+    var samplers: WGPURegistryReport
+
+
+@fieldwise_init
+struct WGPUGlobalReport:
+    var surfaces: WGPURegistryReport
+    var backend_type: UInt32
+    var vulkan: WGPUHubReport
+    var metal: WGPUHubReport
+    var dx12: WGPUHubReport
+    var gl: WGPUHubReport
+
+
+@fieldwise_init
+struct WGPUPushConstantRange(TrivialRegisterPassable):
+    var stages: UInt64   # WGPUShaderStage
+    var start: UInt32
+    var end: UInt32
+
+
+@fieldwise_init
+struct WGPUPipelineLayoutExtras:
+    var chain: WGPUChainedStruct
+    var push_constant_range_count: UInt
+    var push_constant_ranges: UnsafePointer[WGPUPushConstantRange, MutExternalOrigin]
+
+
+@fieldwise_init
+struct WGPUBindGroupEntryExtras:
+    var chain:            WGPUChainedStruct
+    var buffers:          UnsafePointer[OpaquePtr, MutExternalOrigin]  # WGPUBuffer*
+    var buffer_count:     UInt
+    var samplers:         UnsafePointer[OpaquePtr, MutExternalOrigin]  # WGPUSampler*
+    var sampler_count:    UInt
+    var texture_views:    UnsafePointer[OpaquePtr, MutExternalOrigin]  # WGPUTextureView*
+    var texture_view_count: UInt
+
+
+@fieldwise_init
+struct WGPUBindGroupLayoutEntryExtras:
+    var chain: WGPUChainedStruct
+    var count: UInt32
+
+
+@fieldwise_init
+struct WGPUQuerySetDescriptorExtras:
+    var chain:                      WGPUChainedStruct
+    var pipeline_statistics:        UnsafePointer[UInt32, MutExternalOrigin]
+    var pipeline_statistic_count:   UInt
+
+
+@fieldwise_init
+struct WGPUSurfaceConfigurationExtras:
+    var chain:                  WGPUChainedStruct
+    var maximum_frame_latency:  UInt32
+
+
+@fieldwise_init
+struct WGPUPrimitiveStateExtras:
+    var chain:                      WGPUChainedStruct
+    var polygon_mode:               UInt32
+    var conservative_rasterization:  UInt32  # WGPUBool

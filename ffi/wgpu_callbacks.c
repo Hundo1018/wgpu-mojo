@@ -16,6 +16,7 @@ typedef struct { void* adapter; uint32_t status; } MojoAdapterResult;
 typedef struct { void* device;  uint32_t status; } MojoDeviceResult;
 typedef struct { uint32_t status; }               MojoMapResult;
 typedef struct { uint32_t status; }               MojoWorkDoneResult;
+typedef struct { uint32_t status; uint32_t type; void* message_data; size_t message_len; } MojoPopErrorResult;
 
 static void _wgpu_mojo_adapter_cb(
     WGPURequestAdapterStatus status,
@@ -55,8 +56,24 @@ static void _wgpu_mojo_queue_done_cb(
     if (r) { r->status = (uint32_t)status; }
 }
 
+static void _wgpu_mojo_pop_error_cb(
+    WGPUPopErrorScopeStatus status,
+    WGPUErrorType type,
+    WGPUStringView message,
+    void* ud1, void* ud2
+) {
+    MojoPopErrorResult* r = (MojoPopErrorResult*)ud1;
+    if (r) {
+        r->status = (uint32_t)status;
+        r->type = (uint32_t)type;
+        r->message_data = (void*)message.data;
+        r->message_len = message.length;
+    }
+}
+
 /* Public getter functions — Mojo calls these to obtain function pointers */
 void* wgpu_mojo_get_adapter_callback(void)   { return (void*)_wgpu_mojo_adapter_cb; }
 void* wgpu_mojo_get_device_callback(void)    { return (void*)_wgpu_mojo_device_cb; }
 void* wgpu_mojo_get_buffer_map_callback(void){ return (void*)_wgpu_mojo_buffer_map_cb; }
 void* wgpu_mojo_get_queue_done_callback(void){ return (void*)_wgpu_mojo_queue_done_cb; }
+void* wgpu_mojo_get_pop_error_callback(void) { return (void*)_wgpu_mojo_pop_error_cb; }
