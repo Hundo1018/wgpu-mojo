@@ -10,7 +10,7 @@ Quick start:
 """
 
 # Top-level entry point
-from wgpu.gpu import request_adapter
+from wgpu.gpu import request_adapter, set_log_level
 
 # High-level RAII wrappers
 from wgpu.instance      import Instance

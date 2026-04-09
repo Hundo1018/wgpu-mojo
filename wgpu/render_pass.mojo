@@ -7,6 +7,7 @@ from wgpu._ffi.types import (
     OpaquePtr,
     WGPURenderPassEncoderHandle, WGPURenderPipelineHandle,
     WGPUBindGroupHandle, WGPUBufferHandle, WGPURenderBundleHandle,
+    WGPUQuerySetHandle,
 )
 from wgpu._ffi.structs import WGPUStringView, WGPUColor, str_to_sv
 
@@ -152,3 +153,63 @@ struct RenderPassEncoder(Movable):
 
     def handle(self) -> WGPURenderPassEncoderHandle:
         return self._handle
+
+    # ------------------------------------------------------------------
+    # wgpu-native extensions
+    # ------------------------------------------------------------------
+
+    def set_push_constants(
+        self, stages: UInt64, offset: UInt32, size_bytes: UInt32, data: OpaquePtr
+    ):
+        self._lib.render_pass_set_push_constants(
+            self._handle, stages, offset, size_bytes, data
+        )
+
+    def multi_draw_indirect(
+        self, buffer: WGPUBufferHandle, offset: UInt64, count: UInt32
+    ):
+        self._lib.render_pass_multi_draw_indirect(self._handle, buffer, offset, count)
+
+    def multi_draw_indexed_indirect(
+        self, buffer: WGPUBufferHandle, offset: UInt64, count: UInt32
+    ):
+        self._lib.render_pass_multi_draw_indexed_indirect(
+            self._handle, buffer, offset, count
+        )
+
+    def multi_draw_indirect_count(
+        self,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+        count_buffer: WGPUBufferHandle,
+        count_buffer_offset: UInt64,
+        max_count: UInt32,
+    ):
+        self._lib.render_pass_multi_draw_indirect_count(
+            self._handle, buffer, offset, count_buffer, count_buffer_offset, max_count
+        )
+
+    def multi_draw_indexed_indirect_count(
+        self,
+        buffer: WGPUBufferHandle,
+        offset: UInt64,
+        count_buffer: WGPUBufferHandle,
+        count_buffer_offset: UInt64,
+        max_count: UInt32,
+    ):
+        self._lib.render_pass_multi_draw_indexed_indirect_count(
+            self._handle, buffer, offset, count_buffer, count_buffer_offset, max_count
+        )
+
+    def begin_pipeline_statistics_query(
+        self, query_set: WGPUQuerySetHandle, query_index: UInt32
+    ):
+        self._lib.render_pass_begin_pipeline_statistics_query(
+            self._handle, query_set, query_index
+        )
+
+    def end_pipeline_statistics_query(self):
+        self._lib.render_pass_end_pipeline_statistics_query(self._handle)
+
+    def write_timestamp(self, query_set: WGPUQuerySetHandle, query_index: UInt32):
+        self._lib.render_pass_write_timestamp(self._handle, query_set, query_index)

@@ -48,3 +48,9 @@ def request_adapter(
     adapters.free()
 
     return Instance(lib^, inst, adapter)
+
+
+def set_log_level(level: UInt32) raises:
+    """Set wgpu-native log level (0=Off, 1=Error, 2=Warn, 3=Info, 4=Debug, 5=Trace)."""
+    var lib = WGPULib()
+    lib.set_log_level(level)
