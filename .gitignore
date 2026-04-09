@@ -1,4 +1,6 @@
 # pixi environments
 .pixi/*
 !.pixi/config.toml
-/wgpu-native
+
+/wgpu-native/lib/
+/wgpu-native/*.zip
