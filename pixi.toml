@@ -6,6 +6,32 @@ platforms = ["linux-64"]
 version = "0.1.0"
 
 [tasks]
+# Build the C callback bridge (must be run before any GPU test/example)
+build-callbacks = "gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include"
+
+# Run all tests
+test = { cmd = "mojo test tests/", depends_on = ["build-callbacks"] }
+
+# Run only non-GPU tests (no hardware required)
+test-types       = { cmd = "mojo test tests/test_types.mojo", depends_on = ["build-callbacks"] }
+test-structs     = { cmd = "mojo test tests/test_structs.mojo", depends_on = ["build-callbacks"] }
+test-native-ext  = { cmd = "mojo test tests/test_native_ext.mojo", depends_on = ["build-callbacks"] }
+
+# Run GPU-requiring tests individually
+test-instance    = { cmd = "mojo test tests/test_instance.mojo", depends_on = ["build-callbacks"] }
+test-device      = { cmd = "mojo test tests/test_device.mojo", depends_on = ["build-callbacks"] }
+test-buffer      = { cmd = "mojo test tests/test_buffer.mojo", depends_on = ["build-callbacks"] }
+test-shader      = { cmd = "mojo test tests/test_shader.mojo", depends_on = ["build-callbacks"] }
+test-bind-group  = { cmd = "mojo test tests/test_bind_group.mojo", depends_on = ["build-callbacks"] }
+test-compute     = { cmd = "mojo test tests/test_compute_pipeline.mojo", depends_on = ["build-callbacks"] }
+test-texture     = { cmd = "mojo test tests/test_texture.mojo", depends_on = ["build-callbacks"] }
+test-sampler     = { cmd = "mojo test tests/test_sampler.mojo", depends_on = ["build-callbacks"] }
+test-command     = { cmd = "mojo test tests/test_command_encoder.mojo", depends_on = ["build-callbacks"] }
+test-pipeline-layout = { cmd = "mojo test tests/test_pipeline_layout.mojo", depends_on = ["build-callbacks"] }
+
+# Examples
+example-enumerate = { cmd = "mojo examples/enumerate_adapters.mojo", depends_on = ["build-callbacks"] }
+example-compute   = { cmd = "mojo examples/compute_add.mojo", depends_on = ["build-callbacks"] }
 
 [dependencies]
 mojo = ">=0.26.3.0.dev2026040805,<0.27"
