@@ -103,7 +103,7 @@ struct Device(Movable):
         label: String = "",
     ) raises -> Buffer:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
-        var mapped: UInt32 = 1 if mapped_at_creation else 0
+        var mapped: UInt32 = UInt32(1) if mapped_at_creation else UInt32(0)
         var desc_p = alloc[WGPUBufferDescriptor](1)
         desc_p[] = WGPUBufferDescriptor(
             OpaquePtr(),

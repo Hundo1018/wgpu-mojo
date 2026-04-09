@@ -7,7 +7,7 @@ version = "0.1.0"
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
-build-callbacks = "gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include"
+build-callbacks = "gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN'"
 
 # Run all non-GPU tests
 test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo", depends-on = ["build-callbacks"] }

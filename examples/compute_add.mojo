@@ -16,6 +16,7 @@ from wgpu import (
     request_adapter,
     OpaquePtr,
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE,
+    WGPUBufferBindingType,
     WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout,
@@ -51,7 +52,7 @@ def make_data(n: Int, start: Float32, stride: Float32) -> List[Float32]:
 
 
 def make_storage_entry(binding: UInt32, readonly: Bool) -> WGPUBindGroupLayoutEntry:
-    var buf_type: UInt32 = 3 if readonly else 2
+    var buf_type = WGPUBufferBindingType.ReadOnlyStorage if readonly else WGPUBufferBindingType.Storage
     return WGPUBindGroupLayoutEntry(
         OpaquePtr(), binding, WGPUShaderStage.COMPUTE.value, UInt32(0),
         WGPUBufferBindingLayout(OpaquePtr(), buf_type, UInt32(0), UInt64(0)),
@@ -101,7 +102,8 @@ def main() raises:
     # ----------------------------------------------------------------
     # 5. Compute pipeline (RAII)
     # ----------------------------------------------------------------
-    var entry_sv = str_to_sv(String("main"))
+    var entry_str = String("main")
+    var entry_sv = str_to_sv(entry_str)
     var cs = WGPUComputeState(
         OpaquePtr(), shader.handle(), entry_sv, UInt(0),
         UnsafePointer[WGPUConstantEntry, MutExternalOrigin](),
@@ -110,6 +112,9 @@ def main() raises:
         OpaquePtr(), WGPUStringView.null_view(), pl.handle(), cs,
     )
     var pipeline = device.create_compute_pipeline(pipe_desc)
+    _ = pl^       # prevent ASAP destruction before create_compute_pipeline
+    _ = shader^   # prevent ASAP destruction before create_compute_pipeline
+    _ = entry_str
     print("Compute pipeline created.")
 
     # ----------------------------------------------------------------
@@ -131,10 +136,12 @@ def main() raises:
         buf_a.handle(), UInt64(0),
         rebind[UnsafePointer[Float32, MutExternalOrigin]](a_data.unsafe_ptr()),
         UInt(BUF_BYTES))
+    _ = a_data^  # prevent ASAP destruction during queue_write_buffer
     device.queue_write_buffer(
         buf_b.handle(), UInt64(0),
         rebind[UnsafePointer[Float32, MutExternalOrigin]](b_data.unsafe_ptr()),
         UInt(BUF_BYTES))
+    _ = b_data^  # prevent ASAP destruction during queue_write_buffer
     print("Data uploaded.")
 
     # ----------------------------------------------------------------
@@ -174,6 +181,15 @@ def main() raises:
     device.queue_submit(cmds)
     print("Commands submitted.")
 
+    # Pin GPU resource lifetimes past queue_submit — Mojo's ASAP destruction
+    # would otherwise release wgpu handles before the GPU finishes with them.
+    _ = pipeline^
+    _ = bg^
+    _ = bgl^
+    _ = buf_a^
+    _ = buf_b^
+    _ = buf_c^
+
     # ----------------------------------------------------------------
     # 9. Readback
     # ----------------------------------------------------------------
@@ -198,5 +214,8 @@ def main() raises:
 
     buf_r.unmap()
 
-    # No manual cleanup — RAII destructors handle all GPU resource release
+    # Pin remaining GPU object lifetimes past all usage.
+    # Without these, Mojo's ASAP destruction releases wgpu handles too early.
+    _ = device^
+    _ = instance^
     print("=== Done ===")

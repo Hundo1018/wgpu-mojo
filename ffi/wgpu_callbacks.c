@@ -77,3 +77,79 @@ void* wgpu_mojo_get_device_callback(void)    { return (void*)_wgpu_mojo_device_c
 void* wgpu_mojo_get_buffer_map_callback(void){ return (void*)_wgpu_mojo_buffer_map_cb; }
 void* wgpu_mojo_get_queue_done_callback(void){ return (void*)_wgpu_mojo_queue_done_cb; }
 void* wgpu_mojo_get_pop_error_callback(void) { return (void*)_wgpu_mojo_pop_error_cb; }
+
+/* ---------------------------------------------------------------------------
+ * Struct-by-value wrapper functions.
+ *
+ * Several wgpu-native functions take callback-info structs **by value**.
+ * Mojo's DLHandle.call ABI does not reliably pass >16-byte structs by value
+ * on x86_64 (the SysV ABI requires spilling to the stack, which Mojo's
+ * TrivialRegisterPassable calling convention does not honour).
+ *
+ * These thin wrappers accept the callback info **by pointer** and forward
+ * to the real wgpu function with a dereference, so Mojo only ever passes
+ * pointers through the FFI boundary.
+ * ----------------------------------------------------------------------- */
+
+WGPUFuture wgpu_mojo_instance_request_adapter(
+    WGPUInstance instance,
+    const WGPURequestAdapterOptions* options,
+    const WGPURequestAdapterCallbackInfo* cb_info
+) {
+    return wgpuInstanceRequestAdapter(instance, options, *cb_info);
+}
+
+WGPUFuture wgpu_mojo_adapter_request_device(
+    WGPUAdapter adapter,
+    const WGPUDeviceDescriptor* descriptor,
+    const WGPURequestDeviceCallbackInfo* cb_info
+) {
+    return wgpuAdapterRequestDevice(adapter, descriptor, *cb_info);
+}
+
+WGPUFuture wgpu_mojo_buffer_map_async(
+    WGPUBuffer buffer,
+    WGPUMapMode mode,
+    size_t offset,
+    size_t size,
+    const WGPUBufferMapCallbackInfo* cb_info
+) {
+    return wgpuBufferMapAsync(buffer, mode, offset, size, *cb_info);
+}
+
+WGPUFuture wgpu_mojo_queue_on_submitted_work_done(
+    WGPUQueue queue,
+    const WGPUQueueWorkDoneCallbackInfo* cb_info
+) {
+    return wgpuQueueOnSubmittedWorkDone(queue, *cb_info);
+}
+
+WGPUFuture wgpu_mojo_device_pop_error_scope(
+    WGPUDevice device,
+    const WGPUPopErrorScopeCallbackInfo* cb_info
+) {
+    return wgpuDevicePopErrorScope(device, *cb_info);
+}
+
+WGPUFuture wgpu_mojo_shader_get_compilation_info(
+    WGPUShaderModule module,
+    const WGPUCompilationInfoCallbackInfo* cb_info
+) {
+    return wgpuShaderModuleGetCompilationInfo(module, *cb_info);
+}
+
+WGPUFuture wgpu_mojo_device_create_compute_pipeline_async(
+    WGPUDevice device,
+    const WGPUComputePipelineDescriptor* descriptor,
+    const WGPUCreateComputePipelineAsyncCallbackInfo* cb_info
+) {
+    return wgpuDeviceCreateComputePipelineAsync(device, descriptor, *cb_info);
+}
+
+WGPUFuture wgpu_mojo_device_create_render_pipeline_async(
+    WGPUDevice device,
+    const WGPURenderPipelineDescriptor* descriptor,
+    const WGPUCreateRenderPipelineAsyncCallbackInfo* cb_info
+) {
+    return wgpuDeviceCreateRenderPipelineAsync(device, descriptor, *cb_info);
+}

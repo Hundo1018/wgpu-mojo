@@ -155,32 +155,26 @@ struct WGPULib(Movable):
         instance: WGPUInstanceHandle,
         options: UnsafePointer[WGPURequestAdapterOptions, MutExternalOrigin],
     ) raises -> _AdapterResult:
-        """Synchronously request an adapter via WGPUCallbackMode_WaitAnyOnly."""
+        """Synchronously request an adapter via AllowSpontaneous callback."""
         var result = alloc[_AdapterResult](1)
         result[] = _AdapterResult(WGPUAdapterHandle(), 0)
 
-        var cb_info = WGPURequestAdapterCallbackInfo(
+        var cb_info_p = alloc[WGPURequestAdapterCallbackInfo](1)
+        cb_info_p[] = WGPURequestAdapterCallbackInfo(
             OpaquePtr(),
-            WGPUCallbackMode.WaitAnyOnly,
+            WGPUCallbackMode.AllowSpontaneous,
             self._adapter_cb_ptr,
             result.bitcast[NoneType](),
             OpaquePtr(),
         )
-        var future = self._wgpu.call["wgpuInstanceRequestAdapter", WGPUFuture](
-            instance, options, cb_info
+        _ = self._cb.call["wgpu_mojo_instance_request_adapter", WGPUFuture](
+            instance, options, cb_info_p
         )
-        var wait_info_p = alloc[WGPUFutureWaitInfo](1)
-        wait_info_p[] = WGPUFutureWaitInfo(future, WGPU_FALSE)
-        _ = self._wgpu.call["wgpuInstanceWaitAny", UInt32](
-            instance,
-            UInt(1),
-            wait_info_p.bitcast[NoneType](),
-            UInt64.MAX,
-        )
+        cb_info_p.free()
+        self._wgpu.call["wgpuInstanceProcessEvents"](instance)
         var adapter = result[].adapter
         var status  = result[].status
         result.free()
-        wait_info_p.free()
         return _AdapterResult(adapter, status)
 
     def instance_process_events(self, instance: WGPUInstanceHandle):
@@ -222,32 +216,26 @@ struct WGPULib(Movable):
         adapter: WGPUAdapterHandle,
         desc: UnsafePointer[WGPUDeviceDescriptor, MutExternalOrigin],
     ) raises -> _DeviceResult:
-        """Synchronously request a device via WGPUCallbackMode_WaitAnyOnly."""
+        """Synchronously request a device via AllowSpontaneous callback."""
         var result = alloc[_DeviceResult](1)
         result[] = _DeviceResult(WGPUDeviceHandle(), 0)
 
-        var cb_info = WGPURequestDeviceCallbackInfo(
+        var cb_info_p = alloc[WGPURequestDeviceCallbackInfo](1)
+        cb_info_p[] = WGPURequestDeviceCallbackInfo(
             OpaquePtr(),
-            WGPUCallbackMode.WaitAnyOnly,
+            WGPUCallbackMode.AllowSpontaneous,
             self._device_cb_ptr,
             result.bitcast[NoneType](),
             OpaquePtr(),
         )
-        var future = self._wgpu.call["wgpuAdapterRequestDevice", WGPUFuture](
-            adapter, desc, cb_info
+        _ = self._cb.call["wgpu_mojo_adapter_request_device", WGPUFuture](
+            adapter, desc, cb_info_p
         )
-        var wait_info_p = alloc[WGPUFutureWaitInfo](1)
-        wait_info_p[] = WGPUFutureWaitInfo(future, WGPU_FALSE)
-        _ = self._wgpu.call["wgpuInstanceWaitAny", UInt32](
-            instance,
-            UInt(1),
-            wait_info_p.bitcast[NoneType](),
-            UInt64.MAX,
-        )
+        cb_info_p.free()
+        self._wgpu.call["wgpuInstanceProcessEvents"](instance)
         var device = result[].device
         var status = result[].status
         result.free()
-        wait_info_p.free()
         return _DeviceResult(device, status)
 
     def adapter_get_info(
@@ -421,27 +409,21 @@ struct WGPULib(Movable):
         var result = alloc[_MapResult](1)
         result[] = _MapResult(0)
 
-        var cb_info = WGPUBufferMapCallbackInfo(
+        var cb_info_p = alloc[WGPUBufferMapCallbackInfo](1)
+        cb_info_p[] = WGPUBufferMapCallbackInfo(
             OpaquePtr(),
-            WGPUCallbackMode.WaitAnyOnly,
+            WGPUCallbackMode.AllowSpontaneous,
             self._map_cb_ptr,
             result.bitcast[NoneType](),
             OpaquePtr(),
         )
-        var future = self._wgpu.call["wgpuBufferMapAsync", WGPUFuture](
-            buffer, mode, offset, size, cb_info
+        _ = self._cb.call["wgpu_mojo_buffer_map_async", WGPUFuture](
+            buffer, mode, offset, size, cb_info_p
         )
-        var wait_info_p = alloc[WGPUFutureWaitInfo](1)
-        wait_info_p[] = WGPUFutureWaitInfo(future, WGPU_FALSE)
-        _ = self._wgpu.call["wgpuInstanceWaitAny", UInt32](
-            instance,
-            UInt(1),
-            wait_info_p.bitcast[NoneType](),
-            UInt64.MAX,
-        )
+        cb_info_p.free()
+        self._wgpu.call["wgpuDevicePoll"](device, WGPU_TRUE, OpaquePtr())
         var status = result[].status
         result.free()
-        wait_info_p.free()
         return status
 
     def buffer_get_mapped_range(
@@ -979,9 +961,9 @@ struct WGPULib(Movable):
     def device_pop_error_scope(
         self,
         device: WGPUDeviceHandle,
-        callback_info: WGPUPopErrorScopeCallbackInfo,
+        callback_info_ptr: UnsafePointer[WGPUPopErrorScopeCallbackInfo, MutExternalOrigin],
     ):
-        self._wgpu.call["wgpuDevicePopErrorScope"](device, callback_info)
+        self._cb.call["wgpu_mojo_device_pop_error_scope"](device, callback_info_ptr)
 
     def device_create_render_bundle_encoder(
         self,
@@ -1153,25 +1135,19 @@ struct WGPULib(Movable):
         """Block until submitted queue work is done. Returns status."""
         var result = alloc[_WorkDoneResult](1)
         result[] = _WorkDoneResult(0)
-        var cb_info = WGPUQueueWorkDoneCallbackInfo(
+        var cb_info_p = alloc[WGPUQueueWorkDoneCallbackInfo](1)
+        cb_info_p[] = WGPUQueueWorkDoneCallbackInfo(
             OpaquePtr(),
-            WGPUCallbackMode.WaitAnyOnly,
+            WGPUCallbackMode.AllowSpontaneous,
             self._done_cb_ptr,
             result.bitcast[NoneType](),
             OpaquePtr(),
         )
-        var future = self._wgpu.call["wgpuQueueOnSubmittedWorkDone", WGPUFuture](queue, cb_info)
-        var wait_info_p = alloc[WGPUFutureWaitInfo](1)
-        wait_info_p[] = WGPUFutureWaitInfo(future, WGPU_FALSE)
-        _ = self._wgpu.call["wgpuInstanceWaitAny", UInt32](
-            instance,
-            UInt(1),
-            wait_info_p.bitcast[NoneType](),
-            UInt64.MAX,
-        )
+        _ = self._cb.call["wgpu_mojo_queue_on_submitted_work_done", WGPUFuture](queue, cb_info_p)
+        cb_info_p.free()
+        self._wgpu.call["wgpuInstanceProcessEvents"](instance)
         var status = result[].status
         result.free()
-        wait_info_p.free()
         return status
 
     def queue_set_label(self, queue: WGPUQueueHandle, label: WGPUStringView):
@@ -1212,9 +1188,9 @@ struct WGPULib(Movable):
     def shader_module_get_compilation_info(
         self,
         shader: WGPUShaderModuleHandle,
-        callback_info: WGPUCompilationInfoCallbackInfo,
+        callback_info_ptr: UnsafePointer[WGPUCompilationInfoCallbackInfo, MutExternalOrigin],
     ):
-        self._wgpu.call["wgpuShaderModuleGetCompilationInfo"](shader, callback_info)
+        self._cb.call["wgpu_mojo_shader_get_compilation_info"](shader, callback_info_ptr)
 
     def bind_group_set_label(self, bg: WGPUBindGroupHandle, label: WGPUStringView):
         self._wgpu.call["wgpuBindGroupSetLabel"](bg, label)
