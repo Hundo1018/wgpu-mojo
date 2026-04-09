@@ -2,5 +2,5 @@
 .pixi/*
 !.pixi/config.toml
 
-/wgpu-native/lib/
-/wgpu-native/*.zip
+/ffi/lib/
+/ffi/*.zip
