@@ -8,6 +8,7 @@ from wgpu._ffi.types import (
     WGPUComputePipelineHandle, WGPURenderPipelineHandle,
     WGPUBindGroupLayoutHandle,
 )
+from wgpu._ffi.structs import WGPUStringView, str_to_sv
 
 
 struct ComputePipeline(Movable):
@@ -33,6 +34,10 @@ struct ComputePipeline(Movable):
     def get_bind_group_layout(self, index: UInt32) -> WGPUBindGroupLayoutHandle:
         return self._lib.compute_pipeline_get_bind_group_layout(self._handle, index)
 
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.compute_pipeline_set_label(self._handle, sv)
+
 
 struct RenderPipeline(Movable):
     """RAII wrapper around a WGPURenderPipeline."""
@@ -56,3 +61,7 @@ struct RenderPipeline(Movable):
 
     def get_bind_group_layout(self, index: UInt32) -> WGPUBindGroupLayoutHandle:
         return self._lib.render_pipeline_get_bind_group_layout(self._handle, index)
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.render_pipeline_set_label(self._handle, sv)

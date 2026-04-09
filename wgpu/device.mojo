@@ -28,6 +28,15 @@ from wgpu._ffi.structs import (
     str_to_sv,
 )
 from wgpu._ffi.types import WGPUSType
+from wgpu.buffer import Buffer
+from wgpu.texture import Texture, TextureView
+from wgpu.sampler import Sampler
+from wgpu.shader import ShaderModule
+from wgpu.bind_group import BindGroup, BindGroupLayout
+from wgpu.pipeline_layout import PipelineLayout
+from wgpu.pipeline import ComputePipeline, RenderPipeline
+from wgpu.command import CommandEncoder
+from wgpu.query_set import QuerySet
 
 
 struct Device(Movable):
@@ -92,7 +101,7 @@ struct Device(Movable):
         usage: WGPUBufferUsage,
         mapped_at_creation: Bool = False,
         label: String = "",
-    ) -> WGPUBufferHandle:
+    ) raises -> Buffer:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var mapped: UInt32 = 1 if mapped_at_creation else 0
         var desc_p = alloc[WGPUBufferDescriptor](1)
@@ -105,7 +114,8 @@ struct Device(Movable):
         )
         var result = self._lib.device_create_buffer(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return Buffer(lib^, self._instance, self._handle, result, size, usage)
 
     def create_texture(
         self,
@@ -118,7 +128,7 @@ struct Device(Movable):
         mip_level_count: UInt32 = 1,
         sample_count: UInt32 = 1,
         label: String = "",
-    ) -> WGPUTextureHandle:
+    ) raises -> Texture:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var size = WGPUExtent3D(width, height, depth_or_layers)
         var desc_p = alloc[WGPUTextureDescriptor](1)
@@ -136,7 +146,8 @@ struct Device(Movable):
         )
         var result = self._lib.device_create_texture(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return Texture(lib^, result)
 
     def create_sampler(
         self,
@@ -151,7 +162,7 @@ struct Device(Movable):
         compare: UInt32 = 0,         # Undefined
         max_anisotropy: UInt16 = 1,
         label: String = "",
-    ) -> WGPUSamplerHandle:
+    ) raises -> Sampler:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUSamplerDescriptor](1)
         desc_p[] = WGPUSamplerDescriptor(
@@ -170,13 +181,14 @@ struct Device(Movable):
         )
         var result = self._lib.device_create_sampler(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return Sampler(lib^, result)
 
     def create_shader_module_wgsl(
         self,
         code: String,
         label: String = "",
-    ) -> WGPUShaderModuleHandle:
+    ) raises -> ShaderModule:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var code_sv  = str_to_sv(code)
         var chain_val = WGPUChainedStruct(OpaquePtr(), WGPUSType.ShaderSourceWGSL)
@@ -190,13 +202,14 @@ struct Device(Movable):
         var result = self._lib.device_create_shader_module(self._handle, desc_p)
         source_p.free()
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return ShaderModule(lib^, result)
 
     def create_shader_module_spirv(
         self,
         code: List[UInt32],
         label: String = "",
-    ) -> WGPUShaderModuleHandle:
+    ) raises -> ShaderModule:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var code_ptr = rebind[UnsafePointer[UInt32, MutExternalOrigin]](code.unsafe_ptr())
         var chain_val = WGPUChainedStruct(OpaquePtr(), WGPUSType.ShaderSourceSPIRV)
@@ -214,33 +227,36 @@ struct Device(Movable):
         var result = self._lib.device_create_shader_module(self._handle, desc_p)
         source_p.free()
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return ShaderModule(lib^, result)
 
     def create_bind_group_layout(
         self,
         desc: WGPUBindGroupLayoutDescriptor,
-    ) -> WGPUBindGroupLayoutHandle:
+    ) raises -> BindGroupLayout:
         var desc_p = alloc[WGPUBindGroupLayoutDescriptor](1)
         desc_p[] = desc
         var result = self._lib.device_create_bind_group_layout(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return BindGroupLayout(lib^, result)
 
     def create_bind_group(
         self,
         desc: WGPUBindGroupDescriptor,
-    ) -> WGPUBindGroupHandle:
+    ) raises -> BindGroup:
         var desc_p = alloc[WGPUBindGroupDescriptor](1)
         desc_p[] = desc
         var result = self._lib.device_create_bind_group(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return BindGroup(lib^, result)
 
     def create_pipeline_layout(
         self,
         bind_group_layouts: List[WGPUBindGroupLayoutHandle],
         label: String = "",
-    ) -> WGPUPipelineLayoutHandle:
+    ) raises -> PipelineLayout:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var layouts_ptr = rebind[UnsafePointer[WGPUBindGroupLayoutHandle, MutExternalOrigin]](bind_group_layouts.unsafe_ptr())
         var desc_p = alloc[WGPUPipelineLayoutDescriptor](1)
@@ -253,42 +269,46 @@ struct Device(Movable):
         )
         var result = self._lib.device_create_pipeline_layout(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return PipelineLayout(lib^, result)
 
     def create_compute_pipeline(
         self,
         desc: WGPUComputePipelineDescriptor,
-    ) -> WGPUComputePipelineHandle:
+    ) raises -> ComputePipeline:
         var desc_p = alloc[WGPUComputePipelineDescriptor](1)
         desc_p[] = desc
         var result = self._lib.device_create_compute_pipeline(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return ComputePipeline(lib^, result)
 
     def create_render_pipeline(
         self,
         desc: WGPURenderPipelineDescriptor,
-    ) -> WGPURenderPipelineHandle:
+    ) raises -> RenderPipeline:
         var desc_p = alloc[WGPURenderPipelineDescriptor](1)
         desc_p[] = desc
         var result = self._lib.device_create_render_pipeline(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return RenderPipeline(lib^, result)
 
-    def create_command_encoder(self, label: String = "") -> WGPUCommandEncoderHandle:
+    def create_command_encoder(self, label: String = "") raises -> CommandEncoder:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUCommandEncoderDescriptor](1)
         desc_p[] = WGPUCommandEncoderDescriptor(OpaquePtr(), label_sv)
         var result = self._lib.device_create_command_encoder(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return CommandEncoder(lib^, result)
 
     def create_query_set(
         self,
         query_type: UInt32,
         count: UInt32,
         label: String = "",
-    ) -> WGPUQuerySetHandle:
+    ) raises -> QuerySet:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUQuerySetDescriptor](1)
         desc_p[] = WGPUQuerySetDescriptor(
@@ -296,7 +316,8 @@ struct Device(Movable):
         )
         var result = self._lib.device_create_query_set(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return QuerySet(lib^, result)
 
     # ------------------------------------------------------------------
     # Queue write helpers
@@ -322,6 +343,18 @@ struct Device(Movable):
     def queue_submit(self, commands: List[WGPUCommandBufferHandle]):
         var arr = rebind[UnsafePointer[WGPUCommandBufferHandle, MutExternalOrigin]](commands.unsafe_ptr())
         self._lib.queue_submit(self._queue, UInt(len(commands)), arr)
+
+    # ------------------------------------------------------------------
+    # Labels
+    # ------------------------------------------------------------------
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.device_set_label(self._handle, sv)
+
+    def queue_set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.queue_set_label(self._queue, sv)
 
     # ------------------------------------------------------------------
     # Raw handle access

@@ -7,6 +7,7 @@ from wgpu._ffi.types import (
     OpaquePtr,
     WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
 )
+from wgpu._ffi.structs import WGPUStringView, str_to_sv
 
 
 struct BindGroupLayout(Movable):
@@ -29,6 +30,10 @@ struct BindGroupLayout(Movable):
     def handle(self) -> WGPUBindGroupLayoutHandle:
         return self._handle
 
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.bind_group_layout_set_label(self._handle, sv)
+
 
 struct BindGroup(Movable):
     """RAII wrapper around a WGPUBindGroup."""
@@ -49,3 +54,7 @@ struct BindGroup(Movable):
 
     def handle(self) -> WGPUBindGroupHandle:
         return self._handle
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.bind_group_set_label(self._handle, sv)

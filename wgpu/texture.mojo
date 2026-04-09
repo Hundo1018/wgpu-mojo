@@ -27,6 +27,10 @@ struct TextureView(Movable):
     def handle(self) -> WGPUTextureViewHandle:
         return self._handle
 
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.texture_view_set_label(self._handle, sv)
+
 
 struct Texture(Movable):
     """RAII wrapper around a WGPUTexture."""
@@ -61,14 +65,31 @@ struct Texture(Movable):
     def format(self) -> UInt32:
         return self._lib.texture_get_format(self._handle)
 
-    def create_view_default(self) -> WGPUTextureViewHandle:
-        return self._lib.texture_create_view(
+    def dimension(self) -> UInt32:
+        return self._lib.texture_get_dimension(self._handle)
+
+    def mip_level_count(self) -> UInt32:
+        return self._lib.texture_get_mip_level_count(self._handle)
+
+    def sample_count(self) -> UInt32:
+        return self._lib.texture_get_sample_count(self._handle)
+
+    def create_view_default(self) raises -> TextureView:
+        var h = self._lib.texture_create_view(
             self._handle,
             UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin](),
         )
+        var lib = WGPULib()
+        return TextureView(lib^, h)
 
     def create_view(
         self,
         desc: UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin],
-    ) -> WGPUTextureViewHandle:
-        return self._lib.texture_create_view(self._handle, desc)
+    ) raises -> TextureView:
+        var h = self._lib.texture_create_view(self._handle, desc)
+        var lib = WGPULib()
+        return TextureView(lib^, h)
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.texture_set_label(self._handle, sv)

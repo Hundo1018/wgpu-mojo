@@ -19,6 +19,8 @@ from wgpu._ffi.structs import (
     WGPUStringView,
     str_to_sv,
 )
+from wgpu.compute_pass import ComputePassEncoder
+from wgpu.render_pass import RenderPassEncoder
 
 
 struct CommandEncoder(Movable):
@@ -47,18 +49,21 @@ struct CommandEncoder(Movable):
 
     def begin_compute_pass(
         self, label: String = ""
-    ) -> WGPUComputePassEncoderHandle:
+    ) raises -> ComputePassEncoder:
         var label_sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUComputePassDescriptor](1)
         desc_p[] = WGPUComputePassDescriptor(OpaquePtr(), label_sv, OpaquePtr())
         var result = self._lib.command_encoder_begin_compute_pass(self._handle, desc_p)
         desc_p.free()
-        return result
+        var lib = WGPULib()
+        return ComputePassEncoder(lib^, result)
 
     def begin_render_pass(
         self, desc: UnsafePointer[WGPURenderPassDescriptor, MutExternalOrigin]
-    ) -> WGPURenderPassEncoderHandle:
-        return self._lib.command_encoder_begin_render_pass(self._handle, desc)
+    ) raises -> RenderPassEncoder:
+        var result = self._lib.command_encoder_begin_render_pass(self._handle, desc)
+        var lib = WGPULib()
+        return RenderPassEncoder(lib^, result)
 
     # ------------------------------------------------------------------
     # Copy operations
@@ -92,6 +97,14 @@ struct CommandEncoder(Movable):
     ):
         self._lib.command_encoder_copy_texture_to_buffer(self._handle, src, dst, size)
 
+    def copy_texture_to_texture(
+        self,
+        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
+        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
+        size: UnsafePointer[WGPUExtent3D, MutExternalOrigin],
+    ):
+        self._lib.command_encoder_copy_texture_to_texture(self._handle, src, dst, size)
+
     def clear_buffer(self, buffer: WGPUBufferHandle, offset: UInt64 = 0, size: UInt64 = 0):
         self._lib.command_encoder_clear_buffer(self._handle, buffer, offset, size)
 
@@ -106,6 +119,32 @@ struct CommandEncoder(Movable):
         self._lib.command_encoder_resolve_query_set(
             self._handle, query_set, first_query, query_count, destination, destination_offset
         )
+
+    def write_timestamp(self, query_set: WGPUQuerySetHandle, query_index: UInt32):
+        self._lib.command_encoder_write_timestamp(self._handle, query_set, query_index)
+
+    # ------------------------------------------------------------------
+    # Debug groups
+    # ------------------------------------------------------------------
+
+    def push_debug_group(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.command_encoder_push_debug_group(self._handle, sv)
+
+    def pop_debug_group(self):
+        self._lib.command_encoder_pop_debug_group(self._handle)
+
+    def insert_debug_marker(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.command_encoder_insert_debug_marker(self._handle, sv)
+
+    # ------------------------------------------------------------------
+    # Label
+    # ------------------------------------------------------------------
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.command_encoder_set_label(self._handle, sv)
 
     # ------------------------------------------------------------------
     # Finish

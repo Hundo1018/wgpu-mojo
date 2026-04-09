@@ -15,18 +15,16 @@ def test_create_2d_texture() raises:
     """Create a simple 2D RGBA8Unorm texture."""
     var inst   = request_adapter()
     var device = inst.request_device()
-    var handle = device.create_texture(
+    var tex = device.create_texture(
         UInt32(256), UInt32(256), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
         WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_SRC,
         2, 1, 1, "tex2d"
     )
-    assert_true(Bool(handle))
-    assert_equal(device._lib.texture_get_width(handle), UInt32(256))
-    assert_equal(device._lib.texture_get_height(handle), UInt32(256))
-    assert_equal(device._lib.texture_get_format(handle), WGPUTextureFormat.RGBA8Unorm)
-    device._lib.texture_destroy(handle)
-    device._lib.texture_release(handle)
+    assert_true(Bool(tex.handle()))
+    assert_equal(tex.width(), UInt32(256))
+    assert_equal(tex.height(), UInt32(256))
+    assert_equal(tex.format(), WGPUTextureFormat.RGBA8Unorm)
 
 
 def test_create_texture_view() raises:
@@ -39,13 +37,8 @@ def test_create_texture_view() raises:
         WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
         2, 1, 1
     )
-    var view = device._lib.texture_create_view(
-        tex, UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin]()
-    )
-    assert_true(Bool(view))
-    device._lib.texture_view_release(view)
-    device._lib.texture_destroy(tex)
-    device._lib.texture_release(tex)
+    var view = tex.create_view_default()
+    assert_true(Bool(view.handle()))
 
 
 def test_texture_dimensions() raises:
@@ -60,10 +53,8 @@ def test_texture_dimensions() raises:
         WGPUTextureUsage.COPY_DST | WGPUTextureUsage.COPY_SRC,
         2, 1, 1
     )
-    assert_equal(device._lib.texture_get_width(tex), w)
-    assert_equal(device._lib.texture_get_height(tex), h)
-    device._lib.texture_destroy(tex)
-    device._lib.texture_release(tex)
+    assert_equal(tex.width(), w)
+    assert_equal(tex.height(), h)
 
 
 def main() raises:

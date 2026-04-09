@@ -41,17 +41,18 @@ def test_create_bind_group_layout() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
 
-    var entries = List[WGPUBindGroupLayoutEntry](make_storage_bgl_entry(UInt32(0)))
+    var entries_p = alloc[WGPUBindGroupLayoutEntry](1)
+    entries_p[0] = make_storage_bgl_entry(UInt32(0))
     var label   = str_to_sv(String("test_bgl"))
     var desc    = WGPUBindGroupLayoutDescriptor(
         OpaquePtr(),
         label,
         UInt(1),
-        entries.unsafe_ptr(),
+        entries_p,
     )
     var bgl = device.create_bind_group_layout(desc)
-    assert_true(Bool(bgl))
-    device._lib.bind_group_layout_release(bgl)
+    entries_p.free()
+    assert_true(Bool(bgl.handle()))
 
 
 def test_create_bind_group_with_buffer() raises:
@@ -63,31 +64,30 @@ def test_create_bind_group_with_buffer() raises:
         UInt64(256), WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False
     )
 
-    var entries_layout = List[WGPUBindGroupLayoutEntry](make_storage_bgl_entry(UInt32(0)))
+    var entries_p = alloc[WGPUBindGroupLayoutEntry](1)
+    entries_p[0] = make_storage_bgl_entry(UInt32(0))
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(1), entries_layout.unsafe_ptr()
+        OpaquePtr(), WGPUStringView.null_view(), UInt(1), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
+    entries_p.free()
 
-    var entry = WGPUBindGroupEntry(
+    var bg_entries_p = alloc[WGPUBindGroupEntry](1)
+    bg_entries_p[0] = WGPUBindGroupEntry(
         OpaquePtr(),
         UInt32(0),
-        buf,
+        buf.handle(),
         UInt64(0),
         WGPU_WHOLE_SIZE,
         OpaquePtr(),
         OpaquePtr(),
     )
-    var bg_entries = List[WGPUBindGroupEntry](entry)
     var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), bgl, UInt(1), bg_entries.unsafe_ptr()
+        OpaquePtr(), WGPUStringView.null_view(), bgl.handle(), UInt(1), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
-    assert_true(Bool(bg))
-
-    device._lib.bind_group_release(bg)
-    device._lib.bind_group_layout_release(bgl)
-    device._lib.buffer_release(buf)
+    bg_entries_p.free()
+    assert_true(Bool(bg.handle()))
 
 
 def main() raises:

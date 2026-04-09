@@ -135,3 +135,11 @@ struct Buffer(Movable):
         for i in range(len(data)):
             (dst + i).init_pointee_copy(data[i])
         self.unmap()
+
+    # ------------------------------------------------------------------
+    # Label
+    # ------------------------------------------------------------------
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.buffer_set_label(self._handle, sv)

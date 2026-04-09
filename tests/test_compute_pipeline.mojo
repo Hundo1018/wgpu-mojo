@@ -15,10 +15,7 @@ from wgpu._ffi.structs import (
     WGPUBindGroupEntry, WGPUBindGroupDescriptor,
     WGPUComputeState, WGPUComputePipelineDescriptor,
     WGPUConstantEntry,
-    WGPUPipelineLayoutDescriptor,
     WGPUStringView, str_to_sv,
-    WGPUCommandBufferDescriptor,
-    WGPUComputePassDescriptor,
 )
 from wgpu._ffi.types import WGPU_WHOLE_SIZE
 
@@ -56,45 +53,33 @@ def test_create_compute_pipeline() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
     var shader = device.create_shader_module_wgsl(ADD_WGSL, "add")
-    assert_true(Bool(shader))
+    assert_true(Bool(shader.handle()))
 
-    var entries = List[WGPUBindGroupLayoutEntry]()
+    var entries_p = alloc[WGPUBindGroupLayoutEntry](3)
     for i in range(3):
-        entries.append(_make_bgl_entry(UInt32(i), i < 2))
+        entries_p[i] = _make_bgl_entry(UInt32(i), i < 2)
 
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(3), entries.unsafe_ptr()
+        OpaquePtr(), WGPUStringView.null_view(), UInt(3), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
+    entries_p.free()
 
     var bgls = List[OpaquePtr]()
-    bgls.append(bgl)
-    var layout_desc = WGPUPipelineLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(1), bgls.unsafe_ptr(), UInt32(0)
-    )
-    var layout_desc_p = alloc[WGPUPipelineLayoutDescriptor](1)
-    layout_desc_p[] = layout_desc
-    var pl = device._lib.device_create_pipeline_layout(
-        device.handle(), layout_desc_p
-    )
-    layout_desc_p.free()
-    assert_true(Bool(pl))
+    bgls.append(bgl.handle())
+    var pl = device.create_pipeline_layout(bgls)
+    assert_true(Bool(pl.handle()))
 
     var entry_sv = str_to_sv(String("main"))
     var compute_state = WGPUComputeState(
-        OpaquePtr(), shader, entry_sv, UInt(0),
+        OpaquePtr(), shader.handle(), entry_sv, UInt(0),
         UnsafePointer[WGPUConstantEntry, MutExternalOrigin]()
     )
     var pipeline_desc = WGPUComputePipelineDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), pl, compute_state
+        OpaquePtr(), WGPUStringView.null_view(), pl.handle(), compute_state
     )
     var pipeline = device.create_compute_pipeline(pipeline_desc)
-    assert_true(Bool(pipeline))
-
-    device._lib.compute_pipeline_release(pipeline)
-    device._lib.pipeline_layout_release(pl)
-    device._lib.bind_group_layout_release(bgl)
-    device._lib.shader_module_release(shader)
+    assert_true(Bool(pipeline.handle()))
 
 
 def test_vec_add_compute() raises:
@@ -103,30 +88,25 @@ def test_vec_add_compute() raises:
     var device = inst.request_device()
     var shader = device.create_shader_module_wgsl(ADD_WGSL, "vec_add")
 
-    var entries = List[WGPUBindGroupLayoutEntry]()
+    var entries_p = alloc[WGPUBindGroupLayoutEntry](3)
     for i in range(3):
-        entries.append(_make_bgl_entry(UInt32(i), i < 2))
+        entries_p[i] = _make_bgl_entry(UInt32(i), i < 2)
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(3), entries.unsafe_ptr()
+        OpaquePtr(), WGPUStringView.null_view(), UInt(3), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
+    entries_p.free()
 
-    var bgls2 = List[OpaquePtr]()
-    bgls2.append(bgl)
-    var layout_desc = WGPUPipelineLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(1), bgls.unsafe_ptr(), UInt32(0)
-    )
-    var layout_desc_p = alloc[WGPUPipelineLayoutDescriptor](1)
-    layout_desc_p[] = layout_desc
-    var layout_desc_p2 = alloc[WGPUPipelineLayoutDescriptor](1)
-    layout_desc_p2[] = layout_desc2
-    var pl = device._lib.device_create_pipeline_layout(device.handle(), layout_desc_p2)
-    layout_desc_p2.free()
+    var bgls = List[OpaquePtr]()
+    bgls.append(bgl.handle())
+    var pl = device.create_pipeline_layout(bgls)
 
     var entry_sv = str_to_sv(String("main"))
-    var cs = WGPUComputeState(OpaquePtr(), shader, entry_sv, UInt(0),
+    var cs = WGPUComputeState(OpaquePtr(), shader.handle(), entry_sv, UInt(0),
                               UnsafePointer[WGPUConstantEntry, MutExternalOrigin]())
-    var pipeline_desc = WGPUComputePipelineDescriptor(OpaquePtr(), WGPUStringView.null_view(), pl, cs)
+    var pipeline_desc = WGPUComputePipelineDescriptor(
+        OpaquePtr(), WGPUStringView.null_view(), pl.handle(), cs
+    )
     var pipeline = device.create_compute_pipeline(pipeline_desc)
 
     var a_data = alloc[Float32](4)
@@ -141,51 +121,34 @@ def test_vec_add_compute() raises:
     var buf_c = device.create_buffer(BUF_SIZE, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC, False, "buf_c")
     var buf_r = device.create_buffer(BUF_SIZE, WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST, False, "buf_r")
 
-    device._lib.queue_write_buffer(
-        device.queue(), buf_a, UInt64(0),
-        a_data.bitcast[NoneType](), UInt(16)
-    )
-    device._lib.queue_write_buffer(
-        device.queue(), buf_b, UInt64(0),
-        b_data.bitcast[NoneType](), UInt(16)
-    )
+    device.queue_write_buffer(buf_a.handle(), UInt64(0), a_data, UInt(16))
+    device.queue_write_buffer(buf_b.handle(), UInt64(0), b_data, UInt(16))
 
-    var bg_entries = List[WGPUBindGroupEntry]()
-    bg_entries.append(WGPUBindGroupEntry(OpaquePtr(), UInt32(0), buf_a, UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr()))
-    bg_entries.append(WGPUBindGroupEntry(OpaquePtr(), UInt32(1), buf_b, UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr()))
-    bg_entries.append(WGPUBindGroupEntry(OpaquePtr(), UInt32(2), buf_c, UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr()))
+    var bg_entries_p = alloc[WGPUBindGroupEntry](3)
+    bg_entries_p[0] = WGPUBindGroupEntry(OpaquePtr(), UInt32(0), buf_a.handle(), UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr())
+    bg_entries_p[1] = WGPUBindGroupEntry(OpaquePtr(), UInt32(1), buf_b.handle(), UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr())
+    bg_entries_p[2] = WGPUBindGroupEntry(OpaquePtr(), UInt32(2), buf_c.handle(), UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr())
     var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), bgl, UInt(3), bg_entries.unsafe_ptr()
+        OpaquePtr(), WGPUStringView.null_view(), bgl.handle(), UInt(3), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
+    bg_entries_p.free()
 
     var enc = device.create_command_encoder("vec_add_enc")
-    var pass_desc_p = alloc[WGPUComputePassDescriptor](1)
-    pass_desc_p[] = WGPUComputePassDescriptor(OpaquePtr(), WGPUStringView.null_view(), OpaquePtr())
-    var cpass = device._lib.command_encoder_begin_compute_pass(enc, pass_desc_p)
-    pass_desc_p.free()
-    device._lib.compute_pass_set_pipeline(cpass, pipeline)
-    device._lib.compute_pass_set_bind_group(cpass, UInt32(0), bg, UInt(0), OpaquePtr())
-    device._lib.compute_pass_dispatch_workgroups(cpass, N_ELEMENTS, UInt32(1), UInt32(1))
-    device._lib.compute_pass_end(cpass)
+    var cpass = enc.begin_compute_pass()
+    cpass.set_pipeline(pipeline.handle())
+    cpass.set_bind_group(UInt32(0), bg.handle())
+    cpass.dispatch_workgroups(N_ELEMENTS, UInt32(1), UInt32(1))
+    cpass.end()
 
-    device._lib.command_encoder_copy_buffer_to_buffer(enc, buf_c, UInt64(0), buf_r, UInt64(0), BUF_SIZE)
+    enc.copy_buffer_to_buffer(buf_c.handle(), UInt64(0), buf_r.handle(), UInt64(0), BUF_SIZE)
 
-    var cmd_buf_desc_p = alloc[WGPUCommandBufferDescriptor](1)
-    cmd_buf_desc_p[] = WGPUCommandBufferDescriptor(OpaquePtr(), WGPUStringView.null_view())
-    var cmd_buf = device._lib.command_encoder_finish(enc, cmd_buf_desc_p)
-    cmd_buf_desc_p.free()
-    var cmds_p = alloc[OpaquePtr](1)
-    cmds_p[] = cmd_buf
-    device._lib.queue_submit(device.queue(), UInt(1), cmds_p)
+    var cmd = enc.finish()
+    var cmds = List[OpaquePtr]()
+    cmds.append(cmd)
+    device.queue_submit(cmds)
 
-    var status = device._lib.buffer_map_async(
-        device.instance(), device.handle(), buf_r,
-        UInt64(1), UInt(0), UInt(16)
-    )
-    assert_equal(status, UInt32(1))
-
-    var raw = device._lib.buffer_get_const_mapped_range(buf_r, UInt(0), UInt(16))
+    var raw = buf_r.map_read(UInt64(0), UInt64(16))
     var result = raw.bitcast[Float32]()
     assert_equal(result[0], Float32(11.0))
     assert_equal(result[1], Float32(22.0))
@@ -193,18 +156,10 @@ def test_vec_add_compute() raises:
     assert_equal(result[3], Float32(44.0))
     print("GPU vector add result:", result[0], result[1], result[2], result[3])
 
-    device._lib.buffer_unmap(buf_r)
-    device._lib.bind_group_release(bg)
-    device._lib.compute_pass_release(cpass)
-    device._lib.command_buffer_release(cmd_buf)
-    device._lib.compute_pipeline_release(pipeline)
-    device._lib.pipeline_layout_release(pl)
-    device._lib.bind_group_layout_release(bgl)
-    device._lib.shader_module_release(shader)
-    device._lib.buffer_release(buf_a)
-    device._lib.buffer_release(buf_b)
-    device._lib.buffer_release(buf_c)
-    device._lib.buffer_release(buf_r)
+    buf_r.unmap()
+    a_data.free()
+    b_data.free()
+    device._lib.command_buffer_release(cmd)
 
 
 def main() raises:

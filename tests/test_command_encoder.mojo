@@ -6,9 +6,6 @@ Requires GPU hardware.
 from std.testing import assert_true, assert_equal
 from wgpu.gpu import request_adapter
 from wgpu._ffi.types import OpaquePtr, WGPUBufferUsage
-from wgpu._ffi.structs import (
-    WGPUCommandBufferDescriptor, WGPUStringView,
-)
 
 
 def test_create_command_encoder() raises:
@@ -16,8 +13,7 @@ def test_create_command_encoder() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
     var enc    = device.create_command_encoder("test_enc")
-    assert_true(Bool(enc))
-    device._lib.command_encoder_release(enc)
+    assert_true(Bool(enc.handle()))
 
 
 def test_finish_empty_encoder() raises:
@@ -25,10 +21,7 @@ def test_finish_empty_encoder() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
     var enc    = device.create_command_encoder()
-    var desc_p = alloc[WGPUCommandBufferDescriptor](1)
-    desc_p[] = WGPUCommandBufferDescriptor(OpaquePtr(), WGPUStringView.null_view())
-    var cmd    = device._lib.command_encoder_finish(enc, desc_p)
-    desc_p.free()
+    var cmd    = enc.finish()
     assert_true(Bool(cmd))
     device._lib.command_buffer_release(cmd)
 
@@ -38,15 +31,11 @@ def test_submit_empty_command_buffer() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
     var enc    = device.create_command_encoder()
-    var desc_p = alloc[WGPUCommandBufferDescriptor](1)
-    desc_p[] = WGPUCommandBufferDescriptor(OpaquePtr(), WGPUStringView.null_view())
-    var cmd    = device._lib.command_encoder_finish(enc, desc_p)
-    desc_p.free()
-    var cmds_p   = alloc[OpaquePtr](1)
-    cmds_p[]   = cmd
-    device._lib.queue_submit(device.queue(), UInt(1), cmds_p)
+    var cmd    = enc.finish()
+    var cmds   = List[OpaquePtr]()
+    cmds.append(cmd)
+    device.queue_submit(cmds)
     _ = device.poll(True)
-    cmds_p.free()
     device._lib.command_buffer_release(cmd)
 
 
@@ -58,19 +47,13 @@ def test_copy_buffer_to_buffer() raises:
     var src = device.create_buffer(size, WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.MAP_WRITE, False, "src")
     var dst = device.create_buffer(size, WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ, False, "dst")
     var enc = device.create_command_encoder()
-    device._lib.command_encoder_copy_buffer_to_buffer(enc, src, UInt64(0), dst, UInt64(0), size)
-    var desc_p = alloc[WGPUCommandBufferDescriptor](1)
-    desc_p[] = WGPUCommandBufferDescriptor(OpaquePtr(), WGPUStringView.null_view())
-    var cmd  = device._lib.command_encoder_finish(enc, desc_p)
-    desc_p.free()
-    var cmds_p = alloc[OpaquePtr](1)
-    cmds_p[] = cmd
-    device._lib.queue_submit(device.queue(), UInt(1), cmds_p)
+    enc.copy_buffer_to_buffer(src.handle(), UInt64(0), dst.handle(), UInt64(0), size)
+    var cmd = enc.finish()
+    var cmds = List[OpaquePtr]()
+    cmds.append(cmd)
+    device.queue_submit(cmds)
     _ = device.poll(True)
-    cmds_p.free()
     device._lib.command_buffer_release(cmd)
-    device._lib.buffer_release(src)
-    device._lib.buffer_release(dst)
 
 
 def main() raises:

@@ -8,6 +8,7 @@ from wgpu._ffi.types import (
     WGPUComputePassEncoderHandle, WGPUComputePipelineHandle,
     WGPUBindGroupHandle, WGPUBufferHandle,
 )
+from wgpu._ffi.structs import WGPUStringView, str_to_sv
 
 
 struct ComputePassEncoder(Movable):
@@ -61,3 +62,26 @@ struct ComputePassEncoder(Movable):
 
     def handle(self) -> WGPUComputePassEncoderHandle:
         return self._handle
+
+    # ------------------------------------------------------------------
+    # Debug groups
+    # ------------------------------------------------------------------
+
+    def push_debug_group(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.compute_pass_push_debug_group(self._handle, sv)
+
+    def pop_debug_group(self):
+        self._lib.compute_pass_pop_debug_group(self._handle)
+
+    def insert_debug_marker(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.compute_pass_insert_debug_marker(self._handle, sv)
+
+    # ------------------------------------------------------------------
+    # Label
+    # ------------------------------------------------------------------
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.compute_pass_set_label(self._handle, sv)

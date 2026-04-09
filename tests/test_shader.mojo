@@ -32,8 +32,7 @@ def test_create_shader_module_wgsl_noop() raises:
     var inst    = request_adapter()
     var device  = inst.request_device()
     var shader  = device.create_shader_module_wgsl(NOOP_WGSL, "noop")
-    assert_true(Bool(shader))
-    device._lib.shader_module_release(shader)
+    assert_true(Bool(shader.handle()))
 
 
 def test_create_shader_module_wgsl_add() raises:
@@ -41,8 +40,7 @@ def test_create_shader_module_wgsl_add() raises:
     var inst    = request_adapter()
     var device  = inst.request_device()
     var shader  = device.create_shader_module_wgsl(ADD_WGSL, "vec_add")
-    assert_true(Bool(shader))
-    device._lib.shader_module_release(shader)
+    assert_true(Bool(shader.handle()))
 
 
 def test_shader_module_handle_nonnull() raises:
@@ -50,8 +48,7 @@ def test_shader_module_handle_nonnull() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
     var shader = device.create_shader_module_wgsl(NOOP_WGSL)
-    assert_true(Bool(shader))
-    device._lib.shader_module_release(shader)
+    assert_true(Bool(shader.handle()))
 
 
 def main() raises:

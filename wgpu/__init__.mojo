@@ -25,6 +25,7 @@ from wgpu.pipeline      import ComputePipeline, RenderPipeline
 from wgpu.command       import CommandEncoder
 from wgpu.compute_pass  import ComputePassEncoder
 from wgpu.render_pass   import RenderPassEncoder
+from wgpu.query_set     import QuerySet
 
 # Low-level types (for users who need raw descriptors)
 from wgpu._ffi.types import (

@@ -4,6 +4,7 @@ wgpu.sampler — Sampler RAII wrapper.
 
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import OpaquePtr, WGPUSamplerHandle
+from wgpu._ffi.structs import WGPUStringView, str_to_sv
 
 
 struct Sampler(Movable):
@@ -25,3 +26,7 @@ struct Sampler(Movable):
 
     def handle(self) -> WGPUSamplerHandle:
         return self._handle
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.sampler_set_label(self._handle, sv)

@@ -4,6 +4,7 @@ wgpu.pipeline_layout — PipelineLayout RAII wrapper.
 
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import OpaquePtr, WGPUPipelineLayoutHandle
+from wgpu._ffi.structs import WGPUStringView, str_to_sv
 
 
 struct PipelineLayout(Movable):
@@ -25,3 +26,7 @@ struct PipelineLayout(Movable):
 
     def handle(self) -> WGPUPipelineLayoutHandle:
         return self._handle
+
+    def set_label(self, label: String):
+        var sv = str_to_sv(label) if len(label) > 0 else WGPUStringView.null_view()
+        self._lib.pipeline_layout_set_label(self._handle, sv)

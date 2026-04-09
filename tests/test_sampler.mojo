@@ -11,16 +11,15 @@ def test_create_default_sampler() raises:
     """Create a sampler with default settings."""
     var inst   = request_adapter()
     var device = inst.request_device()
-    var handle = device.create_sampler(label="default_sampler")
-    assert_true(Bool(handle))
-    device._lib.sampler_release(handle)
+    var sampler = device.create_sampler(label="default_sampler")
+    assert_true(Bool(sampler.handle()))
 
 
 def test_create_linear_sampler() raises:
     """Create a sampler with linear filtering."""
     var inst   = request_adapter()
     var device = inst.request_device()
-    var handle = device.create_sampler(
+    var sampler = device.create_sampler(
         address_mode_u=UInt32(2),
         address_mode_v=UInt32(2),
         address_mode_w=UInt32(1),
@@ -29,22 +28,20 @@ def test_create_linear_sampler() raises:
         mipmap_filter=UInt32(1),
         label="linear_sampler",
     )
-    assert_true(Bool(handle))
-    device._lib.sampler_release(handle)
+    assert_true(Bool(sampler.handle()))
 
 
 def test_create_anisotropic_sampler() raises:
     """Create a sampler with max anisotropy."""
     var inst   = request_adapter()
     var device = inst.request_device()
-    var handle = device.create_sampler(
+    var sampler = device.create_sampler(
         mag_filter=UInt32(1),
         min_filter=UInt32(1),
         max_anisotropy=UInt16(16),
         label="aniso_sampler",
     )
-    assert_true(Bool(handle))
-    device._lib.sampler_release(handle)
+    assert_true(Bool(sampler.handle()))
 
 
 def main() raises:
