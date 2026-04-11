@@ -6,7 +6,7 @@ If a triangle appears, the full stack works:
   wgpu-native → WGPULib (FFI) → Device → RenderPipeline → window.
 
 Run:
-    pixi run mojo run -I . hello.mojo
+    pixi run hello
 """
 
 from wgpu.gpu import request_adapter

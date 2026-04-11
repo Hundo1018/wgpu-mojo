@@ -29,6 +29,9 @@ test-sampler     = { cmd = "mojo run -I . tests/test_sampler.mojo", depends-on =
 test-command     = { cmd = "mojo run -I . tests/test_command_encoder.mojo", depends-on = ["build-callbacks"] }
 test-pipeline-layout = { cmd = "mojo run -I . tests/test_pipeline_layout.mojo", depends-on = ["build-callbacks"] }
 
+# Hello Triangle quickstart
+hello             = { cmd = "mojo run -I . hello.mojo", depends-on = ["build-callbacks"] }
+
 # Examples
 example-enumerate = { cmd = "mojo run -I . examples/enumerate_adapters.mojo", depends-on = ["build-callbacks"] }
 example-compute   = { cmd = "mojo run -I . examples/compute_add.mojo", depends-on = ["build-callbacks"] }

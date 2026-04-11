@@ -11,7 +11,7 @@ Pure Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native) (Web
 ## Quick Start
 
 ```bash
-pixi run mojo run -I . hello.mojo
+pixi run hello
 ```
 
 `hello.mojo` renders an RGB triangle in a window — if it appears, the full stack
