@@ -10,20 +10,30 @@ Pure Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native) (Web
 
 ## Quick Start
 
+```bash
+pixi run mojo run -I . hello.mojo
+```
+
+`hello.mojo` renders an RGB triangle in a window — if it appears, the full stack
+(wgpu-native → WGPULib → Device → RenderPipeline → GLFW window) works on your machine.
+
+The key pattern for all GPU objects:
+
 ```mojo
-from wgpu import request_adapter, WGPUBufferUsage
+from wgpu.gpu import request_adapter
 
 def main() raises:
-    var instance = request_adapter()
-    var device = instance.request_device()
+    var inst   = request_adapter()
+    var device = inst.request_device()
+
     var buffer = device.create_buffer(
         UInt64(1024), WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST,
         label="my_buffer",
     )
-    # buffer is automatically released when it goes out of scope
-    # ⚠️  GPU objects use Mojo ASAP destruction. Buffer handles extracted via .handle()
-    #    must be kept alive with `_ = var^` pins until after GPU submission completes.
-    #    See V29_COMPATIBILITY_REPORT.md for the required lifetime pin pattern.
+    # GPU objects are RAII — released automatically when they go out of scope.
+    # ⚠️  If you extract a raw handle via .handle(), pin the wrapper alive with
+    #    `_ = var^` until AFTER the GPU work that uses that handle is submitted.
+    #    See hello.mojo and V29_COMPATIBILITY_REPORT.md for the lifetime-pin pattern.
 ```
 
 ## Project Structure
