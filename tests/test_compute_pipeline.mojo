@@ -65,8 +65,7 @@ def test_create_compute_pipeline() raises:
     var bgl = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
 
-    var bgls = List[OpaquePtr]()
-    bgls.append(bgl.handle())
+    var bgls: List[OpaquePtr] = [bgl.handle()]
     var pl = device.create_pipeline_layout(bgls)
     _ = bgl^  # bgl no longer needed once pipeline layout is created
 
@@ -103,8 +102,7 @@ def test_vec_add_compute() raises:
     var bgl = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
 
-    var bgls = List[OpaquePtr]()
-    bgls.append(bgl.handle())
+    var bgls: List[OpaquePtr] = [bgl.handle()]
     var pl = device.create_pipeline_layout(bgls)
 
     var entry_str2 = String("main")
@@ -155,8 +153,7 @@ def test_vec_add_compute() raises:
     enc.copy_buffer_to_buffer(buf_c.handle(), UInt64(0), buf_r.handle(), UInt64(0), BUF_SIZE)
 
     var cmd = enc.finish()
-    var cmds = List[OpaquePtr]()
-    cmds.append(cmd)
+    var cmds: List[OpaquePtr] = [cmd]
     device.queue_submit(cmds)
 
     # Pin GPU resources past queue_submit

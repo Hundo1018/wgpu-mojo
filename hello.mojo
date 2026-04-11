@@ -168,8 +168,7 @@ def main() raises:
 
         # Submit and present
         var cmd  = enc.finish()
-        var cmds = List[OpaquePtr]()
-        cmds.append(cmd)
+        var cmds: List[OpaquePtr] = [cmd]
         device.queue_submit(cmds)
         device._lib.command_buffer_release(cmd)
         canvas.present()

@@ -32,8 +32,7 @@ def test_submit_empty_command_buffer() raises:
     var device = inst.request_device()
     var enc    = device.create_command_encoder()
     var cmd    = enc.finish()
-    var cmds   = List[OpaquePtr]()
-    cmds.append(cmd)
+    var cmds: List[OpaquePtr] = [cmd]
     device.queue_submit(cmds)
     _ = device.poll(True)
     device._lib.command_buffer_release(cmd)
@@ -49,8 +48,7 @@ def test_copy_buffer_to_buffer() raises:
     var enc = device.create_command_encoder()
     enc.copy_buffer_to_buffer(src.handle(), UInt64(0), dst.handle(), UInt64(0), size)
     var cmd = enc.finish()
-    var cmds = List[OpaquePtr]()
-    cmds.append(cmd)
+    var cmds: List[OpaquePtr] = [cmd]
     device.queue_submit(cmds)
     _ = device.poll(True)
     _ = src^

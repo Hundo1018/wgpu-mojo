@@ -206,8 +206,7 @@ def test_headless_render_pass() raises:
     # additional structs). The key test is that the render pass doesn't crash.
 
     var cmd = enc.finish()
-    var cmds = List[OpaquePtr]()
-    cmds.append(cmd)
+    var cmds: List[OpaquePtr] = [cmd]
     device.queue_submit(cmds)
     _ = device.poll(True)
     _ = tex^      # keep Texture alive until GPU is done (Texture.__del__ calls wgpuTextureDestroy)

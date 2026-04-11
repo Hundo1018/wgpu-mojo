@@ -95,8 +95,7 @@ def main() raises:
     # ----------------------------------------------------------------
     # 4. Pipeline layout (RAII)
     # ----------------------------------------------------------------
-    var bgls = List[OpaquePtr]()
-    bgls.append(bgl.handle())
+    var bgls: List[OpaquePtr] = [bgl.handle()]
     var pl = device.create_pipeline_layout(bgls, "compute_pl")
 
     # ----------------------------------------------------------------
@@ -176,8 +175,7 @@ def main() raises:
         buf_c.handle(), UInt64(0), buf_r.handle(), UInt64(0), UInt64(BUF_BYTES))
 
     var cmd_buf = enc.finish("compute_cmd")
-    var cmds = List[OpaquePtr]()
-    cmds.append(cmd_buf)
+    var cmds: List[OpaquePtr] = [cmd_buf]
     device.queue_submit(cmds)
     print("Commands submitted.")
 

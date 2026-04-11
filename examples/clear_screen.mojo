@@ -82,8 +82,7 @@ def main() raises:
         rp_desc_p.free()
 
         var cmd = enc.finish()
-        var cmds = List[OpaquePtr]()
-        cmds.append(cmd)
+        var cmds: List[OpaquePtr] = [cmd]
         device.queue_submit(cmds)
         device._lib.command_buffer_release(cmd)
 

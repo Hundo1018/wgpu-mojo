@@ -67,8 +67,7 @@ def test_queue_write_and_map_read_buffer() raises:
     var enc = device.create_command_encoder("copy_enc")
     enc.copy_buffer_to_buffer(gpu_buf.handle(), UInt64(0), read_buf.handle(), UInt64(0), n)
     var cmd_buf = enc.finish()
-    var cmds = List[OpaquePtr]()
-    cmds.append(cmd_buf)
+    var cmds: List[OpaquePtr] = [cmd_buf]
     device.queue_submit(cmds)
 
     # Pin GPU buffers and encoder past submission
