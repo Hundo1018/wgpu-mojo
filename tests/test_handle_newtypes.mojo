@@ -1,6 +1,6 @@
 """Phase 1 strong-handle groundwork tests."""
 
-from std.testing import assert_false, assert_true
+from std.testing import assert_false
 from wgpu._ffi import (
     OpaquePtr,
     BufferHandle, TextureHandle, DeviceHandle, CommandBufferHandle,
@@ -27,4 +27,3 @@ def main() raises:
     print("  PASS: test_null_constructors")
     test_wrap_raw_pointer()
     print("  PASS: test_wrap_raw_pointer")
-    print("All 2 tests passed!")

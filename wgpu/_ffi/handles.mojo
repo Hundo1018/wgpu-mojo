@@ -1,10 +1,4 @@
-"""wgpu._ffi.handles — strongly typed handle wrappers (newtype pattern).
-
-These wrappers are zero-cost containers around ``OpaquePtr`` that improve type
-checking at call sites. Existing alias-based handle types remain in
-``wgpu._ffi.types`` for backward compatibility while the migration is in
-progress.
-"""
+"""wgpu._ffi.handles - strongly typed handle wrappers (newtype pattern)."""
 
 from wgpu._ffi.types import OpaquePtr
 
