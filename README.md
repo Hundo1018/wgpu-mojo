@@ -1,6 +1,6 @@
 # wgpu-mojo
 
-Pure Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native) (WebGPU).
+Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native) (WebGPU).
 
 ## Requirements
 
