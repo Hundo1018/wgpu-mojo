@@ -153,3 +153,12 @@ WGPUFuture wgpu_mojo_device_create_render_pipeline_async(
 ) {
     return wgpuDeviceCreateRenderPipelineAsync(device, descriptor, *cb_info);
 }
+
+/* wgpuSurfaceCapabilitiesFreeMembers takes its arg by value — Mojo FFI can't
+ * pass non-TrivialRegisterPassable structs by value safely, so we accept a
+ * pointer and dereference on the C side. */
+void wgpu_mojo_surface_capabilities_free_members(
+    const WGPUSurfaceCapabilities* caps
+) {
+    wgpuSurfaceCapabilitiesFreeMembers(*caps);
+}

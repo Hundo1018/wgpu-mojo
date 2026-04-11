@@ -17,6 +17,7 @@ from wgpu.instance      import Instance
 from wgpu.device        import Device
 from wgpu.buffer        import Buffer
 from wgpu.texture       import Texture, TextureView
+from wgpu.surface       import Surface, SurfaceFrame
 from wgpu.sampler       import Sampler
 from wgpu.shader        import ShaderModule
 from wgpu.bind_group    import BindGroup, BindGroupLayout
@@ -66,6 +67,7 @@ from wgpu._ffi.structs import (
     WGPUTextureDescriptor, WGPUTextureViewDescriptor,
     WGPUSamplerDescriptor,
     WGPUSurfaceDescriptor, WGPUSurfaceCapabilities, WGPUSurfaceConfiguration,
+    WGPUSurfaceTexture,
     WGPUSurfaceSourceWaylandSurface, WGPUSurfaceSourceXlibWindow,
     WGPUTexelCopyBufferLayout, WGPUTexelCopyBufferInfo, WGPUTexelCopyTextureInfo,
     WGPUAdapterInfo,

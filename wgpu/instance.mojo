@@ -14,6 +14,7 @@ from wgpu._ffi.structs import (
     str_to_sv,
 )
 from wgpu.device import Device
+from wgpu.surface import Surface
 
 
 struct Instance(Movable):
@@ -133,6 +134,38 @@ struct Instance(Movable):
 
     def get_version(self) -> UInt32:
         return self._lib.get_version()
+
+    # ------------------------------------------------------------------
+    # Raw handle accessors (for Surface creation)
+    # ------------------------------------------------------------------
+
+    def inst_handle(self) -> WGPUInstanceHandle:
+        return self._inst
+
+    def adapter_handle(self) -> WGPUAdapterHandle:
+        return self._adapter
+
+    # ------------------------------------------------------------------
+    # Surface creation helpers
+    # ------------------------------------------------------------------
+
+    def create_surface_wayland(
+        self,
+        display: OpaquePtr,
+        wayland_surface: OpaquePtr,
+    ) raises -> Surface:
+        """Create a Surface from a Wayland display + wl_surface pointer."""
+        var lib = WGPULib()
+        return Surface.from_wayland(lib^, self._inst, display, wayland_surface)
+
+    def create_surface_xlib(
+        self,
+        display: OpaquePtr,
+        window: UInt64,
+    ) raises -> Surface:
+        """Create a Surface from an X11 Display* and Window id."""
+        var lib = WGPULib()
+        return Surface.from_xlib(lib^, self._inst, display, window)
 
 
 # Re-export for convenience

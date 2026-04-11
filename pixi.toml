@@ -32,6 +32,9 @@ test-pipeline-layout = { cmd = "mojo run -I . tests/test_pipeline_layout.mojo", 
 # Examples
 example-enumerate = { cmd = "mojo run -I . examples/enumerate_adapters.mojo", depends-on = ["build-callbacks"] }
 example-compute   = { cmd = "mojo run -I . examples/compute_add.mojo", depends-on = ["build-callbacks"] }
+example-clear     = { cmd = "mojo run -I . examples/clear_screen.mojo", depends-on = ["build-callbacks"] }
+example-triangle  = { cmd = "mojo run -I . examples/triangle_window.mojo", depends-on = ["build-callbacks"] }
 
 [dependencies]
 mojo = ">=0.26.3.0.dev2026040805,<0.27"
+glfw = ">=3.4,<4"

@@ -914,7 +914,10 @@ struct WGPULib(Movable):
         self,
         caps: UnsafePointer[WGPUSurfaceCapabilities, MutExternalOrigin],
     ):
-        self._wgpu.call["wgpuSurfaceCapabilitiesFreeMembers"](caps[])
+        # wgpuSurfaceCapabilitiesFreeMembers takes struct by value; Mojo FFI
+        # cannot safely pass non-TrivialRegisterPassable structs by value, so we
+        # call a thin C wrapper that accepts a pointer and dereferences it.
+        self._cb.call["wgpu_mojo_surface_capabilities_free_members"](caps)
 
     # ------------------------------------------------------------------
     # Missing standard WebGPU functions — Instance / global
