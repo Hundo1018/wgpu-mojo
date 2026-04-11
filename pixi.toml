@@ -48,6 +48,10 @@ example-clear     = { cmd = "mojo run -I . examples/clear_screen.mojo", depends-
 example-triangle  = { cmd = "mojo run -I . examples/triangle_window.mojo", depends-on = ["build-callbacks"] }
 example-input     = { cmd = "mojo run -I . examples/input_demo.mojo", depends-on = ["build-callbacks"] }
 
+# Linked binary builds (Phase 3 groundwork)
+build-hello-linked = { cmd = "mkdir -p build && mojo build -I . hello.mojo -o build/hello-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
+build-compute-linked = { cmd = "mkdir -p build && mojo build -I . examples/compute_add.mojo -o build/compute-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
+
 [dependencies]
 mojo = ">=0.26.3.0.dev2026040805,<0.27"
 glfw = ">=3.4,<4"
