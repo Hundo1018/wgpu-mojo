@@ -102,6 +102,8 @@ def test_create_render_pipeline() raises:
         fragment_p,
     )
     var pipeline = device.create_render_pipeline(desc)
+    _ = pl^      # keep PipelineLayout alive through create_render_pipeline (ASAP destroys after pl.handle())
+    _ = shader^ # keep ShaderModule alive through create_render_pipeline
     assert_true(Bool(pipeline.handle()))
     target_p.free()
     fragment_p.free()
@@ -147,6 +149,8 @@ def test_headless_render_pass() raises:
         multisample, fragment_p,
     )
     var pipeline = device.create_render_pipeline(desc)
+    _ = pl^      # keep PipelineLayout alive through create_render_pipeline
+    _ = shader^ # keep ShaderModule alive through create_render_pipeline
 
     # Create offscreen render target
     var tex = device.create_texture(
@@ -169,7 +173,7 @@ def test_headless_render_pass() raises:
     color_att_p[0] = WGPURenderPassColorAttachment(
         OpaquePtr(),
         view.handle(),
-        UInt32(0),      # depth_slice (WGPU_DEPTH_SLICE_UNDEFINED for 2D)
+        UInt32(0xFFFFFFFF),  # depth_slice (WGPU_DEPTH_SLICE_UNDEFINED for 2D)
         OpaquePtr(),    # no resolve target
         UInt32(1),      # LoadOp.Clear
         UInt32(1),      # StoreOp.Store
@@ -188,7 +192,9 @@ def test_headless_render_pass() raises:
     )
 
     var rpass = enc.begin_render_pass(rp_desc_p)
+    _ = view^     # keep TextureView alive past begin_render_pass (safe: TextureView has no destroy)
     rpass.set_pipeline(pipeline.handle())
+    _ = pipeline^ # keep RenderPipeline alive past set_pipeline
     rpass.draw(UInt32(3), UInt32(1), UInt32(0), UInt32(0))
     rpass.end()
 
@@ -204,6 +210,8 @@ def test_headless_render_pass() raises:
     cmds.append(cmd)
     device.queue_submit(cmds)
     _ = device.poll(True)
+    _ = tex^      # keep Texture alive until GPU is done (Texture.__del__ calls wgpuTextureDestroy)
+    _ = readback^ # keep alive to suppress ASAP warning
     device._lib.command_buffer_release(cmd)
     target_p.free()
     fragment_p.free()

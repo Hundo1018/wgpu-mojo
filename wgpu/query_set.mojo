@@ -22,7 +22,13 @@ struct QuerySet(Movable):
         self._handle = take._handle
 
     def __del__(deinit self):
-        self._lib.query_set_destroy(self._handle)
+        # wgpuQuerySetDestroy in wgpu-native v29 calls query_set_drop() which
+        # removes the resource from the registry immediately.  When Release
+        # then decrements the Arc refcount to zero, WGPUQuerySetImpl::drop
+        # fires and tries to drop the already-removed resource → double-free.
+        # Buffer/Texture don't have this problem because their Destroy only
+        # marks the resource invalid without removing it from the registry.
+        # Fix: skip Destroy and let Release + Arc drop do the full cleanup.
         self._lib.query_set_release(self._handle)
 
     def handle(self) -> WGPUQuerySetHandle:

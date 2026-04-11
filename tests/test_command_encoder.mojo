@@ -53,6 +53,9 @@ def test_copy_buffer_to_buffer() raises:
     cmds.append(cmd)
     device.queue_submit(cmds)
     _ = device.poll(True)
+    _ = src^
+    _ = dst^
+    _ = enc^
     device._lib.command_buffer_release(cmd)
 
 

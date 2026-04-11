@@ -36,6 +36,7 @@ def test_create_pipeline_layout_with_bgl() raises:
     var bgls = List[OpaquePtr]()
     bgls.append(bgl.handle())
     var pl = device.create_pipeline_layout(bgls, "pl_with_bgl")
+    _ = bgl^  # bgl must outlive create_pipeline_layout
     assert_true(Bool(pl.handle()))
 
 

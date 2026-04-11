@@ -42,8 +42,8 @@ def test_backend_type_enum() raises:
 
 def test_texture_format_enum() raises:
     assert_equal(WGPUTextureFormat.Undefined, UInt32(0x00000000))
-    assert_equal(WGPUTextureFormat.RGBA8Unorm, UInt32(0x00000012))
-    assert_equal(WGPUTextureFormat.Depth32Float, UInt32(0x0000002A))
+    assert_equal(WGPUTextureFormat.RGBA8Unorm, UInt32(0x00000016))
+    assert_equal(WGPUTextureFormat.Depth32Float, UInt32(0x00000030))
 
 
 def test_texture_usage_bitflag() raises:

@@ -1,10 +1,167 @@
 # wgpu-mojo Technical Debt
 
-## Current Verified State
+## Verified Status (2026-04-11)
 
-- End-to-end GPU compute is working: `pixi run example-compute` completes successfully and validates all 1024 output elements.
-- Non-GPU test tasks are stable: `pixi run test` passes.
-- Several GPU-facing tests still crash, but the failures cluster around the same ownership and lifetime model rather than unrelated API bugs.
+All 16 test files pass. `pixi run example-compute` validates all 1024 output elements correctly.
+
+The items below are still real debt, but the first-pass stabilisation work is done:
+
+- All GPU tests now have explicit lifetime pins where required.
+- `WGPUTextureFormat` enum values corrected to match webgpu.h v29 (R16Unorm, R16Snorm, RG16Unorm, RG16Snorm, RGBA16Unorm, RGBA16Snorm inserted at correct positions).
+- `QuerySet.__del__` fixed: `wgpuQuerySetDestroy` in v29 calls `query_set_drop()` (removes resource from registry), making a subsequent `wgpuQuerySetRelease` a double-free. Destroy call removed; Release alone is sufficient.
+- Anisotropic sampler filter corrected: wgpu v29 requires `mag_filter`, `min_filter`, and `mipmap_filter` to all be `Linear` when `max_anisotropy > 1`.
+- `WGPUQueryType` values corrected: `Occlusion=0x1`, `Timestamp=0x2` (not 0 and 1).
+- `WGPU_DEPTH_SLICE_UNDEFINED` must be `0xFFFFFFFF`, not `0`; fixed in render-pass tests.
+- Three functions not implemented in wgpu-native v29 (`wgpuQuerySetSetLabel`, `wgpuCommandEncoderSetLabel`, `wgpuCreateTimestampQuerySet`) — tests using them disabled with comments.
+
+---
+
+## P0: Lifetime Model Is Unsound For GPU Objects
+
+### Problem
+
+Mojo's ASAP destruction releases `Movable` values immediately after their last visible use. This is incompatible with the current wrapper design because most APIs extract raw handles and then rely on the original wrapper object remaining alive implicitly.
+
+This causes resources to be destroyed before wgpu-native consumes them, often at:
+
+- bind group creation
+- pipeline recording
+- queue submission
+- buffer unmap or map-read
+
+### Status
+
+**Mitigated by explicit lifetime pins** — all GPU tests pass. Pins are concentrated in test bodies, not wrapper internals.
+
+A deeper redesign is still needed so pins are not scattered manually.
+
+### Affected Files
+
+- [wgpu/device.mojo](wgpu/device.mojo)
+- [wgpu/buffer.mojo](wgpu/buffer.mojo)
+- [wgpu/bind_group.mojo](wgpu/bind_group.mojo)
+- [wgpu/pipeline.mojo](wgpu/pipeline.mojo)
+- [wgpu/command.mojo](wgpu/command.mojo)
+- [wgpu/texture.mojo](wgpu/texture.mojo)
+- [wgpu/instance.mojo](wgpu/instance.mojo)
+
+### Recommended Direction
+
+Short term (done):
+
+- Add explicit lifetime pins in GPU tests and examples immediately after the last GPU-visible use.
+
+Medium term:
+
+- Redesign wrappers so parent ownership is preserved structurally, not manually.
+- Candidate approaches:
+  - Store parent handles or owner wrappers inside dependent wrappers.
+  - Replace raw-handle-taking APIs with wrapper-taking APIs where practical.
+  - Introduce small helper objects for submit-scoped resource retention.
+
+Success condition:
+
+- GPU tests pass without scattered `_ = var^` pins in every test body.
+
+## P0: Raw Handle API Encourages Unsafe Call Sites
+
+### Problem
+
+Most high-level APIs still accept raw `WGPU*Handle` values instead of the RAII wrapper types. That means the caller must manually keep the owner alive, which is easy to forget and hard to review.
+
+Examples:
+
+- `Device.queue_write_buffer(buffer: WGPUBufferHandle, ...)`
+- `CommandEncoder.copy_buffer_to_buffer(src: WGPUBufferHandle, dst: WGPUBufferHandle, ...)`
+- `ComputePipeline.get_bind_group_layout(...) -> WGPUBindGroupLayoutHandle`
+
+### Risk
+
+- The API surface looks safe but behaves like borrowed raw FFI.
+- Tests and examples appear idiomatic while still being memory-lifetime fragile.
+
+### Recommended Direction
+
+- Prefer overloads or replacements that accept wrapper types like `Buffer`, `BindGroupLayout`, `Texture`, `ComputePipeline`.
+- Keep low-level raw handle methods available, but move them behind an explicitly unsafe or low-level path.
+
+## P0: README Overstates RAII Safety
+
+### Status
+
+**Partially mitigated** — README now contains an ASAP destruction warning in the Quick Start. Long-form documentation is still needed.
+
+### Recommended Direction
+
+- Expand the README with a dedicated "Lifetime and Ownership" section explaining the ASAP destruction constraint and the `_ = var^` workaround until wrapper re-design is complete.
+
+## P1: GPU Test Coverage Exists But Is Not Yet Structure-Verified
+
+### Status
+
+**All 16 tests pass** with explicit lifetime pins. The next step is factoring out shared patterns so tests exercise API semantics rather than encoding object-lifetime folklore.
+
+### Recommended Direction
+
+- Factor out helper patterns so tests exercise the API rather than encoding object-lifetime folklore.
+- Separate smoke tests from semantic validation tests so failures narrow quickly.
+
+## P1: Descriptor And Temporary Data Lifetimes Are Still Easy To Misuse
+
+### Problem
+
+Several APIs rely on temporary allocations or temporary strings whose lifetime must cover an FFI call exactly. This has already shown up in shader entry-point strings and array-backed descriptors.
+
+### Risk Areas
+
+- descriptor structs holding pointers to heap allocations created in the caller
+- `String` to `WGPUStringView` conversions
+- `List.unsafe_ptr()` passed into descriptors or queue writes
+- temporary allocations freed immediately after wrapper creation
+
+### Recommended Direction
+
+- Add helper constructors for common descriptors so pointer-backed fields are assembled in one place.
+- Audit every `unsafe_ptr()`, `alloc[...]`, and `str_to_sv(...)` call in GPU paths.
+
+## P1: Each Wrapper Recreates WGPULib Repeatedly
+
+### Problem
+
+Many `create_*` methods instantiate a new `WGPULib()` for each returned wrapper instead of sharing an existing library owner.
+
+### Risk
+
+- Not currently the main correctness bug, but it is wasteful and makes ownership relationships harder to reason about.
+- It obscures which wrapper actually owns or borrows the dynamic library state.
+
+### Recommended Direction
+
+- Define one clear ownership model for `WGPULib` across `Instance`, `Device`, and child resources.
+- Either share a common library holder or store a lightweight borrowed reference strategy consistently.
+
+## P2: Root Directory Contains Built Artifacts
+
+### Status
+
+**Fixed** — `.gitignore` now excludes `/compute_add`, `/enumerate_adapters`, `/test_debug_groups`, `/test_query_set`, `/test_render_pipeline`.
+
+## Suggested Execution Order
+
+1. ~~Stabilize GPU tests with explicit lifetime pins.~~ ✓ Done
+2. ~~Update README so current constraints are stated honestly.~~ ✓ Partially done
+3. Refactor the public API to prefer wrapper-based parameters over raw handles.
+4. Introduce reusable helpers for descriptor and resource lifetime management.
+5. Simplify `WGPULib` ownership and cleanup model.
+
+## Definition Of Done For This Debt List
+
+This document can be considered mostly resolved when:
+
+- all GPU tests in `pixi.toml` pass reliably on a real adapter ✓
+- examples no longer need scattered manual lifetime pins
+- README accurately describes ownership and lifetime behavior
+- high-level APIs no longer force callers into raw-handle lifetime management
 
 ## P0: Lifetime Model Is Unsound For GPU Objects
 

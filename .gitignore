@@ -4,3 +4,10 @@
 
 /ffi/lib/
 /ffi/*.zip
+
+# Generated binaries (produced by mojo build or mojo run)
+/compute_add
+/enumerate_adapters
+/test_debug_groups
+/test_query_set
+/test_render_pipeline

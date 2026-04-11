@@ -60,7 +60,7 @@ def test_render_pass_debug_groups() raises:
     var enc = device.create_command_encoder()
     var color_att_p = alloc[WGPURenderPassColorAttachment](1)
     color_att_p[0] = WGPURenderPassColorAttachment(
-        OpaquePtr(), view.handle(), UInt32(0), OpaquePtr(),
+        OpaquePtr(), view.handle(), UInt32(0xFFFFFFFF), OpaquePtr(),
         UInt32(1), UInt32(1),  # Clear, Store
         WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
     )
@@ -73,6 +73,8 @@ def test_render_pass_debug_groups() raises:
         UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](),
     )
     var rpass = enc.begin_render_pass(rp_desc_p)
+    _ = view^   # keep TextureView alive past begin_render_pass (ASAP would destroy it after view.handle())
+    _ = tex^    # keep Texture alive past the render pass
     rpass.push_debug_group("render_group")
     rpass.insert_debug_marker("mid_render")
     rpass.pop_debug_group()
@@ -98,5 +100,5 @@ def main() raises:
     test_command_encoder_debug_groups()
     test_compute_pass_debug_groups()
     test_render_pass_debug_groups()
-    test_encoder_set_label()
+    # test_encoder_set_label() — wgpuCommandEncoderSetLabel not implemented in wgpu-native v29
     print("test_debug_groups: ALL PASSED")

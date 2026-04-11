@@ -68,6 +68,7 @@ def test_create_compute_pipeline() raises:
     var bgls = List[OpaquePtr]()
     bgls.append(bgl.handle())
     var pl = device.create_pipeline_layout(bgls)
+    _ = bgl^  # bgl no longer needed once pipeline layout is created
 
     var entry_str = String("main")
     var entry_sv = str_to_sv(entry_str)
@@ -79,12 +80,9 @@ def test_create_compute_pipeline() raises:
         OpaquePtr(), WGPUStringView.null_view(), pl.handle(), compute_state
     )
     var pipeline = device.create_compute_pipeline(pipeline_desc)
-    
-    # Pin objects after creation to prevent ASAP destruction
-    _ = pl^
-    _ = shader^
+    _ = pl^      # pl must outlive create_compute_pipeline
+    _ = shader^  # shader must outlive create_compute_pipeline
     _ = entry_str
-    _ = bgl^
     _ = pipeline^
     _ = device^
     _ = inst^
@@ -109,13 +107,17 @@ def test_vec_add_compute() raises:
     bgls.append(bgl.handle())
     var pl = device.create_pipeline_layout(bgls)
 
-    var entry_sv = str_to_sv(String("main"))
+    var entry_str2 = String("main")
+    var entry_sv = str_to_sv(entry_str2)
     var cs = WGPUComputeState(OpaquePtr(), shader.handle(), entry_sv, UInt(0),
                               UnsafePointer[WGPUConstantEntry, MutExternalOrigin]())
     var pipeline_desc = WGPUComputePipelineDescriptor(
         OpaquePtr(), WGPUStringView.null_view(), pl.handle(), cs
     )
     var pipeline = device.create_compute_pipeline(pipeline_desc)
+    _ = pl^      # pl must outlive create_compute_pipeline
+    _ = shader^  # shader must outlive create_compute_pipeline
+    _ = entry_str2
 
     var a_data = alloc[Float32](4)
     a_data[0] = Float32(1.0); a_data[1] = Float32(2.0)
@@ -140,6 +142,7 @@ def test_vec_add_compute() raises:
         OpaquePtr(), WGPUStringView.null_view(), bgl.handle(), UInt(3), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
+    _ = bgl^  # bgl must outlive create_bind_group
     bg_entries_p.free()
 
     var enc = device.create_command_encoder("vec_add_enc")

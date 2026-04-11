@@ -21,6 +21,9 @@ def main() raises:
         label="my_buffer",
     )
     # buffer is automatically released when it goes out of scope
+    # ⚠️  GPU objects use Mojo ASAP destruction. Buffer handles extracted via .handle()
+    #    must be kept alive with `_ = var^` pins until after GPU submission completes.
+    #    See V29_COMPATIBILITY_REPORT.md for the required lifetime pin pattern.
 ```
 
 ## Project Structure
