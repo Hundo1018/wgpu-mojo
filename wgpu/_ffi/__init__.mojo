@@ -62,7 +62,8 @@ from wgpu._ffi.structs import (
     WGPUColorTargetState, WGPUFragmentState, WGPURenderPipelineDescriptor,
     WGPUCompilationMessage, WGPUCompilationInfo,
     WGPUQueueWorkDoneCallbackInfo,
-    str_to_sv, wgpu_limits_default,
+    WGPUBorrowedStringView,
+    str_to_borrowed_sv, str_to_sv, wgpu_limits_default,
 )
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.handles import (

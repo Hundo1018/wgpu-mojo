@@ -41,13 +41,38 @@ struct WGPUStringView(TrivialRegisterPassable):
         )
 
 
-def str_to_sv(s: String) -> WGPUStringView:
-    """Borrow `s` as a WGPUStringView. `s` must outlive the view."""
+@fieldwise_init
+@align(16)
+struct WGPUBorrowedStringView[
+    is_mutable: Bool,
+    //,
+    origin: Origin[mut=is_mutable],
+](TrivialRegisterPassable):
+    """Origin-tracked StringView used before crossing the FFI boundary."""
+
+    var data: UnsafePointer[NoneType, Self.origin]
+    var length: UInt
+
+    def to_ffi(self) -> WGPUStringView:
+        var erased = rebind[UnsafePointer[NoneType, MutAnyOrigin]](self.data)
+        return WGPUStringView(erased, self.length)
+
+
+def str_to_borrowed_sv[
+    is_mutable: Bool,
+    //,
+    origin: Origin[mut=is_mutable],
+](ref[origin] s: String) -> WGPUBorrowedStringView[origin]:
+    """Borrow `s` with origin tracking so the compiler can extend lifetime."""
     var bytes = s.as_bytes()
     var raw = bytes.unsafe_ptr().bitcast[NoneType]()
-    # Erase lifetime tracking (unsafe: caller must keep `s` alive while view is in use)
-    var ptr = rebind[UnsafePointer[NoneType, MutAnyOrigin]](raw)
-    return WGPUStringView(ptr, UInt(len(bytes)))
+    var ptr = rebind[UnsafePointer[NoneType, origin]](raw)
+    return WGPUBorrowedStringView[origin](ptr, UInt(len(bytes)))
+
+
+def str_to_sv(ref s: String) -> WGPUStringView:
+    """Borrow `s` as a WGPUStringView. `s` must outlive the view."""
+    return str_to_borrowed_sv(s).to_ffi()
 
 
 # ---------------------------------------------------------------------------
