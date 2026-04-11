@@ -211,6 +211,7 @@ Medium term:
   - Store parent handles or owner wrappers inside dependent wrappers.
   - Replace raw-handle-taking APIs with wrapper-taking APIs where practical.
   - Introduce small helper objects for submit-scoped resource retention.
+  - **Context managers are now available** (Mojo nightly 2026-04-11, confirmed). Structs implementing `__enter__`/`__exit__` work with `with` and run `__exit__` even on error. GPU wrappers currently hold `OwnedDLHandle` (not `ImplicitlyCopyable`), so they cannot be context managers directly, but a thin scope-guard wrapper pattern is viable once the ownership design is settled.
 
 Success condition:
 
