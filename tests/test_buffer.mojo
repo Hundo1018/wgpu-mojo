@@ -31,6 +31,8 @@ def test_create_staging_buffer_mapped() raises:
     var ptr = device._lib.buffer_get_mapped_range(buf.handle(), UInt(0), UInt(64))
     assert_true(Bool(ptr))
     buf.unmap()
+    _ = device^
+    _ = inst^
 
 
 def test_queue_write_and_map_read_buffer() raises:
@@ -59,6 +61,7 @@ def test_queue_write_and_map_read_buffer() raises:
         device.queue(), gpu_buf.handle(), UInt64(0),
         data.bitcast[NoneType](), UInt(16)
     )
+    _ = data^  # pin data lifetime past queue_write_buffer
 
     # Copy gpu -> readback
     var enc = device.create_command_encoder("copy_enc")
@@ -67,6 +70,10 @@ def test_queue_write_and_map_read_buffer() raises:
     var cmds = List[OpaquePtr]()
     cmds.append(cmd_buf)
     device.queue_submit(cmds)
+
+    # Pin GPU buffers and encoder past submission
+    _ = gpu_buf^
+    _ = enc^
 
     # Wait for GPU
     _ = device.poll(True)
@@ -80,7 +87,10 @@ def test_queue_write_and_map_read_buffer() raises:
     assert_equal(result[3], Float32(4.0))
 
     read_buf.unmap()
-    data.free()
+
+    # Pin remaining GPU object lifetimes past all usage
+    _ = device^
+    _ = inst^
 
 
 def main() raises:

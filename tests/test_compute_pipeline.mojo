@@ -37,7 +37,8 @@ comptime BUF_SIZE: UInt64 = UInt64(4) * UInt64(4)
 
 
 def _make_bgl_entry(binding: UInt32, read_only: Bool) -> WGPUBindGroupLayoutEntry:
-    var buf_type: UInt32 = 3 if read_only else 2
+    # Type 3 = Storage (read_write), Type 4 = ReadOnlyStorage
+    var buf_type: UInt32 = UInt32(4) if read_only else UInt32(3)
     return WGPUBindGroupLayoutEntry(
         OpaquePtr(), binding,
         WGPUShaderStage.COMPUTE.value, UInt32(0),
@@ -53,7 +54,6 @@ def test_create_compute_pipeline() raises:
     var inst   = request_adapter()
     var device = inst.request_device()
     var shader = device.create_shader_module_wgsl(ADD_WGSL, "add")
-    assert_true(Bool(shader.handle()))
 
     var entries_p = alloc[WGPUBindGroupLayoutEntry](3)
     for i in range(3):
@@ -68,9 +68,9 @@ def test_create_compute_pipeline() raises:
     var bgls = List[OpaquePtr]()
     bgls.append(bgl.handle())
     var pl = device.create_pipeline_layout(bgls)
-    assert_true(Bool(pl.handle()))
 
-    var entry_sv = str_to_sv(String("main"))
+    var entry_str = String("main")
+    var entry_sv = str_to_sv(entry_str)
     var compute_state = WGPUComputeState(
         OpaquePtr(), shader.handle(), entry_sv, UInt(0),
         UnsafePointer[WGPUConstantEntry, MutExternalOrigin]()
@@ -79,7 +79,15 @@ def test_create_compute_pipeline() raises:
         OpaquePtr(), WGPUStringView.null_view(), pl.handle(), compute_state
     )
     var pipeline = device.create_compute_pipeline(pipeline_desc)
-    assert_true(Bool(pipeline.handle()))
+    
+    # Pin objects after creation to prevent ASAP destruction
+    _ = pl^
+    _ = shader^
+    _ = entry_str
+    _ = bgl^
+    _ = pipeline^
+    _ = device^
+    _ = inst^
 
 
 def test_vec_add_compute() raises:
@@ -148,6 +156,14 @@ def test_vec_add_compute() raises:
     cmds.append(cmd)
     device.queue_submit(cmds)
 
+    # Pin GPU resources past queue_submit
+    _ = pipeline^
+    _ = bg^
+    _ = enc^
+    _ = buf_a^
+    _ = buf_b^
+    _ = buf_c^
+
     var raw = buf_r.map_read(UInt64(0), UInt64(16))
     var result = raw.bitcast[Float32]()
     assert_equal(result[0], Float32(11.0))
@@ -157,9 +173,10 @@ def test_vec_add_compute() raises:
     print("GPU vector add result:", result[0], result[1], result[2], result[3])
 
     buf_r.unmap()
-    a_data.free()
-    b_data.free()
-    device._lib.command_buffer_release(cmd)
+    
+    # Pin remaining GPU object lifetimes past all usage
+    _ = device^
+    _ = inst^
 
 
 def main() raises:

@@ -25,6 +25,11 @@ def test_create_2d_texture() raises:
     assert_equal(tex.width(), UInt32(256))
     assert_equal(tex.height(), UInt32(256))
     assert_equal(tex.format(), WGPUTextureFormat.RGBA8Unorm)
+    
+    # Pin GPU objects past usage
+    _ = tex^
+    _ = device^
+    _ = inst^
 
 
 def test_create_texture_view() raises:
@@ -39,6 +44,12 @@ def test_create_texture_view() raises:
     )
     var view = tex.create_view_default()
     assert_true(Bool(view.handle()))
+    
+    # Pin GPU objects past usage
+    _ = tex^
+    _ = view^
+    _ = device^
+    _ = inst^
 
 
 def test_texture_dimensions() raises:
@@ -55,6 +66,11 @@ def test_texture_dimensions() raises:
     )
     assert_equal(tex.width(), w)
     assert_equal(tex.height(), h)
+    
+    # Pin GPU objects past usage
+    _ = tex^
+    _ = device^
+    _ = inst^
 
 
 def main() raises:

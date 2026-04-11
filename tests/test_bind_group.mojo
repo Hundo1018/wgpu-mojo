@@ -23,7 +23,8 @@ def make_storage_bgl_entry(
     read_only: Bool = False,
 ) -> WGPUBindGroupLayoutEntry:
     """Create a BindGroupLayoutEntry for a storage buffer binding."""
-    var buf_type: UInt32 = 3 if read_only else 2
+    # Type 3 = Storage (read_write), Type 4 = ReadOnlyStorage
+    var buf_type: UInt32 = UInt32(4) if read_only else UInt32(3)
     return WGPUBindGroupLayoutEntry(
         OpaquePtr(),
         binding,
@@ -53,6 +54,11 @@ def test_create_bind_group_layout() raises:
     var bgl = device.create_bind_group_layout(desc)
     entries_p.free()
     assert_true(Bool(bgl.handle()))
+    
+    # Pin GPU objects past usage
+    _ = bgl^
+    _ = device^
+    _ = inst^
 
 
 def test_create_bind_group_with_buffer() raises:
@@ -88,6 +94,13 @@ def test_create_bind_group_with_buffer() raises:
     var bg = device.create_bind_group(bg_desc)
     bg_entries_p.free()
     assert_true(Bool(bg.handle()))
+    
+    # Pin GPU objects past usage
+    _ = buf^
+    _ = bgl^
+    _ = bg^
+    _ = device^
+    _ = inst^
 
 
 def main() raises:
