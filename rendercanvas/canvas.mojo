@@ -24,6 +24,7 @@ from wgpu.instance import Instance
 from wgpu.device import Device
 from wgpu.surface import Surface, SurfaceFrame
 from rendercanvas.glfw import GLFWLib, GLFW_CLIENT_API, GLFW_NO_API, GLFW_RESIZABLE, GLFW_TRUE
+from rendercanvas.input import InputState
 
 
 struct RenderCanvas(Movable):
@@ -38,6 +39,7 @@ struct RenderCanvas(Movable):
     var _surface: Surface
     var _width:   Int32
     var _height:  Int32
+    var input:    InputState
 
     def __init__(
         out self,
@@ -89,12 +91,16 @@ struct RenderCanvas(Movable):
         # --- Configure surface (pick format, set up swapchain) -----------
         surface.configure(inst.adapter_handle(), device.handle(), UInt32(width), UInt32(height))
 
+        # --- Install input callbacks (key, mouse, cursor, scroll) --------
+        glfw.install_input_callbacks(window)
+
         # --- Store ---
         self._glfw    = glfw^
         self._window  = window
         self._surface = surface^
         self._width   = width
         self._height  = height
+        self.input    = InputState()
 
     def __init__(out self, *, deinit take: Self):
         self._glfw    = take._glfw^
@@ -102,6 +108,7 @@ struct RenderCanvas(Movable):
         self._surface = take._surface^
         self._width   = take._width
         self._height  = take._height
+        self.input    = take.input^
 
     def __del__(deinit self):
         self._glfw.destroy_window(self._window)
@@ -115,9 +122,15 @@ struct RenderCanvas(Movable):
         """Returns True while the window close button has not been pressed."""
         return not Bool(self._glfw.window_should_close(self._window))
 
-    def poll(self):
-        """Process pending window / input events (call once per frame)."""
+    def poll(mut self):
+        """Process pending window / input events (call once per frame).
+
+        Clears per-frame input state, pumps GLFW events, then drains the
+        C-side event queue into self.input.
+        """
+        self.input.begin_frame()
         self._glfw.poll_events()
+        self.input.update(self._glfw)
 
     def next_frame(self) -> SurfaceFrame:
         """Acquire the next swapchain texture.

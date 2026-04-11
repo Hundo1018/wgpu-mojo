@@ -7,10 +7,10 @@ version = "0.1.0"
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
-build-callbacks = "gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN'"
+build-callbacks = "gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN' && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"
 
 # Run all non-GPU tests
-test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo", depends-on = ["build-callbacks"] }
+test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_glfw_constants.mojo && mojo run -I . tests/test_input_state.mojo", depends-on = ["build-callbacks"] }
 
 # Run only non-GPU tests (no hardware required)
 test-types       = { cmd = "mojo run -I . tests/test_types.mojo", depends-on = ["build-callbacks"] }
@@ -28,6 +28,13 @@ test-texture     = { cmd = "mojo run -I . tests/test_texture.mojo", depends-on =
 test-sampler     = { cmd = "mojo run -I . tests/test_sampler.mojo", depends-on = ["build-callbacks"] }
 test-command     = { cmd = "mojo run -I . tests/test_command_encoder.mojo", depends-on = ["build-callbacks"] }
 test-pipeline-layout = { cmd = "mojo run -I . tests/test_pipeline_layout.mojo", depends-on = ["build-callbacks"] }
+
+# Input system tests (non-GPU)
+test-glfw-constants = { cmd = "mojo run -I . tests/test_glfw_constants.mojo", depends-on = ["build-callbacks"] }
+test-input-state    = { cmd = "mojo run -I . tests/test_input_state.mojo", depends-on = ["build-callbacks"] }
+
+# Input system tests (needs display server + GLFW)
+test-glfw-input     = { cmd = "mojo run -I . tests/test_glfw_input.mojo", depends-on = ["build-callbacks"] }
 
 # Hello Triangle quickstart
 hello             = { cmd = "mojo run -I . hello.mojo", depends-on = ["build-callbacks"] }
