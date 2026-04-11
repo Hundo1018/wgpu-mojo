@@ -10,10 +10,11 @@ version = "0.1.0"
 build-callbacks = "gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN' && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"
 
 # Run all non-GPU tests
-test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_glfw_constants.mojo && mojo run -I . tests/test_input_state.mojo", depends-on = ["build-callbacks"] }
+test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_glfw_constants.mojo && mojo run -I . tests/test_input_state.mojo", depends-on = ["build-callbacks"] }
 
 # Run only non-GPU tests (no hardware required)
 test-types       = { cmd = "mojo run -I . tests/test_types.mojo", depends-on = ["build-callbacks"] }
+test-handle-newtypes = { cmd = "mojo run -I . tests/test_handle_newtypes.mojo", depends-on = ["build-callbacks"] }
 test-structs     = { cmd = "mojo run -I . tests/test_structs.mojo", depends-on = ["build-callbacks"] }
 test-native-ext  = { cmd = "mojo run -I . tests/test_native_ext.mojo", depends-on = ["build-callbacks"] }
 

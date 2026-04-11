@@ -65,3 +65,11 @@ from wgpu._ffi.structs import (
     str_to_sv, wgpu_limits_default,
 )
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.handles import (
+    AdapterHandle, DeviceHandle, QueueHandle, BufferHandle,
+    TextureHandle, TextureViewHandle, SamplerHandle, ShaderModuleHandle,
+    BindGroupLayoutHandle, BindGroupHandle, PipelineLayoutHandle,
+    ComputePipelineHandle, RenderPipelineHandle,
+    CommandEncoderHandle, CommandBufferHandle,
+    QuerySetHandle, SurfaceHandle,
+)
