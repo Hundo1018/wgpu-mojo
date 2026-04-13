@@ -137,6 +137,3 @@ This project uses a thin, dynamic FFI layer to load `libwgpu_native.so` at runti
 
 See [LICENSE](LICENSE).
 
-
-## Workflow Note
-- Branch policy validated on 2026-04-14 via CI smoke branch.
