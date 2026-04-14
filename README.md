@@ -12,15 +12,43 @@ Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native), providin
 
 ## Platform Dependencies
 
-This repository provides the Mojo wrapper and example tasks, but it does not install system-level GPU drivers or native runtime libraries for you.
+This repository provides the Mojo wrapper and Pixi tasks, but does not bundle GPU drivers or native runtime libraries.
 
-You must install the platform-specific dependencies yourself before running GPU examples.
+### Native library: `wgpu-native`
 
-- Linux: Vulkan-compatible GPU drivers, GLFW, and `libwgpu_native.so`. On many distributions this means installing Mesa Vulkan/OpenGL drivers such as `mesa-vulkan-drivers`, `libvulkan1`, or the vendor-specific GPU stack for Intel/AMD/NVIDIA.
-- macOS: Metal-compatible GPU drivers and a compatible `wgpu-native` build
-- Windows: D3D12/Vulkan drivers and the appropriate `wgpu-native` DLL
+Download the correct pre-built binary from the [wgpu-native releases page](https://github.com/gfx-rs/wgpu-native/releases) and place it in `ffi/lib/`:
 
-If you are using a Conda environment, make sure GLFW is available there and `ffi/lib/libwgpu_native.so` is present or symlinked from the native runtime build.
+| Platform | Asset to download | File to copy |
+|---|---|---|
+| Linux x86-64 | `wgpu-linux-x86_64-release.zip` | `libwgpu_native.so` → `ffi/lib/` |
+| macOS arm64 | `wgpu-macos-aarch64-release.zip` | `libwgpu_native.dylib` → `ffi/lib/` |
+| macOS x86-64 | `wgpu-macos-x86_64-release.zip` | `libwgpu_native.dylib` → `ffi/lib/` |
+| Windows x64 | `wgpu-windows-x86_64-release.zip` | `wgpu_native.dll` + `.lib` → `ffi/lib/` |
+
+```bash
+mkdir -p ffi/lib
+# Linux example — replace the tag with the version matching wgpu-native-git-tag
+TAG=$(cat ffi/wgpu-native-meta/wgpu-native-git-tag)
+wget "https://github.com/gfx-rs/wgpu-native/releases/download/${TAG}/wgpu-linux-x86_64-release.zip"
+unzip wgpu-linux-x86_64-release.zip -d /tmp/wgpu-native
+cp /tmp/wgpu-native/libwgpu_native.so ffi/lib/
+```
+
+Verify: `ls -lh ffi/lib/libwgpu_native.so` before building callbacks.
+
+### GPU drivers
+
+| Platform | What you need |
+|---|---|
+| Linux | Vulkan drivers: `mesa-vulkan-drivers` + `libvulkan1` (Intel/AMD) or the NVIDIA proprietary stack |
+| macOS | Metal is built into macOS — no extra drivers needed |
+| Windows | D3D12 or Vulkan drivers — typically already installed with your GPU vendor's driver package |
+
+### GLFW
+
+GLFW is provided via Conda through Pixi on Linux. On macOS/Windows, install it via [brew](https://formulae.brew.sh/formula/glfw) or [vcpkg](https://vcpkg.io/) and ensure it is on your library path.
+
+> **Note:** The Pixi workspace is currently configured for `linux-64`. On macOS or Windows you can still build and run the code manually with `mojo run -I . hello.mojo` after placing the correct native library in `ffi/lib/`.
 
 ## Setup
 
@@ -42,23 +70,91 @@ If the window appears, the core runtime path is working: `wgpu-native` → FFI b
 
 ## Quick Start
 
-Use the `GPU` wrapper and request a device before creating buffers, pipelines, or passes:
+### Hello Triangle
+
+`hello.mojo` renders an RGB vertex-coloured triangle in a GLFW window. This is the exact pattern the file uses:
 
 ```mojo
 from wgpu.gpu import GPU
+from wgpu._ffi.types import OpaquePtr
+from wgpu._ffi.structs import WGPUColor
+from rendercanvas import RenderCanvas
 
-func main() raises:
-    var gpu = GPU()
+comptime WGSL = """
+struct VertexOut {
+    @builtin(position) pos: vec4<f32>,
+    @location(0)       col: vec3<f32>,
+}
+@vertex
+fn vs_main(@builtin(vertex_index) i: u32) -> VertexOut {
+    var pos = array<vec2<f32>, 3>(
+        vec2( 0.0,  0.5), vec2(-0.5, -0.5), vec2( 0.5, -0.5),
+    );
+    var col = array<vec3<f32>, 3>(
+        vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
+    );
+    var out: VertexOut;
+    out.pos = vec4<f32>(pos[i], 0.0, 1.0);
+    out.col = col[i];
+    return out;
+}
+@fragment
+fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
+    return vec4<f32>(in.col, 1.0);
+}
+"""
+
+def main() raises:
+    var gpu    = GPU()
+    var device = gpu.request_device()
+    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: hello triangle")
+    var shader = device.create_shader_module_wgsl(WGSL, "hello")
+    var layout = device.create_pipeline_layout(List[OpaquePtr](), "layout")
+    var pipeline = device.create_render_pipeline(
+        shader, "vs_main", "fs_main",
+        canvas.surface_format(), layout,
+        primitive_topology=UInt32(4),  # TriangleList
+    )
+    while canvas.is_open():
+        canvas.poll()
+        var frame = canvas.next_frame()
+        if not frame.is_renderable():
+            continue
+        var enc   = device.create_command_encoder("frame")
+        var rpass = enc.begin_surface_clear_pass(
+            frame.texture,
+            WGPUColor(Float64(0), Float64(0), Float64(0), Float64(1)),
+            "pass",
+        )
+        rpass.set_pipeline(pipeline)
+        rpass.draw(UInt32(3), UInt32(1), UInt32(0), UInt32(0))
+        rpass^.end()
+        device.queue_submit(enc^.finish())
+        canvas.present()
+```
+
+Run it with `pixi run hello`. See `examples/triangle_window.mojo` for an identical standalone version.
+
+### GPU Compute (no window)
+
+For headless work (ML, simulation, data processing), skip `RenderCanvas` entirely:
+
+```mojo
+from wgpu import GPU, WGPUBufferUsage
+
+def main() raises:
+    var gpu    = GPU()
     var device = gpu.request_device()
 
-    var buffer = device.create_buffer(
+    var buf = device.create_buffer(
         UInt64(1024),
         WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST,
         label="my_buffer",
     )
-
-    # GPU objects are RAII-managed and released when they go out of scope.
+    # GPU objects release automatically when they go out of scope (RAII).
 ```
+
+See `examples/compute_add.mojo` for a full vector-addition pipeline with buffer readback.
 
 ## Available Tasks
 
@@ -75,8 +171,9 @@ func main() raises:
 
 ## Project Layout
 
-- `hello.mojo` — triangle demo using the Mojo wrapper
-- `examples/` — sample GPU programs and input demos
+- `hello.mojo` — hello triangle quickstart (RGB vertices, GLFW window)
+- `examples/triangle_window.mojo` — identical standalone triangle demo
+- `examples/` — GPU compute, adapter enumeration, clear-screen, and input demos
 - `tests/` — Mojo test files for wrapper behavior and API compatibility
 - `wgpu/` — high-level Mojo wrapper layer for WebGPU objects
 - `wgpu/_ffi/` — raw FFI bindings and type definitions
