@@ -1,7 +1,7 @@
 [workspace]
 authors = ["Tien-Chueh, Wang <f74169@gmail.com>"]
 channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
-name = "wgpu"
+name = "wgpu-mojo"
 platforms = ["linux-64"]
 version = "0.1.0"
 preview = ["pixi-build"]
@@ -17,7 +17,7 @@ repository = "https://github.com/Hundo1018/wgpu-mojo"
 
 [package.build]
 backend = { name = "pixi-build-mojo",version = "0.1.*" }
-source.path = "."
+source.path = "wgpu"
 
 [package.build.config.pkg]
 name = "wgpu"
