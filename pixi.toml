@@ -4,6 +4,32 @@ channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
 name = "wgpu-mojo"
 platforms = ["linux-64"]
 version = "0.1.0"
+preview = ["pixi-build"]
+
+[package]
+name = "wgpu-mojo"
+version = "0.1.0"
+authors = ["Tien-Chueh, Wang <f74169@gmail.com>"]
+description = "Mojo bindings for wgpu-native"
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/Hundo1018/wgpu-mojo"
+
+[package.build]
+backend = { name = "pixi-build-mojo",version = "0.1.*" }
+
+[package.host-dependencies]
+mojo-compiler = ">=0.26.3.0.dev2026040805,<0.27"
+
+[package.build-dependencies]
+mojo-compiler = ">=0.26.3.0.dev2026040805,<0.27"
+
+[package.run-dependencies]
+mojo-compiler = ">=0.26.3.0.dev2026040805,<0.27"
+
+[dependencies]
+mojo = ">=0.26.3.0.dev2026040805,<0.27"
+glfw = ">=3.4,<4"
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
@@ -54,7 +80,3 @@ examples-input    = { cmd = "pixi run example-input" }
 # Linked binary builds (Phase 3 groundwork)
 build-hello-linked = { cmd = "mkdir -p build && mojo build -I . hello.mojo -o build/hello-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
 build-compute-linked = { cmd = "mkdir -p build && mojo build -I . examples/compute_add.mojo -o build/compute-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
-
-[dependencies]
-mojo = ">=0.26.3.0.dev2026040805,<0.27"
-glfw = ">=3.4,<4"
