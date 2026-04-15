@@ -1,4 +1,4 @@
-[workspace]
+[project]
 authors = ["Tien-Chueh, Wang <f74169@gmail.com>"]
 channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
 name = "wgpu-mojo"
