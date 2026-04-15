@@ -1,4 +1,4 @@
-[project]
+[workspace]
 authors = ["Tien-Chueh, Wang <f74169@gmail.com>"]
 channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
 name = "wgpu-mojo"
@@ -18,11 +18,15 @@ repository = "https://github.com/Hundo1018/wgpu-mojo"
 [package.build]
 backend = { name = "pixi-build-mojo",version = "0.1.*" }
 
+[package.build.config]
+name = "wgpu-mojo"
+
 [package.host-dependencies]
 mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
 
 [package.build-dependencies]
 mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
+
 
 [package.run-dependencies]
 mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
