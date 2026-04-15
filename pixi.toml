@@ -23,7 +23,7 @@ source.path = "."
 
 [package.build.config.pkg]
 name = "wgpu"
-path = "wgpu"
+path = ["wgpu","ffi","rendercanvas"]
 extra-args = ["-I","."]
 
 [package.build.config]
