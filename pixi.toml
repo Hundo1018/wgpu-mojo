@@ -19,16 +19,16 @@ repository = "https://github.com/Hundo1018/wgpu-mojo"
 backend = { name = "pixi-build-mojo",version = "0.1.*" }
 
 [package.host-dependencies]
-mojo-compiler = ">=0.26.3.0.dev2026040805,<0.27"
+mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
 
 [package.build-dependencies]
-mojo-compiler = ">=0.26.3.0.dev2026040805,<0.27"
+mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
 
 [package.run-dependencies]
-mojo-compiler = ">=0.26.3.0.dev2026040805,<0.27"
+mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
 
 [dependencies]
-mojo = ">=0.26.3.0.dev2026040805,<0.27"
+mojo = ">=0.26.3.0.dev2026041405,<0.27"
 glfw = ">=3.4,<4"
 
 [tasks]
