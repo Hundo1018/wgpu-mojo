@@ -15,26 +15,32 @@ license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/Hundo1018/wgpu-mojo"
 
+
 [package.build]
 backend = { name = "pixi-build-mojo",version = "0.1.*" }
 source.path = "."
 
+
 [package.build.config.pkg]
 name = "wgpu"
 path = "wgpu"
+extra-args = ["-I","."]
+
+[package.build.config]
+compilers = ["c","cxx","gcc"]
 
 [package.host-dependencies]
 mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
 
 [package.build-dependencies]
 mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
-gcc = ">=12"
 
 [package.run-dependencies]
 mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
 
 [dependencies]
 mojo = ">=0.26.3.0.dev2026041405,<0.27"
+glfw = ">=3.3"
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
