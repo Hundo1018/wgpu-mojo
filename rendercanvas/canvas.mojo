@@ -71,27 +71,29 @@ struct RenderCanvas(Movable):
         # --- Detect platform, create Surface, then configure --------------
         # Any failure in this block must tear down GLFW resources.
         var surface: Surface
-        try:
-            # Try Wayland first (preferred on modern Linux); fall back to X11.
-            var display = glfw.get_wayland_display()
-            if Bool(display):
-                var wl_surf = glfw.get_wayland_window(window)
-                if not Bool(wl_surf):
-                    raise Error("glfwGetWaylandWindow() returned NULL")
-                surface = gpu.create_surface_wayland(display, wl_surf)
-            else:
-                var x11_disp = glfw.get_x11_display()
-                if not Bool(x11_disp):
-                    raise Error("No Wayland or X11 display available from GLFW")
-                var x11_win = glfw.get_x11_window(window)
-                surface = gpu.create_surface_xlib(x11_disp, x11_win)
+        # try:
+        # Try Wayland first (preferred on modern Linux); fall back to X11.
+        var display = glfw.get_wayland_display()
+        if Bool(display):
+            var wl_surf = glfw.get_wayland_window(window)
+            if not Bool(wl_surf):
+                pass
+                # raise Error("glfwGetWaylandWindow() returned NULL")
+            surface = gpu.create_surface_wayland(display, wl_surf)
+        else:
+            var x11_disp = glfw.get_x11_display()
+            if not Bool(x11_disp):
+                pass
+                # raise Error("No Wayland or X11 display available from GLFW")
+            var x11_win = glfw.get_x11_window(window)
+            surface = gpu.create_surface_xlib(x11_disp, x11_win)
 
-            # Configure surface (pick format, set up swapchain).
-            surface.configure(gpu.adapter_handle(), device.handle().raw, UInt32(width), UInt32(height))
-        except:
-            glfw.destroy_window(window)
-            glfw.terminate()
-            raise
+        # Configure surface (pick format, set up swapchain).
+        surface.configure(gpu.adapter_handle(), device.handle().raw, UInt32(width), UInt32(height))
+        # except:
+        #     glfw.destroy_window(window)
+        #     glfw.terminate()
+        #     raise
 
         # --- Install input callbacks (key, mouse, cursor, scroll) --------
         glfw.install_input_callbacks(window)

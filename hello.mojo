@@ -94,7 +94,3 @@ def main() raises:
         canvas.present()
 
     print("Done.")
-    _ = pipeline^
-    _ = canvas^
-    _ = device^
-    _ = gpu^
