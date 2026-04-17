@@ -7,10 +7,14 @@
             "request": "launch",
             "mojoFile": "${file}",
             "args": [],
-            "env": [],
+            "env": [
+                "MODULAR_HOME=${workspaceFolder}/.pixi/envs/default/share/max",
+                "LD_LIBRARY_PATH=${workspaceFolder}/ffi/lib:${workspaceFolder}/.pixi/envs/default/lib",
+                "CONDA_PREFIX=${workspaceFolder}/.pixi/envs/default"
+            ],
             "cwd": "${workspaceFolder}",
             "modularHomePath": "${workspaceFolder}/.pixi/envs/default/share/max",
-            "runInTerminal": false
+            "runInTerminal": true
         }
     ]
 }
