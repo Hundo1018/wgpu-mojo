@@ -39,7 +39,7 @@ mojo-compiler = ">=0.26.2.0"
 mojo-compiler = ">=0.26.2.0"
 
 [dependencies]
-mojo = ">=0.26.3.0.dev2026041605,<0.27"
+mojo = ">=0.26.3.0.dev2026041716,<0.27"
 glfw = ">=3.4,<4"
 
 [tasks]
@@ -65,6 +65,7 @@ test-shader      = { cmd = "mojo run -I . tests/test_shader.mojo", depends-on = 
 test-bind-group  = { cmd = "mojo run -I . tests/test_bind_group.mojo", depends-on = ["build-callbacks"] }
 test-compute     = { cmd = "mojo run -I . tests/test_compute_pipeline.mojo", depends-on = ["build-callbacks"] }
 test-texture     = { cmd = "mojo run -I . tests/test_texture.mojo", depends-on = ["build-callbacks"] }
+test-texture-sample = { cmd = "mojo run -I . tests/test_texture_sample.mojo", depends-on = ["build-callbacks"] }
 test-sampler     = { cmd = "mojo run -I . tests/test_sampler.mojo", depends-on = ["build-callbacks"] }
 test-command     = { cmd = "mojo run -I . tests/test_command_encoder.mojo", depends-on = ["build-callbacks"] }
 test-pipeline-layout = { cmd = "mojo run -I . tests/test_pipeline_layout.mojo", depends-on = ["build-callbacks"] }
@@ -86,6 +87,8 @@ example-compute   = { cmd = "mojo run -I . examples/compute_add.mojo", depends-o
 example-clear     = { cmd = "mojo run -I . examples/clear_screen.mojo", depends-on = ["build-callbacks"] }
 example-triangle  = { cmd = "mojo run -I . examples/triangle_window.mojo", depends-on = ["build-callbacks"] }
 example-input     = { cmd = "mojo run -I . examples/input_demo.mojo", depends-on = ["build-callbacks"] }
+example-texture-sample = { cmd = "mojo run -I . examples/texture_sample.mojo", depends-on = ["build-callbacks"] }
+example-native-extensions = { cmd = "mojo run -I . examples/native_extensions.mojo", depends-on = ["build-callbacks"] }
 example-flame     = { cmd = "mojo run -I . hello-fire.mojo", depends-on = ["build-callbacks"] }
 examples-input    = { cmd = "pixi run example-input" }
 

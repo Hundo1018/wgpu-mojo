@@ -166,6 +166,8 @@ See `examples/compute_add.mojo` for a full vector-addition pipeline with buffer 
 - `pixi run example-enumerate` — run `examples/enumerate_adapters.mojo`
 - `pixi run example-clear` — run `examples/clear_screen.mojo`
 - `pixi run example-input` — run `examples/input_demo.mojo`
+- `pixi run example-texture-sample` — run `examples/texture_sample.mojo`
+- `pixi run example-native-extensions` — run `examples/native_extensions.mojo`
 - `pixi run test` — run non-GPU tests
 - `pixi run test-glfw-input` — run GLFW input integration test
 
@@ -173,6 +175,8 @@ See `examples/compute_add.mojo` for a full vector-addition pipeline with buffer 
 
 - `hello.mojo` — hello triangle quickstart (RGB vertices, GLFW window)
 - `examples/triangle_window.mojo` — identical standalone triangle demo
+- `examples/texture_sample.mojo` — sampled texture rendering demo
+- `examples/native_extensions.mojo` — query native wgpu-native feature support
 - `examples/` — GPU compute, adapter enumeration, clear-screen, and input demos
 - `tests/` — Mojo test files for wrapper behavior and API compatibility
 - `wgpu/` — high-level Mojo wrapper layer for WebGPU objects
