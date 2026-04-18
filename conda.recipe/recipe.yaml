@@ -1,0 +1,43 @@
+context:
+  version: "0.1.0"
+
+package:
+  name: wgpu-mojo
+  version: ${{ version }}
+
+source:
+  - git: https://github.com/Hundo1018/wgpu-mojo.git
+    rev: 375a02a43109c7638524349d9eb766ac05815070
+
+build:
+  number: 0
+  script:
+    - mojo package wgpu -o ${{ PREFIX }}/lib/mojo/wgpu.mojopkg
+
+requirements:
+  build:
+    - mojo-compiler >=0.26.2.0
+  host:
+    - mojo-compiler >=0.26.2.0
+  run:
+    - ${{ pin_compatible('mojo-compiler') }}
+
+tests:
+  - script:
+      - if: unix
+        then:
+          - pixi run test
+    files:
+      recipe:
+        - test.mojo
+
+about:
+  homepage: https://github.com/Hundo1018/wgpu-mojo/blob/main/README.md
+  repository: https://github.com/Hundo1018/wgpu-mojo
+  license: Apache-2.0
+  license_file: LICENSE
+  summary: Mojo bindings for wgpu-native.
+
+extra:
+  maintainers:
+    - Hundo1018

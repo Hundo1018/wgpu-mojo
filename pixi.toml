@@ -30,17 +30,17 @@ extra-args = ["-I","."]
 compilers = ["c","cxx","gcc"]
 
 [package.host-dependencies]
-mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
+mojo-compiler = ">=0.26.2.0"
 
 [package.build-dependencies]
-mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
+mojo-compiler = ">=0.26.2.0"
 
 [package.run-dependencies]
-mojo-compiler = ">=0.26.3.0.dev2026041405,<0.27"
+mojo-compiler = ">=0.26.2.0"
 
 [dependencies]
-mojo = ">=0.26.3.0.dev2026041405,<0.27"
-glfw = ">=3.3"
+mojo = ">=0.26.3.0.dev2026041605,<0.27"
+glfw = ">=3.4,<4"
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
@@ -86,6 +86,7 @@ example-compute   = { cmd = "mojo run -I . examples/compute_add.mojo", depends-o
 example-clear     = { cmd = "mojo run -I . examples/clear_screen.mojo", depends-on = ["build-callbacks"] }
 example-triangle  = { cmd = "mojo run -I . examples/triangle_window.mojo", depends-on = ["build-callbacks"] }
 example-input     = { cmd = "mojo run -I . examples/input_demo.mojo", depends-on = ["build-callbacks"] }
+example-flame     = { cmd = "mojo run -I . hello-fire.mojo", depends-on = ["build-callbacks"] }
 examples-input    = { cmd = "pixi run example-input" }
 
 # Linked binary builds (Phase 3 groundwork)

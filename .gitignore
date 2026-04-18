@@ -32,3 +32,4 @@
 /test_render_pipeline
 /test_pipeline_layout
 /test_debug_groups
+/output/*
