@@ -6,13 +6,12 @@ package:
   version: ${{ version }}
 
 source:
-  - git: https://github.com/Hundo1018/wgpu-mojo.git
-    rev: 375a02a43109c7638524349d9eb766ac05815070
+  - path: ../
 
 build:
   number: 0
   script:
-    - mojo package wgpu -o ${{ PREFIX }}/lib/mojo/wgpu.mojopkg
+    - mojo package wgpu_mojo -o ${{ PREFIX }}/lib/mojo/wgpu_mojo.mojopkg
 
 requirements:
   build:
