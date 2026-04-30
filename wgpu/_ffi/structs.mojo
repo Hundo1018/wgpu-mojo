@@ -15,9 +15,12 @@ from wgpu._ffi.types import (
     WGPUSurfaceHandle, WGPUTextureHandle, WGPUTextureViewHandle,
     WGPUBufferUsage, WGPUColorWriteMask, WGPUMapMode, WGPUShaderStage, WGPUTextureUsage,
     WGPU_STRLEN, WGPUSType, WGPUCallbackMode,
+    WGPUMapAsyncStatus, WGPUCompilationInfoRequestStatus, WGPUCreatePipelineAsyncStatus,
+    WGPUDeviceLostReason, WGPUErrorType, WGPUPopErrorScopeStatus,
+    WGPUQueueWorkDoneStatus, WGPURequestAdapterStatus, WGPURequestDeviceStatus,
 )
 
-# Convenience alias — used in many places for void* userdata
+# Convenience alias — used in many places for void* userdata and chained structs
 comptime VoidPtr = OpaquePtr
 
 # Self-referencing chain pointer (opaque to avoid recursive struct issue)
@@ -73,6 +76,85 @@ def str_to_borrowed_sv[
 def str_to_sv(ref s: String) -> WGPUStringView:
     """Borrow `s` as a WGPUStringView. `s` must outlive the view."""
     return str_to_borrowed_sv(s).to_ffi()
+
+
+# Callback function pointer aliases for FFI bridge compatibility.
+comptime WGPUBufferMapCallback = def(
+    WGPUMapAsyncStatus,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPUCompilationInfoCallback = def(
+    WGPUCompilationInfoRequestStatus,
+    UnsafePointer[WGPUCompilationInfo, MutExternalOrigin],
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPUCreateComputePipelineAsyncCallback = def(
+    WGPUCreatePipelineAsyncStatus,
+    WGPUComputePipelineHandle,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPUCreateRenderPipelineAsyncCallback = def(
+    WGPUCreatePipelineAsyncStatus,
+    WGPURenderPipelineHandle,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPUDeviceLostCallback = def(
+    WGPUDeviceHandle,
+    WGPUDeviceLostReason,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPUPopErrorScopeCallback = def(
+    WGPUPopErrorScopeStatus,
+    WGPUErrorType,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPUQueueWorkDoneCallback = def(
+    WGPUQueueWorkDoneStatus,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPURequestAdapterCallback = def(
+    WGPURequestAdapterStatus,
+    WGPUAdapterHandle,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPURequestDeviceCallback = def(
+    WGPURequestDeviceStatus,
+    WGPUDeviceHandle,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
+
+comptime WGPUUncapturedErrorCallback = def(
+    WGPUDeviceHandle,
+    WGPUErrorType,
+    WGPUStringView,
+    OpaquePtr,
+    OpaquePtr,
+) -> None
 
 
 # ---------------------------------------------------------------------------
@@ -500,7 +582,7 @@ struct WGPURequestAdapterOptions:
     var power_preference: UInt32
     var force_fallback_adapter: UInt32   # WGPUBool
     var backend_type: UInt32
-    var compatible_surface: Optional[WGPUSurfaceHandle]   # nullable
+    var compatible_surface: WGPUSurfaceHandle   # nullable
 
 
 @fieldwise_init
@@ -535,7 +617,7 @@ struct WGPURenderPassDescriptor:
     var color_attachment_count: UInt
     var color_attachments: UnsafePointer[WGPURenderPassColorAttachment, MutExternalOrigin]
     var depth_stencil_attachment: Optional[UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin]]  # nullable
-    var occlusion_query_set: Optional[WGPUQuerySetHandle]   # nullable
+    var occlusion_query_set: WGPUQuerySetHandle   # nullable
     var timestamp_writes: Optional[UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin]]  # nullable
 
 
@@ -754,7 +836,7 @@ struct WGPUFragmentState(TrivialRegisterPassable):
 struct WGPURenderPipelineDescriptor(TrivialRegisterPassable):
     var next_in_chain: WGPUChainedStructPtr
     var label: WGPUStringView
-    var layout: Optional[WGPUPipelineLayoutHandle]   # nullable
+    var layout: WGPUPipelineLayoutHandle   # nullable
     var vertex: WGPUVertexState
     var primitive: WGPUPrimitiveState
     var depth_stencil: Optional[UnsafePointer[WGPUDepthStencilState, MutExternalOrigin]]  # nullable

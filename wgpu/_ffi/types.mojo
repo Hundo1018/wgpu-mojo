@@ -4,13 +4,13 @@ mirroring webgpu.h for the wgpu-native v27 API.
 """
 
 from std.ffi import OwnedDLHandle
+from std.memory import OpaquePointer
 
 # ---------------------------------------------------------------------------
 # Opaque handle types (all wgpu objects are pointer-sized)
 # ---------------------------------------------------------------------------
-comptime OpaquePtr = UnsafePointer[NoneType, MutExternalOrigin]
-comptime OptionalOpaquePtr = Optional[OpaquePtr]
-comptime NullableUnsafePointer[T] = Optional[UnsafePointer[T, MutExternalOrigin]]
+comptime OpaquePtr = OpaquePointer[MutExternalOrigin]
+comptime NullableUnsafePointer[T: AnyType] = Optional[UnsafePointer[T, MutExternalOrigin]]
 
 comptime WGPUAdapterHandle = OpaquePtr
 comptime WGPUBindGroupHandle = OpaquePtr

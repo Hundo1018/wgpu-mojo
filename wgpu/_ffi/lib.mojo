@@ -157,15 +157,15 @@ struct WGPULib(Movable):
     ) raises -> _AdapterResult:
         """Synchronously request an adapter via AllowSpontaneous callback."""
         var result = alloc[_AdapterResult](1)
-        result[] = _AdapterResult(WGPUAdapterHandle(), 0)
+        result[] = _AdapterResult(WGPUAdapterHandle(unsafe_from_address=0), 0)
 
         var cb_info_p = alloc[WGPURequestAdapterCallbackInfo](1)
         cb_info_p[] = WGPURequestAdapterCallbackInfo(
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
             WGPUCallbackMode.AllowSpontaneous,
             self._adapter_cb_ptr,
             result.bitcast[NoneType](),
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
         )
         _ = self._cb.call["wgpu_mojo_instance_request_adapter", WGPUFuture](
             instance, options, cb_info_p
@@ -218,15 +218,15 @@ struct WGPULib(Movable):
     ) raises -> _DeviceResult:
         """Synchronously request a device via AllowSpontaneous callback."""
         var result = alloc[_DeviceResult](1)
-        result[] = _DeviceResult(WGPUDeviceHandle(), 0)
+        result[] = _DeviceResult(WGPUDeviceHandle(unsafe_from_address=0), 0)
 
         var cb_info_p = alloc[WGPURequestDeviceCallbackInfo](1)
         cb_info_p[] = WGPURequestDeviceCallbackInfo(
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
             WGPUCallbackMode.AllowSpontaneous,
             self._device_cb_ptr,
             result.bitcast[NoneType](),
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
         )
         _ = self._cb.call["wgpu_mojo_adapter_request_device", WGPUFuture](
             adapter, desc, cb_info_p
@@ -378,7 +378,7 @@ struct WGPULib(Movable):
         return self._wgpu.call["wgpuDeviceHasFeature", UInt32](device, feature)
 
     def device_poll(self, device: WGPUDeviceHandle, wait: UInt32) -> UInt32:
-        return self._wgpu.call["wgpuDevicePoll", UInt32](device, wait, OpaquePtr())
+        return self._wgpu.call["wgpuDevicePoll", UInt32](device, wait, OpaquePtr(unsafe_from_address=0))
 
     def device_push_error_scope(self, device: WGPUDeviceHandle, filter: UInt32):
         self._wgpu.call["wgpuDevicePushErrorScope"](device, filter)
@@ -411,17 +411,17 @@ struct WGPULib(Movable):
 
         var cb_info_p = alloc[WGPUBufferMapCallbackInfo](1)
         cb_info_p[] = WGPUBufferMapCallbackInfo(
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
             WGPUCallbackMode.AllowSpontaneous,
             self._map_cb_ptr,
             result.bitcast[NoneType](),
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
         )
         _ = self._cb.call["wgpu_mojo_buffer_map_async", WGPUFuture](
             buffer, mode, offset, size, cb_info_p
         )
         cb_info_p.free()
-        self._wgpu.call["wgpuDevicePoll"](device, WGPU_TRUE, OpaquePtr())
+        self._wgpu.call["wgpuDevicePoll"](device, WGPU_TRUE, OpaquePtr(unsafe_from_address=0))
         var status = result[].status
         result.free()
         return status
@@ -756,7 +756,7 @@ struct WGPULib(Movable):
         data_size: UInt,
         data_layout: OpaquePtr,
         write_size: OpaquePtr,
-    ):
+    ) :
         self._wgpu.call["wgpuQueueWriteTexture"](
             queue, destination, data, data_size, data_layout, write_size
         )
@@ -892,7 +892,7 @@ struct WGPULib(Movable):
 
     def device_poll(self, device: WGPUDeviceHandle, wait: Bool) -> UInt32:
         var w: UInt32 = WGPU_TRUE if wait else WGPU_FALSE
-        return self._wgpu.call["wgpuDevicePoll", UInt32](device, w, OpaquePtr())
+        return self._wgpu.call["wgpuDevicePoll", UInt32](device, w, OpaquePtr(unsafe_from_address=0))
 
     def enumerate_adapters(
         self,
@@ -1140,11 +1140,11 @@ struct WGPULib(Movable):
         result[] = _WorkDoneResult(0)
         var cb_info_p = alloc[WGPUQueueWorkDoneCallbackInfo](1)
         cb_info_p[] = WGPUQueueWorkDoneCallbackInfo(
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
             WGPUCallbackMode.AllowSpontaneous,
             self._done_cb_ptr,
             result.bitcast[NoneType](),
-            OpaquePtr(),
+            OpaquePtr(unsafe_from_address=0),
         )
         _ = self._cb.call["wgpu_mojo_queue_on_submitted_work_done", WGPUFuture](queue, cb_info_p)
         cb_info_p.free()
