@@ -13,7 +13,7 @@ def test_create_command_encoder() raises:
     var gpu    = GPU()
     var device = gpu.request_device()
     var enc    = device.create_command_encoder("test_enc")
-    var is_valid = Bool(enc.handle().raw)
+    var is_valid = enc.handle().raw != OpaquePtr(unsafe_from_address=0)
     enc^.abandon()  # linear type: must explicitly consume
     assert_true(is_valid)
 
@@ -24,7 +24,7 @@ def test_finish_empty_encoder() raises:
     var device = gpu.request_device()
     var enc    = device.create_command_encoder()
     var cmd    = enc^.finish()
-    assert_true(Bool(cmd))
+    assert_true(cmd.raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_submit_empty_command_buffer() raises:

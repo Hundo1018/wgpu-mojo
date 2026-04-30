@@ -21,7 +21,7 @@ def test_create_2d_texture() raises:
         WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_SRC,
         2, 1, 1, "tex2d"
     )
-    assert_true(Bool(tex.handle().raw))
+    assert_true(tex.handle().raw != OpaquePtr(unsafe_from_address=0))
     assert_equal(tex.width(), UInt32(256))
     assert_equal(tex.height(), UInt32(256))
     assert_equal(tex.format(), WGPUTextureFormat.RGBA8Unorm)
@@ -38,7 +38,7 @@ def test_create_texture_view() raises:
         2, 1, 1
     )
     var view = tex.create_view_default()
-    assert_true(Bool(view.handle().raw))
+    assert_true(view.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_texture_dimensions() raises:

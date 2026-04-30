@@ -32,7 +32,7 @@ def test_create_shader_module_wgsl_noop() raises:
     var gpu     = GPU()
     var device  = gpu.request_device()
     var shader  = device.create_shader_module_wgsl(NOOP_WGSL, "noop")
-    assert_true(Bool(shader.handle().raw))
+    assert_true(shader.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_create_shader_module_wgsl_add() raises:
@@ -40,7 +40,7 @@ def test_create_shader_module_wgsl_add() raises:
     var gpu     = GPU()
     var device  = gpu.request_device()
     var shader  = device.create_shader_module_wgsl(ADD_WGSL, "vec_add")
-    assert_true(Bool(shader.handle().raw))
+    assert_true(shader.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_shader_module_handle_nonnull() raises:
@@ -48,7 +48,7 @@ def test_shader_module_handle_nonnull() raises:
     var gpu    = GPU()
     var device = gpu.request_device()
     var shader = device.create_shader_module_wgsl(NOOP_WGSL)
-    assert_true(Bool(shader.handle().raw))
+    assert_true(shader.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def main() raises:

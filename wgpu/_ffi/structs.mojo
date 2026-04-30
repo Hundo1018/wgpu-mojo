@@ -36,7 +36,7 @@ struct WGPUStringView(TrivialRegisterPassable):
     @staticmethod
     def null_view() -> WGPUStringView:
         return WGPUStringView(
-            UnsafePointer[NoneType, MutAnyOrigin](),
+            UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0),
             WGPU_STRLEN,
         )
 
@@ -435,8 +435,8 @@ struct WGPUDeviceDescriptor:
     var next_in_chain: WGPUChainedStructPtr
     var label: WGPUStringView
     var required_feature_count: UInt
-    var required_features: UnsafePointer[UInt32, MutExternalOrigin]
-    var required_limits: UnsafePointer[WGPULimits, MutExternalOrigin]  # nullable
+    var required_features: Optional[UnsafePointer[UInt32, MutExternalOrigin]]
+    var required_limits: Optional[UnsafePointer[WGPULimits, MutExternalOrigin]]  # nullable
     var default_queue: WGPUQueueDescriptor
     var device_lost_callback_info: WGPUDeviceLostCallbackInfo
     var uncaptured_error_callback_info: WGPUUncapturedErrorCallbackInfo
@@ -446,8 +446,8 @@ struct WGPUDeviceDescriptor:
 struct WGPUInstanceDescriptor:
     var next_in_chain: WGPUChainedStructPtr
     var required_feature_count: UInt
-    var required_features: UnsafePointer[UInt32, MutExternalOrigin]
-    var required_limits: UnsafePointer[NoneType, MutExternalOrigin]  # nullable WGPUInstanceLimits*
+    var required_features: Optional[UnsafePointer[UInt32, MutExternalOrigin]]
+    var required_limits: Optional[UnsafePointer[NoneType, MutExternalOrigin]]  # nullable WGPUInstanceLimits*
 
 
 @fieldwise_init
@@ -500,7 +500,7 @@ struct WGPURequestAdapterOptions:
     var power_preference: UInt32
     var force_fallback_adapter: UInt32   # WGPUBool
     var backend_type: UInt32
-    var compatible_surface: WGPUSurfaceHandle   # nullable
+    var compatible_surface: Optional[WGPUSurfaceHandle]   # nullable
 
 
 @fieldwise_init
@@ -534,9 +534,9 @@ struct WGPURenderPassDescriptor:
     var label: WGPUStringView
     var color_attachment_count: UInt
     var color_attachments: UnsafePointer[WGPURenderPassColorAttachment, MutExternalOrigin]
-    var depth_stencil_attachment: UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin]  # nullable
-    var occlusion_query_set: WGPUQuerySetHandle   # nullable
-    var timestamp_writes: UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin]  # nullable
+    var depth_stencil_attachment: Optional[UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin]]  # nullable
+    var occlusion_query_set: Optional[WGPUQuerySetHandle]   # nullable
+    var timestamp_writes: Optional[UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin]]  # nullable
 
 
 @fieldwise_init
@@ -724,7 +724,7 @@ struct WGPUVertexBufferLayout:
 struct WGPUColorTargetState:
     var next_in_chain: WGPUChainedStructPtr
     var format: UInt32
-    var blend: UnsafePointer[WGPUBlendState, MutExternalOrigin]   # nullable
+    var blend: Optional[UnsafePointer[WGPUBlendState, MutExternalOrigin]]   # nullable
     var write_mask: UInt64   # WGPUColorWriteMask
 
 
@@ -754,12 +754,12 @@ struct WGPUFragmentState(TrivialRegisterPassable):
 struct WGPURenderPipelineDescriptor(TrivialRegisterPassable):
     var next_in_chain: WGPUChainedStructPtr
     var label: WGPUStringView
-    var layout: WGPUPipelineLayoutHandle   # nullable
+    var layout: Optional[WGPUPipelineLayoutHandle]   # nullable
     var vertex: WGPUVertexState
     var primitive: WGPUPrimitiveState
-    var depth_stencil: UnsafePointer[WGPUDepthStencilState, MutExternalOrigin]  # nullable
+    var depth_stencil: Optional[UnsafePointer[WGPUDepthStencilState, MutExternalOrigin]]  # nullable
     var multisample: WGPUMultisampleState
-    var fragment: UnsafePointer[WGPUFragmentState, MutExternalOrigin]   # nullable
+    var fragment: Optional[UnsafePointer[WGPUFragmentState, MutExternalOrigin]]   # nullable
 
 
 @fieldwise_init
@@ -822,7 +822,7 @@ def wgpu_limits_default() -> WGPULimits:
     var u32_max: UInt32 = WGPU_LIMIT_U32_UNDEFINED
     var u64_max: UInt64 = WGPU_LIMIT_U64_UNDEFINED
     return WGPULimits(
-        OpaquePtr(),    # next_in_chain
+        OpaquePtr(unsafe_from_address=0),    # next_in_chain
         u32_max,        # max_texture_dimension_1d
         u32_max,        # max_texture_dimension_2d
         u32_max,        # max_texture_dimension_3d

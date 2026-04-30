@@ -95,8 +95,8 @@ def test_stype_enum() raises:
 
 
 def test_opaque_ptr_null() raises:
-    var p = OpaquePtr()
-    assert_false(Bool(p))
+    var p: Optional[OpaquePtr] = None
+    assert_true(p == None)
 
 
 def main() raises:

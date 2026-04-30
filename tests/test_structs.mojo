@@ -19,20 +19,20 @@ from wgpu._ffi.structs import (
 def test_stringview_null() raises:
     var sv = WGPUStringView.null_view()
     assert_equal(sv.length, WGPU_STRLEN)
-    assert_false(Bool(sv.data))
+    assert_true(sv.data == UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0))
 
 
 def test_stringview_from_string() raises:
     var s = String("hello")
     var sv = str_to_sv(s)
     assert_equal(sv.length, UInt(5))
-    assert_true(Bool(sv.data))
+    assert_true(sv.data != UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0))
 
 
 def test_chained_struct() raises:
-    var cs = WGPUChainedStruct(OpaquePtr(), UInt32(1))
+    var cs = WGPUChainedStruct(OpaquePtr(unsafe_from_address=0), UInt32(1))
     assert_equal(cs.stype, UInt32(1))
-    assert_false(Bool(cs.next))
+    assert_true(cs.next == UnsafePointer[NoneType, MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_future() raises:

@@ -143,11 +143,11 @@ def test_sampled_texture_pipeline_creation() raises:
     var shader = device.create_shader_module_wgsl(TEXTURE_SAMPLE_WGSL, "test_sample_shader")
     var pipeline = device.create_render_pipeline(shader, "vs_main", "fs_main", WGPUTextureFormat.RGBA8Unorm, pl)
 
-    assert_true(Bool(view.handle().raw))
-    assert_true(Bool(sampler.handle().raw))
-    assert_true(Bool(bgl.handle().raw))
-    assert_true(Bool(bg.handle().raw))
-    assert_true(Bool(pipeline.handle().raw))
+    assert_true(view.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(sampler.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(bgl.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(bg.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(pipeline.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_offscreen_render_texture_readback() raises:
@@ -398,7 +398,7 @@ def test_texture_upload_copy_buffer_to_texture() raises:
     copy_dst.free()
     copy_size.free()
 
-    assert_true(Bool(texture.handle().raw))
+    assert_true(texture.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_texture_upload_readback() raises:
@@ -527,8 +527,8 @@ def test_texture_upload_readback() raises:
     device.queue_submit(copy_enc^.finish())
     _ = device.poll(True)
 
-    assert_true(Bool(storage_buffer.handle().raw))
-    assert_true(Bool(readback.handle().raw))
+    assert_true(storage_buffer.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(readback.handle().raw != OpaquePtr(unsafe_from_address=0))
 
     _ = staging^
     _ = storage_buffer^

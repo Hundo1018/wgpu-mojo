@@ -38,7 +38,7 @@ def test_glfw_input_integration() raises:
     var title_ptr = rebind[OpaquePtr](raw)
     var window = glfw.create_window(Int32(1), Int32(1), title_ptr)
     _ = title_bytes
-    assert_true(Bool(window))
+    assert_true(window != OpaquePtr(unsafe_from_address=0))
 
     # Exercise polling functions — should not crash
     var key_state = glfw.get_key(window, GLFW_KEY_A)

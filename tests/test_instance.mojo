@@ -33,14 +33,14 @@ def test_create_instance() raises:
     var lib = WGPULib()
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePtr(),
+        OpaquePtr(unsafe_from_address=0),
         UInt(0),
-        UnsafePointer[UInt32, MutExternalOrigin](),
-        UnsafePointer[NoneType, MutExternalOrigin](),
+        None,
+        None,
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
-    assert_true(Bool(inst))
+    assert_true(inst != OpaquePtr(unsafe_from_address=0))
     lib.instance_release(inst)
 
 
@@ -49,9 +49,9 @@ def test_enumerate_adapters() raises:
     var lib = WGPULib()
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePtr(), UInt(0),
-        UnsafePointer[UInt32, MutExternalOrigin](),
-        UnsafePointer[NoneType, MutExternalOrigin](),
+        OpaquePtr(unsafe_from_address=0), UInt(0),
+        None,
+        None,
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
@@ -60,7 +60,7 @@ def test_enumerate_adapters() raises:
     assert_true(count > UInt(0))
     var adapters = alloc[OpaquePtr](Int(count))
     _ = lib.enumerate_adapters(inst, OpaquePtr(), adapters)
-    assert_true(Bool(adapters[0]))
+    assert_true(adapters[0] != OpaquePtr(unsafe_from_address=0))
     adapters.free()
     lib.instance_release(inst)
 
@@ -78,7 +78,7 @@ def test_adapter_info_fields() raises:
     """AdapterInfo fields should be populated after get_info."""
     var gpu = GPU()
     var info = gpu.adapter_info()
-    assert_true(Bool(info.vendor.data))
+    assert_true(info.vendor.data != UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0))
 
 
 def test_get_version_via_instance() raises:

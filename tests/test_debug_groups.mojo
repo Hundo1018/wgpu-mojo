@@ -24,7 +24,7 @@ def test_command_encoder_debug_groups() raises:
     enc.pop_debug_group()
     enc.pop_debug_group()
     var cmd = enc^.finish()
-    assert_true(Bool(cmd))
+    assert_true(cmd.raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_compute_pass_debug_groups() raises:
@@ -38,7 +38,7 @@ def test_compute_pass_debug_groups() raises:
     cpass.pop_debug_group()
     cpass^.end()
     var cmd = enc^.finish()
-    assert_true(Bool(cmd))
+    assert_true(cmd.raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_render_pass_debug_groups() raises:
@@ -80,7 +80,7 @@ def test_render_pass_debug_groups() raises:
     color_att_p.free()
     rp_desc_p.free()
     var cmd = enc^.finish()
-    assert_true(Bool(cmd))
+    assert_true(cmd.raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_encoder_set_label() raises:

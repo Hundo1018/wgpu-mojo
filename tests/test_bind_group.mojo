@@ -53,7 +53,7 @@ def test_create_bind_group_layout() raises:
     )
     var bgl = device.create_bind_group_layout(desc)
     entries_p.free()
-    assert_true(Bool(bgl.handle().raw))
+    assert_true(bgl.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_create_bind_group_with_buffer() raises:
@@ -88,7 +88,7 @@ def test_create_bind_group_with_buffer() raises:
     )
     var bg = device.create_bind_group(bg_desc)
     bg_entries_p.free()
-    assert_true(Bool(bg.handle().raw))
+    assert_true(bg.handle().raw != OpaquePtr(unsafe_from_address=0))
 
     # Pin: raw handles from buf/bgl are embedded in FFI descriptors
     # passed to create_bind_group — ASAP could destroy them after .handle().raw

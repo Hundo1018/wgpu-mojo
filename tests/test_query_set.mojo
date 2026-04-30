@@ -13,7 +13,7 @@ def test_create_occlusion_query_set() raises:
     var gpu    = GPU()
     var device = gpu.request_device()
     var qs     = device.create_query_set(UInt32(1), UInt32(8), "occlusion_qs")  # Occlusion = 1
-    assert_true(Bool(qs.handle().raw))
+    assert_true(qs.handle().raw != OpaquePtr(unsafe_from_address=0))
     assert_equal(qs.get_count(), UInt32(8))
     assert_equal(qs.get_type(), UInt32(1))  # Occlusion
 

@@ -18,7 +18,7 @@ def test_create_storage_buffer() raises:
         False,
         "test_storage_buf",
     )
-    assert_true(Bool(buf.handle().raw))
+    assert_true(buf.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_create_staging_buffer_mapped() raises:
@@ -27,9 +27,9 @@ def test_create_staging_buffer_mapped() raises:
     var device = gpu.request_device()
     var usage  = WGPUBufferUsage.MAP_WRITE | WGPUBufferUsage.COPY_SRC
     var buf = device.create_buffer(UInt64(64), usage, True, "staging")
-    assert_true(Bool(buf.handle().raw))
+    assert_true(buf.handle().raw != OpaquePtr(unsafe_from_address=0))
     var ptr = device._lib[].buffer_get_mapped_range(buf.handle().raw, UInt(0), UInt(64))
-    assert_true(Bool(ptr))
+    assert_true(ptr != None)
     buf.unmap()
 
 

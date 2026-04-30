@@ -46,13 +46,13 @@ def test_create_render_pipeline() raises:
     var gpu    = GPU()
     var device = gpu.request_device()
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
-    assert_true(Bool(shader.handle().raw))
+    assert_true(shader.handle().raw != OpaquePtr(unsafe_from_address=0))
 
     var pl = device.create_pipeline_layout(List[OpaquePtr](), "render_pl")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main", TEX_FMT, pl,
     )
-    assert_true(Bool(pipeline.handle().raw))
+    assert_true(pipeline.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_headless_render_pass() raises:

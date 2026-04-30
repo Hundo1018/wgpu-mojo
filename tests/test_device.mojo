@@ -12,7 +12,7 @@ def test_request_device() raises:
     """Device creation should succeed."""
     var gpu    = GPU()
     var device = gpu.request_device()
-    assert_true(Bool(device.handle().raw))
+    assert_true(device.handle().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def test_device_get_limits() raises:
@@ -45,7 +45,7 @@ def test_queue_available() raises:
     """Queue should be non-null after device creation."""
     var gpu    = GPU()
     var device = gpu.request_device()
-    assert_true(Bool(device.queue().raw))
+    assert_true(device.queue().raw != OpaquePtr(unsafe_from_address=0))
 
 
 def main() raises:

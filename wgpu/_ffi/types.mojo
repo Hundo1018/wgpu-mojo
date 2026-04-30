@@ -9,6 +9,8 @@ from std.ffi import OwnedDLHandle
 # Opaque handle types (all wgpu objects are pointer-sized)
 # ---------------------------------------------------------------------------
 comptime OpaquePtr = UnsafePointer[NoneType, MutExternalOrigin]
+comptime OptionalOpaquePtr = Optional[OpaquePtr]
+comptime NullableUnsafePointer[T] = Optional[UnsafePointer[T, MutExternalOrigin]]
 
 comptime WGPUAdapterHandle = OpaquePtr
 comptime WGPUBindGroupHandle = OpaquePtr

@@ -9,7 +9,7 @@ struct AdapterHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> AdapterHandle:
-        return AdapterHandle(OpaquePtr())
+        return AdapterHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -18,7 +18,7 @@ struct DeviceHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> DeviceHandle:
-        return DeviceHandle(OpaquePtr())
+        return DeviceHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -27,7 +27,7 @@ struct QueueHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> QueueHandle:
-        return QueueHandle(OpaquePtr())
+        return QueueHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -36,7 +36,7 @@ struct BufferHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> BufferHandle:
-        return BufferHandle(OpaquePtr())
+        return BufferHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -45,7 +45,7 @@ struct TextureHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> TextureHandle:
-        return TextureHandle(OpaquePtr())
+        return TextureHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -54,7 +54,7 @@ struct TextureViewHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> TextureViewHandle:
-        return TextureViewHandle(OpaquePtr())
+        return TextureViewHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -63,7 +63,7 @@ struct SamplerHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> SamplerHandle:
-        return SamplerHandle(OpaquePtr())
+        return SamplerHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -72,7 +72,7 @@ struct ShaderModuleHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> ShaderModuleHandle:
-        return ShaderModuleHandle(OpaquePtr())
+        return ShaderModuleHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -81,7 +81,7 @@ struct BindGroupLayoutHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> BindGroupLayoutHandle:
-        return BindGroupLayoutHandle(OpaquePtr())
+        return BindGroupLayoutHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -90,7 +90,7 @@ struct BindGroupHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> BindGroupHandle:
-        return BindGroupHandle(OpaquePtr())
+        return BindGroupHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -99,7 +99,7 @@ struct PipelineLayoutHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> PipelineLayoutHandle:
-        return PipelineLayoutHandle(OpaquePtr())
+        return PipelineLayoutHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -108,7 +108,7 @@ struct ComputePipelineHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> ComputePipelineHandle:
-        return ComputePipelineHandle(OpaquePtr())
+        return ComputePipelineHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -117,7 +117,7 @@ struct RenderPipelineHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> RenderPipelineHandle:
-        return RenderPipelineHandle(OpaquePtr())
+        return RenderPipelineHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -126,7 +126,7 @@ struct CommandEncoderHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> CommandEncoderHandle:
-        return CommandEncoderHandle(OpaquePtr())
+        return CommandEncoderHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -135,7 +135,7 @@ struct CommandBufferHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> CommandBufferHandle:
-        return CommandBufferHandle(OpaquePtr())
+        return CommandBufferHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -144,7 +144,7 @@ struct QuerySetHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> QuerySetHandle:
-        return QuerySetHandle(OpaquePtr())
+        return QuerySetHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -153,7 +153,7 @@ struct SurfaceHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> SurfaceHandle:
-        return SurfaceHandle(OpaquePtr())
+        return SurfaceHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -162,7 +162,7 @@ struct InstanceHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> InstanceHandle:
-        return InstanceHandle(OpaquePtr())
+        return InstanceHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -171,7 +171,7 @@ struct ComputePassEncoderHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> ComputePassEncoderHandle:
-        return ComputePassEncoderHandle(OpaquePtr())
+        return ComputePassEncoderHandle(OpaquePtr(unsafe_from_address=0))
 
 
 @fieldwise_init
@@ -180,4 +180,4 @@ struct RenderPassEncoderHandle(TrivialRegisterPassable, Copyable):
 
     @staticmethod
     def null() -> RenderPassEncoderHandle:
-        return RenderPassEncoderHandle(OpaquePtr())
+        return RenderPassEncoderHandle(OpaquePtr(unsafe_from_address=0))
