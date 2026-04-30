@@ -79,19 +79,20 @@ def str_to_sv(ref s: String) -> WGPUStringView:
 
 
 # Callback function pointer aliases for FFI bridge compatibility.
+# These aliases use the platform C ABI so they match C callback conventions.
 comptime WGPUBufferMapCallback = def(
     WGPUMapAsyncStatus,
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPUCompilationInfoCallback = def(
     WGPUCompilationInfoRequestStatus,
     UnsafePointer[WGPUCompilationInfo, MutExternalOrigin],
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPUCreateComputePipelineAsyncCallback = def(
     WGPUCreatePipelineAsyncStatus,
@@ -99,7 +100,7 @@ comptime WGPUCreateComputePipelineAsyncCallback = def(
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPUCreateRenderPipelineAsyncCallback = def(
     WGPUCreatePipelineAsyncStatus,
@@ -107,7 +108,7 @@ comptime WGPUCreateRenderPipelineAsyncCallback = def(
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPUDeviceLostCallback = def(
     WGPUDeviceHandle,
@@ -115,7 +116,7 @@ comptime WGPUDeviceLostCallback = def(
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPUPopErrorScopeCallback = def(
     WGPUPopErrorScopeStatus,
@@ -123,14 +124,14 @@ comptime WGPUPopErrorScopeCallback = def(
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPUQueueWorkDoneCallback = def(
     WGPUQueueWorkDoneStatus,
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPURequestAdapterCallback = def(
     WGPURequestAdapterStatus,
@@ -138,7 +139,7 @@ comptime WGPURequestAdapterCallback = def(
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPURequestDeviceCallback = def(
     WGPURequestDeviceStatus,
@@ -146,7 +147,7 @@ comptime WGPURequestDeviceCallback = def(
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 comptime WGPUUncapturedErrorCallback = def(
     WGPUDeviceHandle,
@@ -154,7 +155,7 @@ comptime WGPUUncapturedErrorCallback = def(
     WGPUStringView,
     OpaquePtr,
     OpaquePtr,
-) -> None
+) abi("C") -> None
 
 
 # ---------------------------------------------------------------------------
@@ -833,7 +834,7 @@ struct WGPUFragmentState(TrivialRegisterPassable):
 
 
 @fieldwise_init
-struct WGPURenderPipelineDescriptor(TrivialRegisterPassable):
+struct WGPURenderPipelineDescriptor:
     var next_in_chain: WGPUChainedStructPtr
     var label: WGPUStringView
     var layout: WGPUPipelineLayoutHandle   # nullable
