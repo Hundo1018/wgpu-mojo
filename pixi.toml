@@ -39,7 +39,7 @@ mojo-compiler = ">=0.26.2.0"
 mojo-compiler = ">=0.26.2.0"
 
 [dependencies]
-mojo = ">=0.26.3.0.dev2026042305,<0.27"
+mojo = ">=1.0.0b1.dev2026043006,<2"
 glfw = ">=3.4,<4"
 
 [tasks]
