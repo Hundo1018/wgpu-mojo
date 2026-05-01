@@ -6,6 +6,7 @@ every webgpu.h + wgpu.h function as a method call.
 """
 
 from std.ffi import OwnedDLHandle
+from std.sys import CompilationTarget
 from wgpu._ffi.types import (
     OpaquePtr,
     WGPUAdapterHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
@@ -84,11 +85,49 @@ struct _PopErrorResult(TrivialRegisterPassable):
 
 
 # ---------------------------------------------------------------------------
-# Path constants — relative to cwd (typically project root)
+# Platform-aware library names and dev-tree fallback paths
 # ---------------------------------------------------------------------------
 
-comptime _WGPU_LIB_PATH  = "ffi/lib/libwgpu_native.so"
-comptime _CB_LIB_PATH    = "ffi/lib/libwgpu_mojo_cb.so"
+def _wgpu_lib_name() -> String:
+    """System library name (bare, for conda-installed package)."""
+    comptime if CompilationTarget.is_macos():
+        return "libwgpu_native.dylib"
+    elif CompilationTarget.is_linux():
+        return "libwgpu_native.so"
+    else:  # Windows
+        return "wgpu_native.dll"
+
+def _cb_lib_name() -> String:
+    """Callback bridge library name (bare, for conda-installed package)."""
+    comptime if CompilationTarget.is_macos():
+        return "libwgpu_mojo_cb.dylib"
+    elif CompilationTarget.is_linux():
+        return "libwgpu_mojo_cb.so"
+    else:  # Windows
+        return "wgpu_mojo_cb.dll"
+
+def _wgpu_dev_path() -> String:
+    """Dev-tree relative path (ffi/lib/, works when CWD is repo root)."""
+    comptime if CompilationTarget.is_macos():
+        return "ffi/lib/libwgpu_native.dylib"
+    elif CompilationTarget.is_linux():
+        return "ffi/lib/libwgpu_native.so"
+    else:  # Windows
+        return "ffi/lib/wgpu_native.dll"
+
+def _cb_dev_path() -> String:
+    """Dev-tree relative path for callback bridge."""
+    comptime if CompilationTarget.is_macos():
+        return "ffi/lib/libwgpu_mojo_cb.dylib"
+    elif CompilationTarget.is_linux():
+        return "ffi/lib/libwgpu_mojo_cb.so"
+    else:  # Windows
+        return "ffi/lib/wgpu_mojo_cb.dll"
+
+comptime _WGPU_LIB_NAME = _wgpu_lib_name()
+comptime _CB_LIB_NAME   = _cb_lib_name()
+comptime _WGPU_LIB_PATH = _wgpu_dev_path()
+comptime _CB_LIB_PATH   = _cb_dev_path()
 
 
 # ---------------------------------------------------------------------------
@@ -109,8 +148,17 @@ struct WGPULib(Movable):
     var _pop_error_cb_ptr: OpaquePtr
 
     def __init__(out self) raises:
-        self._wgpu = OwnedDLHandle(_WGPU_LIB_PATH)
-        self._cb   = OwnedDLHandle(_CB_LIB_PATH)
+        # Prefer bare library name so the conda-installed package finds
+        # the library via LD_LIBRARY_PATH / DYLD_LIBRARY_PATH / PATH.
+        # Fall back to the dev-tree relative path for `pixi run` from repo root.
+        try:
+            self._wgpu = OwnedDLHandle(_WGPU_LIB_NAME)
+        except:
+            self._wgpu = OwnedDLHandle(_WGPU_LIB_PATH)
+        try:
+            self._cb = OwnedDLHandle(_CB_LIB_NAME)
+        except:
+            self._cb = OwnedDLHandle(_CB_LIB_PATH)
         self._adapter_cb_ptr = self._cb.call["wgpu_mojo_get_adapter_callback", OpaquePtr]()
         self._device_cb_ptr  = self._cb.call["wgpu_mojo_get_device_callback",  OpaquePtr]()
         self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePtr]()

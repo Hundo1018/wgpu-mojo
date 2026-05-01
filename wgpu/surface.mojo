@@ -83,7 +83,7 @@ struct Surface(Movable):
         self._height = take._height
 
     def __del__(deinit self):
-        if Bool(self._handle):
+        if Int(self._handle) != 0:
             self._lib[].surface_unconfigure(self._handle)
         self._lib[].surface_release(self._handle)
 
@@ -199,7 +199,7 @@ def create_surface_wayland(
     var h = lib[].instance_create_surface(inst, desc_p)
     src_p.free()
     desc_p.free()
-    if not Bool(h):
+    if Int(h) == 0:
         raise Error("wgpuInstanceCreateSurface returned null (Wayland)")
     return Surface(lib, h)
 
@@ -224,6 +224,6 @@ def create_surface_xlib(
     var h = lib[].instance_create_surface(inst, desc_p)
     src_p.free()
     desc_p.free()
-    if not Bool(h):
+    if Int(h) == 0:
         raise Error("wgpuInstanceCreateSurface returned null (X11)")
     return Surface(lib, h)

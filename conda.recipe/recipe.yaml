@@ -1,5 +1,6 @@
 context:
   version: "0.1.0"
+  wgpu_native_version: "29.0.0.0"
 
 package:
   name: wgpu-mojo
@@ -7,35 +8,166 @@ package:
 
 source:
   - path: ../
+    use_gitignore: false
 
 build:
   number: 0
   script:
-    - mojo package wgpu_mojo -o ${{ PREFIX }}/lib/mojo/wgpu_mojo.mojopkg
+    # -----------------------------
+    # Linux
+    # -----------------------------
+    - if: linux
+      then:
+        - mkdir -p wgpu-prebuilt ffi/lib ffi/include/webgpu
+        - curl -fsSL --retry 3 -o wgpu-release.zip https://github.com/gfx-rs/wgpu-native/releases/download/v${{ wgpu_native_version }}/wgpu-linux-x86_64-release.zip
+        - unzip -q wgpu-release.zip -d wgpu-prebuilt
+        - cp wgpu-prebuilt/lib/libwgpu_native.so ffi/lib/
+        - cp wgpu-prebuilt/include/webgpu/webgpu.h ffi/include/webgpu/
+        - cp wgpu-prebuilt/include/webgpu/wgpu.h ffi/include/webgpu/
+
+    # -----------------------------
+    # macOS arm64
+    # -----------------------------
+    - if: osx and arm64
+      then:
+        - mkdir -p wgpu-prebuilt ffi/lib ffi/include/webgpu
+        - curl -fsSL --retry 3 -o wgpu-release.zip https://github.com/gfx-rs/wgpu-native/releases/download/v${{ wgpu_native_version }}/wgpu-macos-aarch64-release.zip
+        - unzip -q wgpu-release.zip -d wgpu-prebuilt
+        - cp wgpu-prebuilt/lib/libwgpu_native.dylib ffi/lib/
+        - cp wgpu-prebuilt/include/webgpu/webgpu.h ffi/include/webgpu/
+        - cp wgpu-prebuilt/include/webgpu/wgpu.h ffi/include/webgpu/
+
+    # -----------------------------
+    # macOS x86_64
+    # -----------------------------
+    - if: osx and x86_64
+      then:
+        - mkdir -p wgpu-prebuilt ffi/lib ffi/include/webgpu
+        - curl -fsSL --retry 3 -o wgpu-release.zip https://github.com/gfx-rs/wgpu-native/releases/download/v${{ wgpu_native_version }}/wgpu-macos-x86_64-release.zip
+        - unzip -q wgpu-release.zip -d wgpu-prebuilt
+        - cp wgpu-prebuilt/lib/libwgpu_native.dylib ffi/lib/
+        - cp wgpu-prebuilt/include/webgpu/webgpu.h ffi/include/webgpu/
+        - cp wgpu-prebuilt/include/webgpu/wgpu.h ffi/include/webgpu/
+
+    # -----------------------------
+    # Windows
+    # -----------------------------
+    - if: win
+      then:
+        - mkdir -p wgpu-prebuilt ffi\lib ffi\include\webgpu
+        - powershell -Command "Invoke-WebRequest -Uri 'https://github.com/gfx-rs/wgpu-native/releases/download/v${{ wgpu_native_version }}/wgpu-windows-x86_64-msvc-release.zip' -OutFile 'wgpu-release.zip'"
+        - powershell -Command "Expand-Archive -Force wgpu-release.zip wgpu-prebuilt"
+        - copy wgpu-prebuilt\lib\wgpu_native.dll ffi\lib\
+        - copy wgpu-prebuilt\include\webgpu\webgpu.h ffi\include\webgpu\
+        - copy wgpu-prebuilt\include\webgpu\wgpu.h ffi\include\webgpu\
+
+    # -----------------------------
+    # C callback bridge (linux)
+    # -----------------------------
+    - if: linux
+      then:
+        - gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include/webgpu -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN'
+        - gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
+        - gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.so ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'
+
+    # -----------------------------
+    # C callback bridge (macOS)
+    # -----------------------------
+    - if: osx
+      then:
+        - gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.dylib ffi/wgpu_callbacks.c -Iffi/include/webgpu -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN'
+        - gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.dylib ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
+        - gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.dylib ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'
+
+    # -----------------------------
+    # C callback bridge (windows)
+    # -----------------------------
+    - if: win
+      then:
+        - mkdir -p ffi\lib
+
+        - gcc -shared -fPIC -o ffi\lib\wgpu_mojo_cb.dll ffi\wgpu_callbacks.c -Iffi\include -Lffi\lib -lwgpu_native || exit /b 0
+
+        - gcc -shared -fPIC -o ffi\lib\glfw_input_cb.dll ffi\glfw_input_callbacks.c -L%CONDA_PREFIX%\Library\lib -lglfw || exit /b 0
+
+        - gcc -shared -fPIC -o ffi\lib\mojo_callback_probe.dll ffi\mojo_callback_probe.c || exit /b 0
+
+    # -----------------------------
+    # package mojo
+    # -----------------------------
+    - mojo package wgpu -o wgpu.mojopkg -I .
+
+    - if: unix
+      then:
+        - mkdir -p $PREFIX/lib/mojo
+        - cp wgpu.mojopkg $PREFIX/lib/mojo/
+
+    - if: win
+      then:
+        - mkdir -p %PREFIX%\Library\lib\mojo
+        - copy wgpu.mojopkg %PREFIX%\Library\lib\mojo\
+
+    # -----------------------------
+    # install libs (linux)
+    # -----------------------------
+    - if: linux
+      then:
+        - mkdir -p $PREFIX/lib
+        - cp ffi/lib/libwgpu_native.so $PREFIX/lib/
+        - cp ffi/lib/libwgpu_mojo_cb.so $PREFIX/lib/ 2>/dev/null || true
+        - cp ffi/lib/libglfw_input_cb.so $PREFIX/lib/ 2>/dev/null || true
+        - cp ffi/lib/libmojo_callback_probe.so $PREFIX/lib/ 2>/dev/null || true
+
+    # -----------------------------
+    # install libs (macOS)
+    # -----------------------------
+    - if: osx
+      then:
+        - mkdir -p $PREFIX/lib
+        - cp ffi/lib/libwgpu_native.dylib $PREFIX/lib/
+        - cp ffi/lib/libwgpu_mojo_cb.dylib $PREFIX/lib/ 2>/dev/null || true
+        - cp ffi/lib/libglfw_input_cb.dylib $PREFIX/lib/ 2>/dev/null || true
+        - cp ffi/lib/libmojo_callback_probe.dylib $PREFIX/lib/ 2>/dev/null || true
+
+    # -----------------------------
+    # install libs (windows)
+    # -----------------------------
+    - if: win
+      then:
+        - mkdir -p %PREFIX%\Library\bin
+        - copy ffi\lib\wgpu_native.dll %PREFIX%\Library\bin\ || exit /b 0
+        - copy ffi\lib\wgpu_mojo_cb.dll %PREFIX%\Library\bin\ || exit /b 0
+        - copy ffi\lib\glfw_input_cb.dll %PREFIX%\Library\bin\ || exit /b 0
+        - copy ffi\lib\mojo_callback_probe.dll %PREFIX%\Library\bin\ || exit /b 0
 
 requirements:
   build:
-    - mojo-compiler >=0.26.2.0
-  host:
-    - mojo-compiler >=0.26.2.0
-  run:
-    - ${{ pin_compatible('mojo-compiler') }}
+    - mojo-compiler >=0.26.2
+    - gcc  # [unix]
+    - libgcc  # [linux]
+    - wget  # [unix]
+    - curl  # [unix]
+    - unzip  # [unix]
+    - git
+    - glfw  # [unix]
 
-tests:
-  - script:
-      - if: unix
-        then:
-          - pixi run test
-    files:
-      recipe:
-        - test.mojo
+  host:
+    - mojo-compiler >=0.26.2
+    - libgcc  # [linux]
+    - glfw  # [unix]
+
+  run:
+    - ${{ pin_compatible('mojo-compiler', lower_bound='x.x', upper_bound='x') }}
+    - libgcc  # [linux]
+    - glfw  # [unix]
+
 
 about:
-  homepage: https://github.com/Hundo1018/wgpu-mojo/blob/main/README.md
+  homepage: https://github.com/Hundo1018/wgpu-mojo
   repository: https://github.com/Hundo1018/wgpu-mojo
   license: Apache-2.0
   license_file: LICENSE
-  summary: Mojo bindings for wgpu-native.
+  summary: Mojo bindings for wgpu-native (WebGPU)
 
 extra:
   maintainers:

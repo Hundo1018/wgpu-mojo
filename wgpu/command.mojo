@@ -62,7 +62,7 @@ struct CommandBuffer(Movable, Boolable):
         return self._handle
 
     def __bool__(self) -> Bool:
-        return Bool(self._handle)
+        return Int(self._handle) != 0
 
 
 @explicit_destroy("Must call finish() or abandon()")

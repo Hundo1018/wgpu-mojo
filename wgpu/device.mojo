@@ -336,10 +336,10 @@ struct Device(Movable):
 
     def create_render_pipeline(
         self,
-        desc: WGPURenderPipelineDescriptor,
+        var desc: WGPURenderPipelineDescriptor,
     ) raises -> RenderPipeline:
         var desc_p = alloc[WGPURenderPipelineDescriptor](1)
-        desc_p[] = desc
+        desc_p[] = desc^
         var result = self._lib[].device_create_render_pipeline(self._handle, desc_p)
         desc_p.free()
         return RenderPipeline(self._lib, result)
@@ -402,7 +402,7 @@ struct Device(Movable):
             UnsafePointer[WGPUDepthStencilState, MutExternalOrigin](),
             multisample, fragment_p,
         )
-        var result = self.create_render_pipeline(desc)
+        var result = self.create_render_pipeline(desc^)
         target_p.free()
         fragment_p.free()
         return result^
