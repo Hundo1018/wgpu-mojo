@@ -18,7 +18,6 @@ repository = "https://github.com/Hundo1018/wgpu-mojo"
 
 [package.build]
 backend = { name = "pixi-build-mojo",version = "0.1.*" }
-source.path = "."
 
 
 [package.build.config.pkg]
