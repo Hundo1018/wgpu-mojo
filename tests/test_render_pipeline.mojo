@@ -6,7 +6,7 @@ Requires GPU hardware.
 from std.testing import assert_true, assert_equal
 from wgpu.gpu import GPU
 from wgpu._ffi.types import (
-    OpaquePtr, WGPUTextureUsage, WGPUTextureFormat,
+    WGPUTextureUsage, WGPUTextureFormat,
     WGPUBufferUsage,
 )
 from wgpu._ffi.structs import (
@@ -46,13 +46,13 @@ def test_create_render_pipeline() raises:
     var gpu    = GPU()
     var device = gpu.request_device()
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
-    assert_true(shader.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(shader.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
-    var pl = device.create_pipeline_layout(List[OpaquePtr](), "render_pl")
+    var pl = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "render_pl")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main", TEX_FMT, pl,
     )
-    assert_true(pipeline.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(pipeline.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_headless_render_pass() raises:
@@ -62,7 +62,7 @@ def test_headless_render_pass() raises:
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
 
     # Build render pipeline
-    var pl = device.create_pipeline_layout(List[OpaquePtr](), "render_pl")
+    var pl = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "render_pl")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main", TEX_FMT, pl,
     )
@@ -86,10 +86,10 @@ def test_headless_render_pass() raises:
 
     var color_att_p = alloc[WGPURenderPassColorAttachment](1)
     color_att_p[0] = WGPURenderPassColorAttachment(
-        OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         view.handle().raw,
         UInt32(0xFFFFFFFF),  # depth_slice (WGPU_DEPTH_SLICE_UNDEFINED for 2D)
-        OpaquePtr(),    # no resolve target
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),    # no resolve target
         UInt32(1),      # LoadOp.Clear
         UInt32(1),      # StoreOp.Store
         WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
@@ -97,12 +97,12 @@ def test_headless_render_pass() raises:
 
     var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
     rp_desc_p[0] = WGPURenderPassDescriptor(
-        OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         WGPUStringView.null_view(),
         UInt(1),
         color_att_p,
         UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin](),
-        OpaquePtr(),    # no occlusion query
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),    # no occlusion query
         UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](),
     )
 

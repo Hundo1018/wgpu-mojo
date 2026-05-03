@@ -7,7 +7,7 @@ from std.testing import assert_true
 from std.memory import alloc
 from wgpu.gpu import GPU
 from wgpu._ffi.types import (
-    OpaquePtr, WGPUTextureUsage, WGPUTextureFormat, WGPUBufferUsage,
+    WGPUTextureUsage, WGPUTextureFormat, WGPUBufferUsage,
     WGPUShaderStage, WGPUSamplerBindingType, WGPUTextureSampleType,
     WGPUTextureViewDimension, WGPUTextureAspect, WGPUBufferBindingType,
     WGPU_WHOLE_SIZE,
@@ -103,35 +103,35 @@ def test_sampled_texture_pipeline_creation() raises:
 
     var entries_p = alloc[WGPUBindGroupLayoutEntry](2)
     entries_p[0] = WGPUBindGroupLayoutEntry(
-        OpaquePtr(), UInt32(0), WGPUShaderStage.FRAGMENT.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePtr(), WGPUTextureSampleType.Float, WGPUTextureViewDimension.D2, UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), WGPUShaderStage.FRAGMENT.value, UInt32(0),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUTextureSampleType.Float, WGPUTextureViewDimension.D2, UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
     entries_p[1] = WGPUBindGroupLayoutEntry(
-        OpaquePtr(), UInt32(1), WGPUShaderStage.FRAGMENT.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), WGPUSamplerBindingType.Filtering),
-        WGPUTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), WGPUShaderStage.FRAGMENT.value, UInt32(0),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUSamplerBindingType.Filtering),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
 
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(2), entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(2), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
 
     var bg_entries_p = alloc[WGPUBindGroupEntry](2)
     bg_entries_p[0] = WGPUBindGroupEntry(
-        OpaquePtr(), UInt32(0), OpaquePtr(), UInt64(0), UInt64(0), OpaquePtr(), view.handle().raw
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), view.handle().raw
     )
     bg_entries_p[1] = WGPUBindGroupEntry(
-        OpaquePtr(), UInt32(1), OpaquePtr(), UInt64(0), UInt64(0), sampler.handle().raw, OpaquePtr()
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), sampler.handle().raw, OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
     )
     var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), bgl.handle().raw, UInt(2), bg_entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(2), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
     bg_entries_p.free()
@@ -143,11 +143,11 @@ def test_sampled_texture_pipeline_creation() raises:
     var shader = device.create_shader_module_wgsl(TEXTURE_SAMPLE_WGSL, "test_sample_shader")
     var pipeline = device.create_render_pipeline(shader, "vs_main", "fs_main", WGPUTextureFormat.RGBA8Unorm, pl)
 
-    assert_true(view.handle().raw != OpaquePtr(unsafe_from_address=0))
-    assert_true(sampler.handle().raw != OpaquePtr(unsafe_from_address=0))
-    assert_true(bgl.handle().raw != OpaquePtr(unsafe_from_address=0))
-    assert_true(bg.handle().raw != OpaquePtr(unsafe_from_address=0))
-    assert_true(pipeline.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(view.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(sampler.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(bgl.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(bg.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(pipeline.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_offscreen_render_texture_readback() raises:
@@ -398,7 +398,7 @@ def test_texture_upload_copy_buffer_to_texture() raises:
     copy_dst.free()
     copy_size.free()
 
-    assert_true(texture.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(texture.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_texture_upload_readback() raises:
@@ -468,22 +468,22 @@ def test_texture_upload_readback() raises:
 
     var entries_p = alloc[WGPUBindGroupLayoutEntry](2)
     entries_p[0] = WGPUBindGroupLayoutEntry(
-        OpaquePtr(), UInt32(0), WGPUShaderStage.COMPUTE.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePtr(), WGPUTextureSampleType.UnfilterableFloat, WGPUTextureViewDimension.D2, UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), WGPUShaderStage.COMPUTE.value, UInt32(0),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUTextureSampleType.UnfilterableFloat, WGPUTextureViewDimension.D2, UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
     entries_p[1] = WGPUBindGroupLayoutEntry(
-        OpaquePtr(), UInt32(1), WGPUShaderStage.COMPUTE.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), WGPUBufferBindingType.Storage, UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), WGPUShaderStage.COMPUTE.value, UInt32(0),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUBufferBindingType.Storage, UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
 
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(2), entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(2), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
@@ -494,13 +494,13 @@ def test_texture_upload_readback() raises:
     var tex_view = texture.create_view_default()
     var bg_entries_p = alloc[WGPUBindGroupEntry](2)
     bg_entries_p[0] = WGPUBindGroupEntry(
-        OpaquePtr(), UInt32(0), OpaquePtr(), UInt64(0), UInt64(0), OpaquePtr(), tex_view.handle().raw
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), tex_view.handle().raw
     )
     bg_entries_p[1] = WGPUBindGroupEntry(
-        OpaquePtr(), UInt32(1), storage_buffer.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr()
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), storage_buffer.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
     )
     var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), bgl.handle().raw, UInt(2), bg_entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(2), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
     bg_entries_p.free()
@@ -527,8 +527,8 @@ def test_texture_upload_readback() raises:
     device.queue_submit(copy_enc^.finish())
     _ = device.poll(True)
 
-    assert_true(storage_buffer.handle().raw != OpaquePtr(unsafe_from_address=0))
-    assert_true(readback.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(storage_buffer.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(readback.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
     _ = staging^
     _ = storage_buffer^

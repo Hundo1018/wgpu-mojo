@@ -5,7 +5,6 @@ wgpu.compute_pass — ComputePassEncoder RAII wrapper.
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUComputePassEncoderHandle, WGPUComputePipelineHandle,
     WGPUBindGroupHandle, WGPUBufferHandle, WGPUQuerySetHandle,
 )
@@ -45,13 +44,13 @@ struct ComputePassEncoder(Movable):
 
     def set_bind_group(self, index: UInt32, bind_group: WGPUBindGroupHandle):
         self._lib[].compute_pass_set_bind_group(
-            self._handle, index, bind_group, OpaquePtr(), UInt(0)
+            self._handle, index, bind_group, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt(0)
         )
 
     def set_bind_group(self, index: UInt32, bind_group: BindGroup):
         """Wrapper-first overload — accepts RAII BindGroup directly."""
         self._lib[].compute_pass_set_bind_group(
-            self._handle, index, bind_group.handle().raw, OpaquePtr(), UInt(0)
+            self._handle, index, bind_group.handle().raw, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt(0)
         )
 
     def set_bind_group_with_offsets(
@@ -60,7 +59,7 @@ struct ComputePassEncoder(Movable):
         bind_group: WGPUBindGroupHandle,
         offsets: List[UInt32],
     ):
-        var ptr = OpaquePtr(unsafe_from_address=Int(offsets.unsafe_ptr()))
+        var ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(offsets.unsafe_ptr()))
         self._lib[].compute_pass_set_bind_group(
             self._handle, index, bind_group, ptr, UInt(len(offsets))
         )
@@ -72,7 +71,7 @@ struct ComputePassEncoder(Movable):
         offsets: List[UInt32],
     ):
         """Wrapper-first overload — accepts RAII BindGroup directly."""
-        var ptr = OpaquePtr(unsafe_from_address=Int(offsets.unsafe_ptr()))
+        var ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(offsets.unsafe_ptr()))
         self._lib[].compute_pass_set_bind_group(
             self._handle, index, bind_group.handle().raw, ptr, UInt(len(offsets))
         )
@@ -134,7 +133,7 @@ struct ComputePassEncoder(Movable):
     # wgpu-native extensions
     # ------------------------------------------------------------------
 
-    def set_push_constants(self, offset: UInt32, size_bytes: UInt32, data: OpaquePtr):
+    def set_push_constants(self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutExternalOrigin]):
         self._lib[].compute_pass_set_push_constants(self._handle, offset, size_bytes, data)
 
     def begin_pipeline_statistics_query(self, query_set: WGPUQuerySetHandle, query_index: UInt32):

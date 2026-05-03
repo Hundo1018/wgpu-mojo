@@ -41,7 +41,6 @@ from wgpu._ffi.handles import (
 
 # Low-level types (for users who need raw descriptors)
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUAdapterType, WGPUAddressMode, WGPUBackendType,
     WGPUBlendFactor, WGPUBlendOperation, WGPUBufferBindingType,
     WGPUCallbackMode, WGPUCompareFunction, WGPUCullMode,

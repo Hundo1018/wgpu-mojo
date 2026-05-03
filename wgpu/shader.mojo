@@ -4,7 +4,7 @@ wgpu.shader — ShaderModule RAII wrapper.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import OpaquePtr, WGPUDeviceHandle, WGPUShaderModuleHandle
+from wgpu._ffi.types import WGPUDeviceHandle, WGPUShaderModuleHandle
 from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import ShaderModuleHandle
 

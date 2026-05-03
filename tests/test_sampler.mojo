@@ -12,7 +12,7 @@ def test_create_default_sampler() raises:
     var gpu    = GPU()
     var device = gpu.request_device()
     var sampler = device.create_sampler(label="default_sampler")
-    assert_true(sampler.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(sampler.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_create_linear_sampler() raises:
@@ -28,7 +28,7 @@ def test_create_linear_sampler() raises:
         mipmap_filter=UInt32(1),
         label="linear_sampler",
     )
-    assert_true(sampler.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(sampler.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_create_anisotropic_sampler() raises:
@@ -42,7 +42,7 @@ def test_create_anisotropic_sampler() raises:
         max_anisotropy=UInt16(16),
         label="aniso_sampler",
     )
-    assert_true(sampler.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(sampler.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def main() raises:

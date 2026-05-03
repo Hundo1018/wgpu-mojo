@@ -4,7 +4,7 @@ All structs match the C ABI layout exactly (field order, types).
 """
 
 from wgpu._ffi.types import (
-    OpaquePtr, WGPUBool, WGPUFlags,
+    WGPUBool, WGPUFlags,
     WGPUAdapterHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
     WGPUBufferHandle, WGPUCommandBufferHandle, WGPUCommandEncoderHandle,
     WGPUComputePassEncoderHandle, WGPUComputePipelineHandle, WGPUDeviceHandle,
@@ -19,12 +19,6 @@ from wgpu._ffi.types import (
     WGPUDeviceLostReason, WGPUErrorType, WGPUPopErrorScopeStatus,
     WGPUQueueWorkDoneStatus, WGPURequestAdapterStatus, WGPURequestDeviceStatus,
 )
-
-# Convenience alias — used in many places for void* userdata and chained structs
-comptime VoidPtr = OpaquePtr
-
-# Self-referencing chain pointer (opaque to avoid recursive struct issue)
-comptime WGPUChainedStructPtr = OpaquePtr
 
 # ---------------------------------------------------------------------------
 # WGPUStringView — equivalent to { const char* data; size_t length; }
@@ -83,78 +77,58 @@ def str_to_sv(ref s: String) -> WGPUStringView:
 comptime WGPUBufferMapCallback = def(
     WGPUMapAsyncStatus,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPUCompilationInfoCallback = def(
     WGPUCompilationInfoRequestStatus,
     UnsafePointer[WGPUCompilationInfo, MutExternalOrigin],
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPUCreateComputePipelineAsyncCallback = def(
     WGPUCreatePipelineAsyncStatus,
     WGPUComputePipelineHandle,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPUCreateRenderPipelineAsyncCallback = def(
     WGPUCreatePipelineAsyncStatus,
     WGPURenderPipelineHandle,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPUDeviceLostCallback = def(
     WGPUDeviceHandle,
     WGPUDeviceLostReason,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPUPopErrorScopeCallback = def(
     WGPUPopErrorScopeStatus,
     WGPUErrorType,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPUQueueWorkDoneCallback = def(
     WGPUQueueWorkDoneStatus,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPURequestAdapterCallback = def(
     WGPURequestAdapterStatus,
     WGPUAdapterHandle,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPURequestDeviceCallback = def(
     WGPURequestDeviceStatus,
     WGPUDeviceHandle,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 comptime WGPUUncapturedErrorCallback = def(
     WGPUDeviceHandle,
     WGPUErrorType,
     WGPUStringView,
-    OpaquePtr,
-    OpaquePtr,
 ) -> None
 
 
@@ -164,7 +138,7 @@ comptime WGPUUncapturedErrorCallback = def(
 
 @fieldwise_init
 struct WGPUChainedStruct(TrivialRegisterPassable):
-    var next: WGPUChainedStructPtr   # actually WGPUChainedStruct*
+    var next: OpaquePointer[MutExternalOrigin]   # actually WGPUChainedStruct*
     var stype: UInt32
 
 
@@ -183,91 +157,91 @@ struct WGPUFuture(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBufferMapCallbackInfo:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr   # WGPUBufferMapCallback fn ptr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]   # WGPUBufferMapCallback fn ptr
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUCompilationInfoCallbackInfo:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr   # WGPUCompilationInfoCallback fn ptr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]   # WGPUCompilationInfoCallback fn ptr
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUCreateComputePipelineAsyncCallbackInfo:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUCreateRenderPipelineAsyncCallbackInfo:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUDeviceLostCallbackInfo(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr   # WGPUDeviceLostCallback fn ptr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]   # WGPUDeviceLostCallback fn ptr
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUPopErrorScopeCallbackInfo(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUQueueWorkDoneCallbackInfo(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr   # WGPUQueueWorkDoneCallback fn ptr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]   # WGPUQueueWorkDoneCallback fn ptr
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPURequestAdapterCallbackInfo(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr   # WGPURequestAdapterCallback fn ptr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]   # WGPURequestAdapterCallback fn ptr
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPURequestDeviceCallbackInfo(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var mode: UInt32
-    var callback: VoidPtr   # WGPURequestDeviceCallback fn ptr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var callback: OpaquePointer[MutExternalOrigin]   # WGPURequestDeviceCallback fn ptr
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUUncapturedErrorCallbackInfo(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
-    var callback: VoidPtr   # WGPUUncapturedErrorCallback fn ptr
-    var userdata1: VoidPtr
-    var userdata2: VoidPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
+    var callback: OpaquePointer[MutExternalOrigin]   # WGPUUncapturedErrorCallback fn ptr
+    var userdata1: OpaquePointer[MutExternalOrigin]
+    var userdata2: OpaquePointer[MutExternalOrigin]
 
 
 # ---------------------------------------------------------------------------
@@ -276,7 +250,7 @@ struct WGPUUncapturedErrorCallbackInfo(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUAdapterInfo(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var vendor: WGPUStringView
     var architecture: WGPUStringView
     var device: WGPUStringView
@@ -332,7 +306,7 @@ struct WGPUFutureWaitInfo:
 
 @fieldwise_init
 struct WGPULimits(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var max_texture_dimension_1d: UInt32
     var max_texture_dimension_2d: UInt32
     var max_texture_dimension_3d: UInt32
@@ -369,7 +343,7 @@ struct WGPULimits(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBufferBindingLayout(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var type: UInt32
     var has_dynamic_offset: UInt32   # WGPUBool
     var min_binding_size: UInt64
@@ -377,13 +351,13 @@ struct WGPUBufferBindingLayout(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUSamplerBindingLayout(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var type: UInt32
 
 
 @fieldwise_init
 struct WGPUTextureBindingLayout(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var sample_type: UInt32
     var view_dimension: UInt32
     var multisampled: UInt32   # WGPUBool
@@ -391,7 +365,7 @@ struct WGPUTextureBindingLayout(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUStorageTextureBindingLayout(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var access: UInt32
     var format: UInt32
     var view_dimension: UInt32
@@ -399,7 +373,7 @@ struct WGPUStorageTextureBindingLayout(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBindGroupLayoutEntry(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var binding: UInt32
     var visibility: UInt64   # WGPUShaderStage flags
     var binding_array_size: UInt32
@@ -411,7 +385,7 @@ struct WGPUBindGroupLayoutEntry(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBindGroupLayoutDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var entry_count: UInt
     var entries: UnsafePointer[WGPUBindGroupLayoutEntry, MutExternalOrigin]
@@ -419,7 +393,7 @@ struct WGPUBindGroupLayoutDescriptor(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBindGroupEntry(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var binding: UInt32
     var buffer: WGPUBufferHandle
     var offset: UInt64
@@ -430,7 +404,7 @@ struct WGPUBindGroupEntry(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBindGroupDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var layout: WGPUBindGroupLayoutHandle
     var entry_count: UInt
@@ -439,7 +413,7 @@ struct WGPUBindGroupDescriptor(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBufferDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var usage: UInt64   # WGPUBufferUsage flags
     var size: UInt64
@@ -448,19 +422,19 @@ struct WGPUBufferDescriptor(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUCommandBufferDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
 
 
 @fieldwise_init
 struct WGPUCommandEncoderDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
 
 
 @fieldwise_init
 struct WGPUCompilationMessage:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var message: WGPUStringView
     var type: UInt32
     var line_num: UInt64
@@ -471,28 +445,28 @@ struct WGPUCompilationMessage:
 
 @fieldwise_init
 struct WGPUCompilationInfo:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var message_count: UInt
     var messages: UnsafePointer[WGPUCompilationMessage, MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUConstantEntry(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var key: WGPUStringView
     var value: Float64
 
 
 @fieldwise_init
 struct WGPUComputePassDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var timestamp_writes: UnsafePointer[NoneType, MutExternalOrigin]  # optional
 
 
 @fieldwise_init
 struct WGPUComputeState(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var module: WGPUShaderModuleHandle
     var entry_point: WGPUStringView
     var constant_count: UInt
@@ -501,7 +475,7 @@ struct WGPUComputeState(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUComputePipelineDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var layout: WGPUPipelineLayoutHandle   # nullable
     var compute: WGPUComputeState
@@ -509,13 +483,13 @@ struct WGPUComputePipelineDescriptor(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUQueueDescriptor(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
 
 
 @fieldwise_init
 struct WGPUDeviceDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var required_feature_count: UInt
     var required_features: Optional[UnsafePointer[UInt32, MutExternalOrigin]]
@@ -527,7 +501,7 @@ struct WGPUDeviceDescriptor:
 
 @fieldwise_init
 struct WGPUInstanceDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var required_feature_count: UInt
     var required_features: Optional[UnsafePointer[UInt32, MutExternalOrigin]]
     var required_limits: Optional[UnsafePointer[NoneType, MutExternalOrigin]]  # nullable WGPUInstanceLimits*
@@ -535,7 +509,7 @@ struct WGPUInstanceDescriptor:
 
 @fieldwise_init
 struct WGPUMultisampleState(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var count: UInt32
     var mask: UInt32
     var alpha_to_coverage_enabled: UInt32   # WGPUBool
@@ -543,7 +517,7 @@ struct WGPUMultisampleState(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUPassTimestampWrites(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var query_set: WGPUQuerySetHandle
     var beginning_of_pass_write_index: UInt32
     var end_of_pass_write_index: UInt32
@@ -551,7 +525,7 @@ struct WGPUPassTimestampWrites(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUPipelineLayoutDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var bind_group_layout_count: UInt
     var bind_group_layouts: UnsafePointer[WGPUBindGroupLayoutHandle, MutExternalOrigin]
@@ -560,7 +534,7 @@ struct WGPUPipelineLayoutDescriptor:
 
 @fieldwise_init
 struct WGPUPrimitiveState(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var topology: UInt32
     var strip_index_format: UInt32
     var front_face: UInt32
@@ -570,7 +544,7 @@ struct WGPUPrimitiveState(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUQuerySetDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var type: UInt32
     var count: UInt32
@@ -578,7 +552,7 @@ struct WGPUQuerySetDescriptor:
 
 @fieldwise_init
 struct WGPURequestAdapterOptions:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var feature_level: UInt32
     var power_preference: UInt32
     var force_fallback_adapter: UInt32   # WGPUBool
@@ -588,7 +562,7 @@ struct WGPURequestAdapterOptions:
 
 @fieldwise_init
 struct WGPURenderPassColorAttachment:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var view: WGPUTextureViewHandle   # nullable
     var depth_slice: UInt32
     var resolve_target: WGPUTextureViewHandle   # nullable
@@ -599,7 +573,7 @@ struct WGPURenderPassColorAttachment:
 
 @fieldwise_init
 struct WGPURenderPassDepthStencilAttachment:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var view: WGPUTextureViewHandle
     var depth_load_op: UInt32
     var depth_store_op: UInt32
@@ -613,7 +587,7 @@ struct WGPURenderPassDepthStencilAttachment:
 
 @fieldwise_init
 struct WGPURenderPassDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var color_attachment_count: UInt
     var color_attachments: UnsafePointer[WGPURenderPassColorAttachment, MutExternalOrigin]
@@ -624,13 +598,13 @@ struct WGPURenderPassDescriptor:
 
 @fieldwise_init
 struct WGPURenderBundleDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
 
 
 @fieldwise_init
 struct WGPURenderBundleEncoderDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var color_format_count: UInt
     var color_formats: UnsafePointer[UInt32, MutExternalOrigin]
@@ -642,7 +616,7 @@ struct WGPURenderBundleEncoderDescriptor:
 
 @fieldwise_init
 struct WGPUSamplerDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var address_mode_u: UInt32
     var address_mode_v: UInt32
@@ -658,7 +632,7 @@ struct WGPUSamplerDescriptor:
 
 @fieldwise_init
 struct WGPUShaderModuleDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
 
 
@@ -685,7 +659,7 @@ struct WGPUStencilFaceState(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUDepthStencilState:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var format: UInt32
     var depth_write_enabled: UInt32   # WGPUOptionalBool
     var depth_compare: UInt32
@@ -700,13 +674,13 @@ struct WGPUDepthStencilState:
 
 @fieldwise_init
 struct WGPUSurfaceDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
 
 
 @fieldwise_init
 struct WGPUSurfaceCapabilities:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var usages: UInt64   # WGPUTextureUsage
     var format_count: UInt
     var formats: UnsafePointer[UInt32, MutExternalOrigin]
@@ -718,7 +692,7 @@ struct WGPUSurfaceCapabilities:
 
 @fieldwise_init
 struct WGPUSurfaceConfiguration:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var device: WGPUDeviceHandle
     var format: UInt32
     var usage: UInt64   # WGPUTextureUsage
@@ -732,7 +706,7 @@ struct WGPUSurfaceConfiguration:
 
 @fieldwise_init
 struct WGPUSurfaceTexture:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var texture: WGPUTextureHandle
     var status: UInt32
 
@@ -760,7 +734,7 @@ struct WGPUTexelCopyTextureInfo:
 
 @fieldwise_init
 struct WGPUTextureDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var usage: UInt64   # WGPUTextureUsage
     var dimension: UInt32
@@ -774,7 +748,7 @@ struct WGPUTextureDescriptor:
 
 @fieldwise_init
 struct WGPUTextureViewDescriptor:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var format: UInt32
     var dimension: UInt32
@@ -788,7 +762,7 @@ struct WGPUTextureViewDescriptor:
 
 @fieldwise_init
 struct WGPUVertexAttribute:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var format: UInt32
     var offset: UInt64
     var shader_location: UInt32
@@ -796,7 +770,7 @@ struct WGPUVertexAttribute:
 
 @fieldwise_init
 struct WGPUVertexBufferLayout:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var step_mode: UInt32
     var array_stride: UInt64
     var attribute_count: UInt
@@ -805,7 +779,7 @@ struct WGPUVertexBufferLayout:
 
 @fieldwise_init
 struct WGPUColorTargetState:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var format: UInt32
     var blend: Optional[UnsafePointer[WGPUBlendState, MutExternalOrigin]]   # nullable
     var write_mask: UInt64   # WGPUColorWriteMask
@@ -813,7 +787,7 @@ struct WGPUColorTargetState:
 
 @fieldwise_init
 struct WGPUVertexState(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var module: WGPUShaderModuleHandle
     var entry_point: WGPUStringView
     var constant_count: UInt
@@ -824,7 +798,7 @@ struct WGPUVertexState(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUFragmentState(TrivialRegisterPassable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var module: WGPUShaderModuleHandle
     var entry_point: WGPUStringView
     var constant_count: UInt
@@ -835,7 +809,7 @@ struct WGPUFragmentState(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPURenderPipelineDescriptor(Movable):
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var label: WGPUStringView
     var layout: WGPUPipelineLayoutHandle   # nullable
     var vertex: WGPUVertexState
@@ -853,14 +827,14 @@ struct WGPUSupportedFeatures:
 
 @fieldwise_init
 struct WGPUSupportedInstanceFeatures:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
     var feature_name_count: UInt
     var feature_names: UnsafePointer[UInt32, MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUInstanceLimits:
-    var next_in_chain: WGPUChainedStructPtr
+    var next_in_chain: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
@@ -876,21 +850,21 @@ struct WGPUSupportedWGSLLanguageFeatures:
 @fieldwise_init
 struct WGPUSurfaceSourceWaylandSurface(TrivialRegisterPassable):
     var chain: WGPUChainedStruct
-    var display: VoidPtr
-    var surface: VoidPtr
+    var display: OpaquePointer[MutExternalOrigin]
+    var surface: OpaquePointer[MutExternalOrigin]
 
 
 @fieldwise_init
 struct WGPUSurfaceSourceXlibWindow(TrivialRegisterPassable):
     var chain: WGPUChainedStruct
-    var display: VoidPtr
+    var display: OpaquePointer[MutExternalOrigin]
     var window: UInt64
 
 
 @fieldwise_init
 struct WGPUSurfaceSourceXCBWindow(TrivialRegisterPassable):
     var chain: WGPUChainedStruct
-    var connection: VoidPtr
+    var connection: OpaquePointer[MutExternalOrigin]
     var window: UInt32
 
 
@@ -905,7 +879,7 @@ def wgpu_limits_default() -> WGPULimits:
     var u32_max: UInt32 = WGPU_LIMIT_U32_UNDEFINED
     var u64_max: UInt64 = WGPU_LIMIT_U64_UNDEFINED
     return WGPULimits(
-        OpaquePtr(unsafe_from_address=0),    # next_in_chain
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),    # next_in_chain
         u32_max,        # max_texture_dimension_1d
         u32_max,        # max_texture_dimension_2d
         u32_max,        # max_texture_dimension_3d

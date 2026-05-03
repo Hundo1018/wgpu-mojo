@@ -5,7 +5,7 @@ Requires GPU hardware.
 
 from std.testing import assert_true
 from wgpu.gpu import GPU
-from wgpu._ffi.types import OpaquePtr, WGPUShaderStage
+from wgpu._ffi.types import WGPUShaderStage
 from wgpu._ffi.structs import (
     WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
@@ -18,8 +18,8 @@ def test_create_empty_pipeline_layout() raises:
     """PipelineLayout with no bind group layouts should succeed."""
     var gpu    = GPU()
     var device = gpu.request_device()
-    var pl     = device.create_pipeline_layout(List[OpaquePtr](), "empty_pl")
-    assert_true(pl.handle().raw != OpaquePtr(unsafe_from_address=0))
+    var pl     = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "empty_pl")
+    assert_true(pl.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_create_pipeline_layout_with_bgl() raises:
@@ -28,13 +28,13 @@ def test_create_pipeline_layout_with_bgl() raises:
     var device = gpu.request_device()
 
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(0),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(0),
         UnsafePointer[WGPUBindGroupLayoutEntry, MutExternalOrigin]()
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
 
     var pl = device.create_pipeline_layout(bgl, "pl_with_bgl")
-    assert_true(pl.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(pl.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def main() raises:

@@ -7,8 +7,8 @@ every webgpu.h + wgpu.h function as a method call.
 
 from std.ffi import OwnedDLHandle
 from std.sys import CompilationTarget
+from wgpu._ffi.alloc_guard import AllocGuard
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUAdapterHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
     WGPUBufferHandle, WGPUCommandBufferHandle, WGPUCommandEncoderHandle,
     WGPUComputePassEncoderHandle, WGPUComputePipelineHandle, WGPUDeviceHandle,
@@ -80,7 +80,7 @@ struct _WorkDoneResult(TrivialRegisterPassable):
 struct _PopErrorResult(TrivialRegisterPassable):
     var status: UInt32
     var type: UInt32
-    var message_data: OpaquePtr
+    var message_data: OpaquePointer[MutExternalOrigin]
     var message_len: UInt
 
 
@@ -141,11 +141,11 @@ struct WGPULib(Movable):
     var _cb:   OwnedDLHandle
 
     # Cached callback function pointers (void*)
-    var _adapter_cb_ptr: OpaquePtr
-    var _device_cb_ptr: OpaquePtr
-    var _map_cb_ptr: OpaquePtr
-    var _done_cb_ptr: OpaquePtr
-    var _pop_error_cb_ptr: OpaquePtr
+    var _adapter_cb_ptr: OpaquePointer[MutExternalOrigin]
+    var _device_cb_ptr: OpaquePointer[MutExternalOrigin]
+    var _map_cb_ptr: OpaquePointer[MutExternalOrigin]
+    var _done_cb_ptr: OpaquePointer[MutExternalOrigin]
+    var _pop_error_cb_ptr: OpaquePointer[MutExternalOrigin]
 
     def __init__(out self) raises:
         # Prefer bare library name so the conda-installed package finds
@@ -159,11 +159,11 @@ struct WGPULib(Movable):
             self._cb = OwnedDLHandle(_CB_LIB_NAME)
         except:
             self._cb = OwnedDLHandle(_CB_LIB_PATH)
-        self._adapter_cb_ptr = self._cb.call["wgpu_mojo_get_adapter_callback", OpaquePtr]()
-        self._device_cb_ptr  = self._cb.call["wgpu_mojo_get_device_callback",  OpaquePtr]()
-        self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePtr]()
-        self._done_cb_ptr    = self._cb.call["wgpu_mojo_get_queue_done_callback", OpaquePtr]()
-        self._pop_error_cb_ptr = self._cb.call["wgpu_mojo_get_pop_error_callback", OpaquePtr]()
+        self._adapter_cb_ptr = self._cb.call["wgpu_mojo_get_adapter_callback", OpaquePointer[MutExternalOrigin]]()
+        self._device_cb_ptr  = self._cb.call["wgpu_mojo_get_device_callback",  OpaquePointer[MutExternalOrigin]]()
+        self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePointer[MutExternalOrigin]]()
+        self._done_cb_ptr    = self._cb.call["wgpu_mojo_get_queue_done_callback", OpaquePointer[MutExternalOrigin]]()
+        self._pop_error_cb_ptr = self._cb.call["wgpu_mojo_get_pop_error_callback", OpaquePointer[MutExternalOrigin]]()
 
     def __init__(out self, *, deinit take: Self):
         self._wgpu = take._wgpu^
@@ -191,7 +191,7 @@ struct WGPULib(Movable):
     def instance_enumerate_adapters(
         self,
         instance: WGPUInstanceHandle,
-        options: OpaquePtr,
+        options: OpaquePointer[MutExternalOrigin],
         adapters: UnsafePointer[WGPUAdapterHandle, MutExternalOrigin],
     ) -> UInt:
         return self._wgpu.call["wgpuInstanceEnumerateAdapters", UInt](
@@ -204,26 +204,23 @@ struct WGPULib(Movable):
         options: UnsafePointer[WGPURequestAdapterOptions, MutExternalOrigin],
     ) raises -> _AdapterResult:
         """Synchronously request an adapter via AllowSpontaneous callback."""
-        var result = alloc[_AdapterResult](1)
-        result[] = _AdapterResult(WGPUAdapterHandle(unsafe_from_address=0), 0)
+        with AllocGuard[_AdapterResult](1) as result:
+            result[] = _AdapterResult(WGPUAdapterHandle(unsafe_from_address=0), 0)
 
-        var cb_info_p = alloc[WGPURequestAdapterCallbackInfo](1)
-        cb_info_p[] = WGPURequestAdapterCallbackInfo(
-            OpaquePtr(unsafe_from_address=0),
-            WGPUCallbackMode.AllowSpontaneous,
-            self._adapter_cb_ptr,
-            result.bitcast[NoneType](),
-            OpaquePtr(unsafe_from_address=0),
-        )
-        _ = self._cb.call["wgpu_mojo_instance_request_adapter", WGPUFuture](
-            instance, options, cb_info_p
-        )
-        cb_info_p.free()
-        self._wgpu.call["wgpuInstanceProcessEvents"](instance)
-        var adapter = result[].adapter
-        var status  = result[].status
-        result.free()
-        return _AdapterResult(adapter, status)
+            with AllocGuard[WGPURequestAdapterCallbackInfo](1) as cb_info_p:
+                cb_info_p[] = WGPURequestAdapterCallbackInfo(
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                    WGPUCallbackMode.AllowSpontaneous,
+                    self._adapter_cb_ptr,
+                    result.bitcast[NoneType](),
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                )
+                _ = self._cb.call["wgpu_mojo_instance_request_adapter", WGPUFuture](
+                    instance, options, cb_info_p
+                )
+
+            self._wgpu.call["wgpuInstanceProcessEvents"](instance)
+            return _AdapterResult(result[].adapter, result[].status)
 
     def instance_process_events(self, instance: WGPUInstanceHandle):
         self._wgpu.call["wgpuInstanceProcessEvents"](instance)
@@ -265,26 +262,23 @@ struct WGPULib(Movable):
         desc: UnsafePointer[WGPUDeviceDescriptor, MutExternalOrigin],
     ) raises -> _DeviceResult:
         """Synchronously request a device via AllowSpontaneous callback."""
-        var result = alloc[_DeviceResult](1)
-        result[] = _DeviceResult(WGPUDeviceHandle(unsafe_from_address=0), 0)
+        with AllocGuard[_DeviceResult](1) as result:
+            result[] = _DeviceResult(WGPUDeviceHandle(unsafe_from_address=0), 0)
 
-        var cb_info_p = alloc[WGPURequestDeviceCallbackInfo](1)
-        cb_info_p[] = WGPURequestDeviceCallbackInfo(
-            OpaquePtr(unsafe_from_address=0),
-            WGPUCallbackMode.AllowSpontaneous,
-            self._device_cb_ptr,
-            result.bitcast[NoneType](),
-            OpaquePtr(unsafe_from_address=0),
-        )
-        _ = self._cb.call["wgpu_mojo_adapter_request_device", WGPUFuture](
-            adapter, desc, cb_info_p
-        )
-        cb_info_p.free()
-        self._wgpu.call["wgpuInstanceProcessEvents"](instance)
-        var device = result[].device
-        var status = result[].status
-        result.free()
-        return _DeviceResult(device, status)
+            with AllocGuard[WGPURequestDeviceCallbackInfo](1) as cb_info_p:
+                cb_info_p[] = WGPURequestDeviceCallbackInfo(
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                    WGPUCallbackMode.AllowSpontaneous,
+                    self._device_cb_ptr,
+                    result.bitcast[NoneType](),
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                )
+                _ = self._cb.call["wgpu_mojo_adapter_request_device", WGPUFuture](
+                    adapter, desc, cb_info_p
+                )
+
+            self._wgpu.call["wgpuInstanceProcessEvents"](instance)
+            return _DeviceResult(result[].device, result[].status)
 
     def adapter_get_info(
         self,
@@ -426,7 +420,7 @@ struct WGPULib(Movable):
         return self._wgpu.call["wgpuDeviceHasFeature", UInt32](device, feature)
 
     def device_poll(self, device: WGPUDeviceHandle, wait: UInt32) -> UInt32:
-        return self._wgpu.call["wgpuDevicePoll", UInt32](device, wait, OpaquePtr(unsafe_from_address=0))
+        return self._wgpu.call["wgpuDevicePoll", UInt32](device, wait, OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
     def device_push_error_scope(self, device: WGPUDeviceHandle, filter: UInt32):
         self._wgpu.call["wgpuDevicePushErrorScope"](device, filter)
@@ -454,41 +448,39 @@ struct WGPULib(Movable):
         size: UInt,
     ) raises -> UInt32:
         """Map a buffer and block until mapping is complete. Returns status."""
-        var result = alloc[_MapResult](1)
-        result[] = _MapResult(0)
+        with AllocGuard[_MapResult](1) as result:
+            result[] = _MapResult(0)
 
-        var cb_info_p = alloc[WGPUBufferMapCallbackInfo](1)
-        cb_info_p[] = WGPUBufferMapCallbackInfo(
-            OpaquePtr(unsafe_from_address=0),
-            WGPUCallbackMode.AllowSpontaneous,
-            self._map_cb_ptr,
-            result.bitcast[NoneType](),
-            OpaquePtr(unsafe_from_address=0),
-        )
-        _ = self._cb.call["wgpu_mojo_buffer_map_async", WGPUFuture](
-            buffer, mode, offset, size, cb_info_p
-        )
-        cb_info_p.free()
-        self._wgpu.call["wgpuDevicePoll"](device, WGPU_TRUE, OpaquePtr(unsafe_from_address=0))
-        var status = result[].status
-        result.free()
-        return status
+            with AllocGuard[WGPUBufferMapCallbackInfo](1) as cb_info_p:
+                cb_info_p[] = WGPUBufferMapCallbackInfo(
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                    WGPUCallbackMode.AllowSpontaneous,
+                    self._map_cb_ptr,
+                    result.bitcast[NoneType](),
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                )
+                _ = self._cb.call["wgpu_mojo_buffer_map_async", WGPUFuture](
+                    buffer, mode, offset, size, cb_info_p
+                )
+
+            self._wgpu.call["wgpuDevicePoll"](device, WGPU_TRUE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+            return result[].status
 
     def buffer_get_mapped_range(
         self,
         buffer: WGPUBufferHandle,
         offset: UInt,
         size: UInt,
-    ) -> OpaquePtr:
-        return self._wgpu.call["wgpuBufferGetMappedRange", OpaquePtr](buffer, offset, size)
+    ) -> OpaquePointer[MutExternalOrigin]:
+        return self._wgpu.call["wgpuBufferGetMappedRange", OpaquePointer[MutExternalOrigin]](buffer, offset, size)
 
     def buffer_get_const_mapped_range(
         self,
         buffer: WGPUBufferHandle,
         offset: UInt,
         size: UInt,
-    ) -> OpaquePtr:
-        return self._wgpu.call["wgpuBufferGetConstMappedRange", OpaquePtr](buffer, offset, size)
+    ) -> OpaquePointer[MutExternalOrigin]:
+        return self._wgpu.call["wgpuBufferGetConstMappedRange", OpaquePointer[MutExternalOrigin]](buffer, offset, size)
 
     def buffer_unmap(self, buffer: WGPUBufferHandle):
         self._wgpu.call["wgpuBufferUnmap"](buffer)
@@ -506,7 +498,7 @@ struct WGPULib(Movable):
         self,
         buffer: WGPUBufferHandle,
         offset: UInt,
-        data: OpaquePtr,
+        data: OpaquePointer[MutExternalOrigin],
         size: UInt,
     ) -> UInt32:
         return self._wgpu.call["wgpuBufferWriteMappedRange", UInt32](
@@ -517,7 +509,7 @@ struct WGPULib(Movable):
         self,
         buffer: WGPUBufferHandle,
         offset: UInt,
-        data: OpaquePtr,
+        data: OpaquePointer[MutExternalOrigin],
         size: UInt,
     ) -> UInt32:
         return self._wgpu.call["wgpuBufferReadMappedRange", UInt32](
@@ -639,7 +631,7 @@ struct WGPULib(Movable):
         pass_enc: WGPUComputePassEncoderHandle,
         index: UInt32,
         bind_group: WGPUBindGroupHandle,
-        dynamic_offsets: OpaquePtr,
+        dynamic_offsets: OpaquePointer[MutExternalOrigin],
         dynamic_offset_count: UInt,
     ):
         self._wgpu.call["wgpuComputePassEncoderSetBindGroup"](
@@ -688,7 +680,7 @@ struct WGPULib(Movable):
         index: UInt32,
         bind_group: WGPUBindGroupHandle,
         dynamic_offset_count: UInt,
-        dynamic_offsets: OpaquePtr,
+        dynamic_offsets: OpaquePointer[MutExternalOrigin],
     ):
         self._wgpu.call["wgpuRenderPassEncoderSetBindGroup"](
             pass_enc, index, bind_group, dynamic_offset_count, dynamic_offsets
@@ -764,7 +756,7 @@ struct WGPULib(Movable):
     def render_pass_set_blend_constant(
         self,
         pass_enc: WGPURenderPassEncoderHandle,
-        color: OpaquePtr,
+        color: OpaquePointer[MutExternalOrigin],
     ):
         self._wgpu.call["wgpuRenderPassEncoderSetBlendConstant"](pass_enc, color)
 
@@ -791,7 +783,7 @@ struct WGPULib(Movable):
         queue: WGPUQueueHandle,
         buffer: WGPUBufferHandle,
         offset: UInt64,
-        data: OpaquePtr,
+        data: OpaquePointer[MutExternalOrigin],
         size: UInt,
     ):
         self._wgpu.call["wgpuQueueWriteBuffer"](queue, buffer, offset, data, size)
@@ -799,11 +791,11 @@ struct WGPULib(Movable):
     def queue_write_texture(
         self,
         queue: WGPUQueueHandle,
-        destination: OpaquePtr,
-        data: OpaquePtr,
+        destination: OpaquePointer[MutExternalOrigin],
+        data: OpaquePointer[MutExternalOrigin],
         data_size: UInt,
-        data_layout: OpaquePtr,
-        write_size: OpaquePtr,
+        data_layout: OpaquePointer[MutExternalOrigin],
+        write_size: OpaquePointer[MutExternalOrigin],
     ) :
         self._wgpu.call["wgpuQueueWriteTexture"](
             queue, destination, data, data_size, data_layout, write_size
@@ -940,12 +932,12 @@ struct WGPULib(Movable):
 
     def device_poll(self, device: WGPUDeviceHandle, wait: Bool) -> UInt32:
         var w: UInt32 = WGPU_TRUE if wait else WGPU_FALSE
-        return self._wgpu.call["wgpuDevicePoll", UInt32](device, w, OpaquePtr(unsafe_from_address=0))
+        return self._wgpu.call["wgpuDevicePoll", UInt32](device, w, OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
     def enumerate_adapters(
         self,
         instance: WGPUInstanceHandle,
-        options: OpaquePtr,  # nullable WGPUInstanceEnumerateAdapterOptions*
+        options: OpaquePointer[MutExternalOrigin],  # nullable WGPUInstanceEnumerateAdapterOptions*
         out_adapters: UnsafePointer[WGPUAdapterHandle, MutExternalOrigin],
     ) -> UInt:
         return self._wgpu.call["wgpuInstanceEnumerateAdapters", UInt](
@@ -1184,22 +1176,19 @@ struct WGPULib(Movable):
         queue: WGPUQueueHandle,
     ) raises -> UInt32:
         """Block until submitted queue work is done. Returns status."""
-        var result = alloc[_WorkDoneResult](1)
-        result[] = _WorkDoneResult(0)
-        var cb_info_p = alloc[WGPUQueueWorkDoneCallbackInfo](1)
-        cb_info_p[] = WGPUQueueWorkDoneCallbackInfo(
-            OpaquePtr(unsafe_from_address=0),
-            WGPUCallbackMode.AllowSpontaneous,
-            self._done_cb_ptr,
-            result.bitcast[NoneType](),
-            OpaquePtr(unsafe_from_address=0),
-        )
-        _ = self._cb.call["wgpu_mojo_queue_on_submitted_work_done", WGPUFuture](queue, cb_info_p)
-        cb_info_p.free()
-        self._wgpu.call["wgpuInstanceProcessEvents"](instance)
-        var status = result[].status
-        result.free()
-        return status
+        with AllocGuard[_WorkDoneResult](1) as result:
+            result[] = _WorkDoneResult(0)
+            with AllocGuard[WGPUQueueWorkDoneCallbackInfo](1) as cb_info_p:
+                cb_info_p[] = WGPUQueueWorkDoneCallbackInfo(
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                    WGPUCallbackMode.AllowSpontaneous,
+                    self._done_cb_ptr,
+                    result.bitcast[NoneType](),
+                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                )
+                _ = self._cb.call["wgpu_mojo_queue_on_submitted_work_done", WGPUFuture](queue, cb_info_p)
+            self._wgpu.call["wgpuInstanceProcessEvents"](instance)
+            return result[].status
 
     def queue_set_label(self, queue: WGPUQueueHandle, label: WGPUStringView):
         self._wgpu.call["wgpuQueueSetLabel"](queue, label)
@@ -1291,7 +1280,7 @@ struct WGPULib(Movable):
         index: UInt32,
         bind_group: WGPUBindGroupHandle,
         dynamic_offset_count: UInt,
-        dynamic_offsets: OpaquePtr,
+        dynamic_offsets: OpaquePointer[MutExternalOrigin],
     ):
         self._wgpu.call["wgpuRenderBundleEncoderSetBindGroup"](
             encoder, index, bind_group, dynamic_offset_count, dynamic_offsets
@@ -1411,7 +1400,7 @@ struct WGPULib(Movable):
     def generate_report(
         self,
         instance: WGPUInstanceHandle,
-        report: OpaquePtr,  # WGPUGlobalReport*
+        report: OpaquePointer[MutExternalOrigin],  # WGPUGlobalReport*
     ):
         self._wgpu.call["wgpuGenerateReport"](instance, report)
 
@@ -1437,7 +1426,7 @@ struct WGPULib(Movable):
         stages: UInt64,   # WGPUShaderStage
         offset: UInt32,
         size_bytes: UInt32,
-        data: OpaquePtr,
+        data: OpaquePointer[MutExternalOrigin],
     ):
         self._wgpu.call["wgpuRenderPassEncoderSetPushConstants"](
             pass_enc, stages, offset, size_bytes, data
@@ -1448,7 +1437,7 @@ struct WGPULib(Movable):
         pass_enc: WGPUComputePassEncoderHandle,
         offset: UInt32,
         size_bytes: UInt32,
-        data: OpaquePtr,
+        data: OpaquePointer[MutExternalOrigin],
     ):
         self._wgpu.call["wgpuComputePassEncoderSetPushConstants"](
             pass_enc, offset, size_bytes, data

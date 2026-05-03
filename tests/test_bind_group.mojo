@@ -6,7 +6,7 @@ Requires GPU hardware.
 from std.testing import assert_true
 from wgpu.gpu import GPU
 from wgpu._ffi.types import (
-    OpaquePtr, WGPUBufferUsage, WGPUShaderStage,
+    WGPUBufferUsage, WGPUShaderStage,
 )
 from wgpu._ffi.structs import (
     WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
@@ -26,14 +26,14 @@ def make_storage_bgl_entry(
     # Type 3 = Storage (read_write), Type 4 = ReadOnlyStorage
     var buf_type: UInt32 = UInt32(4) if read_only else UInt32(3)
     return WGPUBindGroupLayoutEntry(
-        OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         binding,
         WGPUShaderStage.COMPUTE.value,
         UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), buf_type, UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), buf_type, UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
 
 
@@ -46,14 +46,14 @@ def test_create_bind_group_layout() raises:
     entries_p[0] = make_storage_bgl_entry(UInt32(0))
     var label   = str_to_sv(String("test_bgl"))
     var desc    = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         label,
         UInt(1),
         entries_p,
     )
     var bgl = device.create_bind_group_layout(desc)
     entries_p.free()
-    assert_true(bgl.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(bgl.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_create_bind_group_with_buffer() raises:
@@ -68,27 +68,27 @@ def test_create_bind_group_with_buffer() raises:
     var entries_p = alloc[WGPUBindGroupLayoutEntry](1)
     entries_p[0] = make_storage_bgl_entry(UInt32(0))
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(1), entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(1), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
 
     var bg_entries_p = alloc[WGPUBindGroupEntry](1)
     bg_entries_p[0] = WGPUBindGroupEntry(
-        OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         UInt32(0),
         buf.handle().raw,
         UInt64(0),
         WGPU_WHOLE_SIZE,
-        OpaquePtr(),
-        OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
     )
     var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), bgl.handle().raw, UInt(1), bg_entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(1), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
     bg_entries_p.free()
-    assert_true(bg.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(bg.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
     # Pin: raw handles from buf/bgl are embedded in FFI descriptors
     # passed to create_bind_group — ASAP could destroy them after .handle().raw

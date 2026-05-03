@@ -5,7 +5,7 @@ wgpu.device — High-level Device + Queue RAII wrapper.
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    OpaquePtr, WGPU_TRUE,
+    WGPU_TRUE,
     WGPUDeviceHandle, WGPUQueueHandle, WGPUInstanceHandle,
     WGPUBufferHandle, WGPUTextureHandle, WGPUSamplerHandle,
     WGPUShaderModuleHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
@@ -115,7 +115,7 @@ struct Device(Movable):
         var mapped: UInt32 = UInt32(1) if mapped_at_creation else UInt32(0)
         var desc_p = alloc[WGPUBufferDescriptor](1)
         desc_p[] = WGPUBufferDescriptor(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             label_sv,
             usage.value,
             size,
@@ -141,7 +141,7 @@ struct Device(Movable):
         var size = WGPUExtent3D(width, height, depth_or_layers)
         var desc_p = alloc[WGPUTextureDescriptor](1)
         desc_p[] = WGPUTextureDescriptor(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             label_sv,
             usage.value,
             dimension,
@@ -150,7 +150,7 @@ struct Device(Movable):
             mip_level_count,
             sample_count,
             UInt(0),
-            UnsafePointer[UInt32, MutExternalOrigin](),
+            UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
         )
         var result = self._lib[].device_create_texture(self._handle, desc_p)
         desc_p.free()
@@ -160,7 +160,7 @@ struct Device(Movable):
         """Create a TextureView from a raw texture handle (e.g. surface frame)."""
         var result = self._lib[].texture_create_view(
             texture,
-            UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin](),
+            UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin](unsafe_from_address=0),
         )
         return TextureView(self._lib, result)
 
@@ -185,7 +185,7 @@ struct Device(Movable):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUSamplerDescriptor](1)
         desc_p[] = WGPUSamplerDescriptor(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             label_sv,
             address_mode_u,
             address_mode_v,
@@ -209,7 +209,7 @@ struct Device(Movable):
     ) raises -> ShaderModule:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var code_sv  = str_to_sv(code)
-        var chain_val = WGPUChainedStruct(OpaquePtr(), WGPUSType.ShaderSourceWGSL)
+        var chain_val = WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUSType.ShaderSourceWGSL)
         var source_p = alloc[WGPUShaderSourceWGSL](1)
         source_p[] = WGPUShaderSourceWGSL(chain_val, code_sv)
         var desc_p = alloc[WGPUShaderModuleDescriptor](1)
@@ -229,7 +229,7 @@ struct Device(Movable):
     ) raises -> ShaderModule:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var code_ptr = rebind[UnsafePointer[UInt32, MutExternalOrigin]](code.unsafe_ptr())
-        var chain_val = WGPUChainedStruct(OpaquePtr(), WGPUSType.ShaderSourceSPIRV)
+        var chain_val = WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUSType.ShaderSourceSPIRV)
         var source_p = alloc[WGPUShaderSourceSPIRV](1)
         source_p[] = WGPUShaderSourceSPIRV(
             chain_val,
@@ -275,7 +275,7 @@ struct Device(Movable):
         var layouts_ptr = rebind[UnsafePointer[WGPUBindGroupLayoutHandle, MutExternalOrigin]](bind_group_layouts.unsafe_ptr())
         var desc_p = alloc[WGPUPipelineLayoutDescriptor](1)
         desc_p[] = WGPUPipelineLayoutDescriptor(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             label_sv,
             UInt(len(bind_group_layouts)),
             layouts_ptr,
@@ -323,14 +323,14 @@ struct Device(Movable):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var entry_sv = str_to_sv(entry_point)
         var cs = WGPUComputeState(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             shader.handle().raw,
             entry_sv,
             UInt(0),
-            UnsafePointer[WGPUConstantEntry, MutExternalOrigin](),
+            UnsafePointer[WGPUConstantEntry, MutExternalOrigin](unsafe_from_address=0),
         )
         var desc = WGPUComputePipelineDescriptor(
-            OpaquePtr(), label_sv, layout.handle().raw, cs,
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), label_sv, layout.handle().raw, cs,
         )
         return self.create_compute_pipeline(desc)
 
@@ -374,32 +374,32 @@ struct Device(Movable):
         var fs_sv = str_to_sv(fs_entry_point)
 
         var vertex_state = WGPUVertexState(
-            OpaquePtr(), shader.handle().raw, vs_sv,
-            UInt(0), UnsafePointer[WGPUConstantEntry, MutExternalOrigin](),
-            UInt(0), UnsafePointer[WGPUVertexBufferLayout, MutExternalOrigin](),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), shader.handle().raw, vs_sv,
+            UInt(0), UnsafePointer[WGPUConstantEntry, MutExternalOrigin](unsafe_from_address=0),
+            UInt(0), UnsafePointer[WGPUVertexBufferLayout, MutExternalOrigin](unsafe_from_address=0),
         )
         var target_p = alloc[WGPUColorTargetState](1)
         target_p[0] = WGPUColorTargetState(
-            OpaquePtr(), color_format,
-            UnsafePointer[WGPUBlendState, MutExternalOrigin](),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), color_format,
+            UnsafePointer[WGPUBlendState, MutExternalOrigin](unsafe_from_address=0),
             UInt64(0xF),  # ColorWriteMask.All
         )
         var fragment_p = alloc[WGPUFragmentState](1)
         fragment_p[0] = WGPUFragmentState(
-            OpaquePtr(), shader.handle().raw, fs_sv,
-            UInt(0), UnsafePointer[WGPUConstantEntry, MutExternalOrigin](),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), shader.handle().raw, fs_sv,
+            UInt(0), UnsafePointer[WGPUConstantEntry, MutExternalOrigin](unsafe_from_address=0),
             UInt(1), target_p,
         )
         var primitive = WGPUPrimitiveState(
-            OpaquePtr(), primitive_topology, UInt32(0), UInt32(1), UInt32(0), UInt32(0),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), primitive_topology, UInt32(0), UInt32(1), UInt32(0), UInt32(0),
         )
         var multisample = WGPUMultisampleState(
-            OpaquePtr(), UInt32(1), UInt32(0xFFFFFFFF), UInt32(0),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), UInt32(0xFFFFFFFF), UInt32(0),
         )
         var desc = WGPURenderPipelineDescriptor(
-            OpaquePtr(), label_sv, layout.handle().raw,
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), label_sv, layout.handle().raw,
             vertex_state, primitive,
-            UnsafePointer[WGPUDepthStencilState, MutExternalOrigin](),
+            UnsafePointer[WGPUDepthStencilState, MutExternalOrigin](unsafe_from_address=0),
             multisample, fragment_p,
         )
         var result = self.create_render_pipeline(desc^)
@@ -410,7 +410,7 @@ struct Device(Movable):
     def create_command_encoder(self, label: String = "") raises -> CommandEncoder:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUCommandEncoderDescriptor](1)
-        desc_p[] = WGPUCommandEncoderDescriptor(OpaquePtr(), label_sv)
+        desc_p[] = WGPUCommandEncoderDescriptor(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), label_sv)
         var result = self._lib[].device_create_command_encoder(self._handle, desc_p)
         desc_p.free()
         return CommandEncoder(self._lib, result)
@@ -424,7 +424,7 @@ struct Device(Movable):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUQuerySetDescriptor](1)
         desc_p[] = WGPUQuerySetDescriptor(
-            OpaquePtr(), label_sv, query_type, count
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), label_sv, query_type, count
         )
         var result = self._lib[].device_create_query_set(self._handle, desc_p)
         desc_p.free()
@@ -540,10 +540,10 @@ struct Device(Movable):
         var size_p = alloc[WGPUExtent3D](1)
         size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
 
-        var data_ptr = OpaquePtr(unsafe_from_address=Int(data.unsafe_ptr()))
-        var dst_ptr = OpaquePtr(unsafe_from_address=Int(dst_p))
-        var layout_ptr = OpaquePtr(unsafe_from_address=Int(layout_p))
-        var size_ptr = OpaquePtr(unsafe_from_address=Int(size_p))
+        var data_ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(data.unsafe_ptr()))
+        var dst_ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(dst_p))
+        var layout_ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(layout_p))
+        var size_ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(size_p))
         self._lib[].queue_write_texture(
             self._queue,
             dst_ptr,

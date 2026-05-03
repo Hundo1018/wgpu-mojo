@@ -11,7 +11,6 @@ Run:
 
 from wgpu.gpu import GPU
 from wgpu._ffi.types import (
-    OpaquePtr,
 )
 from wgpu._ffi.structs import (
     WGPUColor,
@@ -60,7 +59,7 @@ def main() raises:
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
 
     # --- Build render pipeline --------------------------------------------
-    var pl = device.create_pipeline_layout(List[OpaquePtr](), "tri_layout")
+    var pl = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "tri_layout")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main",
         canvas.surface_format(), pl,

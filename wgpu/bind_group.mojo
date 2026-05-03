@@ -5,7 +5,6 @@ wgpu.bind_group — BindGroupLayout and BindGroup RAII wrappers.
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
 )
 from wgpu._ffi.structs import WGPUStringView, str_to_sv

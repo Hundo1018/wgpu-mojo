@@ -6,7 +6,7 @@ Requires GPU hardware.
 from std.testing import assert_true, assert_equal
 from wgpu.gpu import GPU
 from wgpu._ffi.types import (
-    OpaquePtr, WGPUTextureUsage, WGPUTextureFormat,
+    WGPUTextureUsage, WGPUTextureFormat,
 )
 from wgpu._ffi.structs import WGPUTextureViewDescriptor
 
@@ -21,7 +21,7 @@ def test_create_2d_texture() raises:
         WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_SRC,
         2, 1, 1, "tex2d"
     )
-    assert_true(tex.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(tex.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
     assert_equal(tex.width(), UInt32(256))
     assert_equal(tex.height(), UInt32(256))
     assert_equal(tex.format(), WGPUTextureFormat.RGBA8Unorm)
@@ -38,7 +38,7 @@ def test_create_texture_view() raises:
         2, 1, 1
     )
     var view = tex.create_view_default()
-    assert_true(view.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(view.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_texture_dimensions() raises:

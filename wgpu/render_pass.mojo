@@ -5,7 +5,6 @@ wgpu.render_pass — RenderPassEncoder RAII wrapper.
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPURenderPassEncoderHandle, WGPURenderPipelineHandle,
     WGPUBindGroupHandle, WGPUBufferHandle, WGPURenderBundleHandle,
     WGPUQuerySetHandle,
@@ -99,13 +98,13 @@ struct RenderPassEncoder(Movable):
 
     def set_bind_group(self, index: UInt32, bind_group: WGPUBindGroupHandle):
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group, UInt(0), OpaquePtr()
+            self._handle, index, bind_group, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
         )
 
     def set_bind_group(self, index: UInt32, bind_group: BindGroup):
         """Wrapper-first overload — accepts RAII BindGroup directly."""
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group.handle().raw, UInt(0), OpaquePtr()
+            self._handle, index, bind_group.handle().raw, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
         )
 
     def set_bind_group_with_offsets(
@@ -114,7 +113,7 @@ struct RenderPassEncoder(Movable):
         bind_group: WGPUBindGroupHandle,
         offsets: List[UInt32],
     ):
-        var ptr = OpaquePtr(unsafe_from_address=Int(offsets.unsafe_ptr()))
+        var ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(offsets.unsafe_ptr()))
         self._lib[].render_pass_set_bind_group(
             self._handle, index, bind_group, UInt(len(offsets)), ptr
         )
@@ -264,7 +263,7 @@ struct RenderPassEncoder(Movable):
     # ------------------------------------------------------------------
 
     def set_push_constants(
-        self, stages: UInt64, offset: UInt32, size_bytes: UInt32, data: OpaquePtr
+        self, stages: UInt64, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutExternalOrigin]
     ):
         self._lib[].render_pass_set_push_constants(
             self._handle, stages, offset, size_bytes, data

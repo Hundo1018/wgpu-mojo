@@ -1,7 +1,6 @@
 """wgpu._ffi — Low-level FFI layer for wgpu-native."""
 
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUAdapterHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
     WGPUBufferHandle, WGPUCommandBufferHandle, WGPUCommandEncoderHandle,
     WGPUComputePassEncoderHandle, WGPUComputePipelineHandle, WGPUDeviceHandle,

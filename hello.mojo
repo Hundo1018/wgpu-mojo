@@ -10,7 +10,6 @@ Run:
 """
 
 from wgpu.gpu import GPU
-from wgpu._ffi.types import OpaquePtr
 from wgpu._ffi.structs import WGPUColor
 from rendercanvas import RenderCanvas
 
@@ -61,7 +60,7 @@ def main() raises:
     var shader = device.create_shader_module_wgsl(WGSL, "hello")
 
     # 4. Build render pipeline (convenience overload handles all boilerplate)
-    var layout = device.create_pipeline_layout(List[OpaquePtr](), "hello_layout")
+    var layout = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "hello_layout")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main",
         canvas.surface_format(), layout,

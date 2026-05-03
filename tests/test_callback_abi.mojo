@@ -2,7 +2,6 @@
 
 from std.ffi import OwnedDLHandle
 from std.testing import assert_equal, assert_true
-from wgpu._ffi.types import OpaquePtr
 
 
 def triple(x: Int64) -> Int64:
@@ -27,11 +26,11 @@ struct _ProbeAdapterResult(TrivialRegisterPassable):
 # Probe A: callback with scalars only (StringView decomposed into ptr+len)
 def mojo_scalar_adapter_cb(
     status: UInt32,
-    adapter: OpaquePtr,
-    msg_data: OpaquePtr,
+    adapter: OpaquePointer[MutExternalOrigin],
+    msg_data: OpaquePointer[MutExternalOrigin],
     msg_len: UInt64,
-    ud1: OpaquePtr,
-    ud2: OpaquePtr,
+    ud1: OpaquePointer[MutExternalOrigin],
+    ud2: OpaquePointer[MutExternalOrigin],
 ):
     """Scalar-only callback: receive StringView as two separate args."""
     var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutExternalOrigin]](ud1)
@@ -41,16 +40,16 @@ def mojo_scalar_adapter_cb(
 # Probe B: callback with 16-byte struct by value (WGPUStringView equivalent)
 @fieldwise_init
 struct _StringView16(TrivialRegisterPassable):
-    var data: OpaquePtr
+    var data: OpaquePointer[MutExternalOrigin]
     var length: UInt64
 
 
 def mojo_struct_adapter_cb(
     status: UInt32,
-    adapter: OpaquePtr,
+    adapter: OpaquePointer[MutExternalOrigin],
     msg: _StringView16,
-    ud1: OpaquePtr,
-    ud2: OpaquePtr,
+    ud1: OpaquePointer[MutExternalOrigin],
+    ud2: OpaquePointer[MutExternalOrigin],
 ):
     """Struct-by-value callback: receive 16-byte StringView as single param."""
     var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutExternalOrigin]](ud1)
@@ -87,9 +86,9 @@ def main() raises:
     assert_equal(status_v, UInt32(42))
     print("  PASS: struct-by-value callback status =", status_v)
 
-    # NOTE: Extracting a Mojo def as OpaquePtr for storage in C structs
+    # NOTE: Extracting a Mojo def as OpaquePointer[MutExternalOrigin] for storage in C structs
     # does NOT work. Mojo def functions are kgen.generator internally, not
-    # plain function pointers. rebind[OpaquePtr](fn) fails.
+    # plain function pointers. rebind[OpaquePointer[MutExternalOrigin]](fn) fails.
     # This means wgpu callbacks (which require storing a function pointer in
     # WGPURequestAdapterCallbackInfo) must remain as C implementations.
     # DLHandle.call handles the conversion implicitly when passing functions

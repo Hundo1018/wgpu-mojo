@@ -4,6 +4,7 @@ Requires GPU hardware.
 """
 
 from std.testing import assert_true, assert_false, assert_equal
+from std.memory import OpaquePointer
 from wgpu.gpu import GPU
 from wgpu._ffi.types import WGPUFeatureName, WGPU_LIMIT_U32_UNDEFINED
 
@@ -12,7 +13,7 @@ def test_request_device() raises:
     """Device creation should succeed."""
     var gpu    = GPU()
     var device = gpu.request_device()
-    assert_true(device.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(device.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_device_get_limits() raises:
@@ -45,7 +46,7 @@ def test_queue_available() raises:
     """Queue should be non-null after device creation."""
     var gpu    = GPU()
     var device = gpu.request_device()
-    assert_true(device.queue().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(device.queue().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def main() raises:

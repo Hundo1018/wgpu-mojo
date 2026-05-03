@@ -5,7 +5,7 @@ Requires GPU hardware.
 
 from std.testing import assert_true
 from wgpu.gpu import GPU
-from wgpu._ffi.types import OpaquePtr, WGPUTextureUsage, WGPUTextureFormat
+from wgpu._ffi.types import WGPUTextureUsage, WGPUTextureFormat
 from wgpu._ffi.structs import (
     WGPURenderPassDescriptor, WGPURenderPassColorAttachment,
     WGPURenderPassDepthStencilAttachment, WGPUPassTimestampWrites,
@@ -24,7 +24,7 @@ def test_command_encoder_debug_groups() raises:
     enc.pop_debug_group()
     enc.pop_debug_group()
     var cmd = enc^.finish()
-    assert_true(cmd.raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(cmd.raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_compute_pass_debug_groups() raises:
@@ -38,7 +38,7 @@ def test_compute_pass_debug_groups() raises:
     cpass.pop_debug_group()
     cpass^.end()
     var cmd = enc^.finish()
-    assert_true(cmd.raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(cmd.raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_render_pass_debug_groups() raises:
@@ -58,16 +58,16 @@ def test_render_pass_debug_groups() raises:
     var enc = device.create_command_encoder()
     var color_att_p = alloc[WGPURenderPassColorAttachment](1)
     color_att_p[0] = WGPURenderPassColorAttachment(
-        OpaquePtr(), view.handle().raw, UInt32(0xFFFFFFFF), OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), view.handle().raw, UInt32(0xFFFFFFFF), OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         UInt32(1), UInt32(1),  # Clear, Store
         WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
     )
     var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
     rp_desc_p[0] = WGPURenderPassDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(),
         UInt(1), color_att_p,
         UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin](),
-        OpaquePtr(),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](),
     )
     var rpass = enc.begin_render_pass(rp_desc_p)
@@ -80,7 +80,7 @@ def test_render_pass_debug_groups() raises:
     color_att_p.free()
     rp_desc_p.free()
     var cmd = enc^.finish()
-    assert_true(cmd.raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(cmd.raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_encoder_set_label() raises:

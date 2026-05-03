@@ -19,7 +19,7 @@ Usage (typical render loop):
 The title String must not be empty (GLFW requirement).
 """
 
-from wgpu._ffi.types import OpaquePtr, WGPUTextureHandle
+from wgpu._ffi.types import WGPUTextureHandle
 from wgpu.gpu import GPU
 from wgpu.device import Device
 from wgpu.surface import Surface, SurfaceFrame
@@ -35,7 +35,7 @@ struct RenderCanvas(Movable):
     """
 
     var _glfw:    GLFWLib
-    var _window:  OpaquePtr
+    var _window:  OpaquePointer[MutExternalOrigin]
     var _surface: Surface
     var _width:   Int32
     var _height:  Int32
@@ -61,7 +61,7 @@ struct RenderCanvas(Movable):
         # Pass null-terminated title; String internal buffer is null-terminated.
         var title_bytes = title.as_bytes()
         var raw         = title_bytes.unsafe_ptr().bitcast[NoneType]()
-        var title_ptr   = rebind[OpaquePtr](raw)
+        var title_ptr   = rebind[OpaquePointer[MutExternalOrigin]](raw)
         var window = glfw.create_window(width, height, title_ptr)
         _ = title_bytes  # keep alive past glfwCreateWindow
         if not Bool(window):

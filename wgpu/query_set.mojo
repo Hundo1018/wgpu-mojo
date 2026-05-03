@@ -4,7 +4,7 @@ wgpu.query_set — QuerySet RAII wrapper.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import OpaquePtr, WGPUQuerySetHandle
+from wgpu._ffi.types import WGPUQuerySetHandle
 from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import QuerySetHandle
 

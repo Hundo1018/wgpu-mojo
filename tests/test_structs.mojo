@@ -5,7 +5,7 @@ No GPU required.
 
 from std.testing import assert_equal, assert_true, assert_false
 from wgpu._ffi.types import (
-    OpaquePtr, WGPU_STRLEN, WGPU_WHOLE_SIZE, WGPU_LIMIT_U32_UNDEFINED,
+    WGPU_STRLEN, WGPU_WHOLE_SIZE, WGPU_LIMIT_U32_UNDEFINED,
     WGPUBufferUsage,
 )
 from wgpu._ffi.structs import (
@@ -30,7 +30,7 @@ def test_stringview_from_string() raises:
 
 
 def test_chained_struct() raises:
-    var cs = WGPUChainedStruct(OpaquePtr(unsafe_from_address=0), UInt32(1))
+    var cs = WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1))
     assert_equal(cs.stype, UInt32(1))
     assert_true(cs.next == UnsafePointer[NoneType, MutExternalOrigin](unsafe_from_address=0))
 

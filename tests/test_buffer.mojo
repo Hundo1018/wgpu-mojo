@@ -5,7 +5,8 @@ Requires GPU hardware.
 
 from std.testing import assert_true, assert_equal
 from wgpu.gpu import GPU
-from wgpu._ffi.types import OpaquePtr, WGPUBufferUsage
+from wgpu._ffi.alloc_guard import AllocGuard
+from wgpu._ffi.types import WGPUBufferUsage
 
 
 def test_create_storage_buffer() raises:
@@ -18,7 +19,7 @@ def test_create_storage_buffer() raises:
         False,
         "test_storage_buf",
     )
-    assert_true(buf.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(buf.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def test_create_staging_buffer_mapped() raises:
@@ -27,9 +28,9 @@ def test_create_staging_buffer_mapped() raises:
     var device = gpu.request_device()
     var usage  = WGPUBufferUsage.MAP_WRITE | WGPUBufferUsage.COPY_SRC
     var buf = device.create_buffer(UInt64(64), usage, True, "staging")
-    assert_true(buf.handle().raw != OpaquePtr(unsafe_from_address=0))
+    assert_true(buf.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
     var ptr = device._lib[].buffer_get_mapped_range(buf.handle().raw, UInt(0), UInt(64))
-    assert_true(ptr != None)
+    assert_true(ptr != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
     buf.unmap()
 
 
@@ -50,16 +51,15 @@ def test_queue_write_and_map_read_buffer() raises:
     )
 
     # Upload data
-    var data = alloc[Float32](4)
-    data[0] = Float32(1.0)
-    data[1] = Float32(2.0)
-    data[2] = Float32(3.0)
-    data[3] = Float32(4.0)
-    device._lib[].queue_write_buffer(
-        device.queue().raw, gpu_buf.handle().raw, UInt64(0),
-        data.bitcast[NoneType](), UInt(16)
-    )
-    _ = data^  # pin data lifetime past queue_write_buffer
+    with AllocGuard[Float32](4) as data:
+        data[0] = Float32(1.0)
+        data[1] = Float32(2.0)
+        data[2] = Float32(3.0)
+        data[3] = Float32(4.0)
+        device._lib[].queue_write_buffer(
+            device.queue().raw, gpu_buf.handle().raw, UInt64(0),
+            data.bitcast[NoneType](), UInt(16)
+        )
 
     # Copy gpu -> readback
     var enc = device.create_command_encoder("copy_enc")

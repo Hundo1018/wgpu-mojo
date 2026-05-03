@@ -5,8 +5,9 @@ Requires GPU hardware.
 
 from std.testing import assert_true, assert_equal
 from wgpu.gpu import GPU
+from wgpu._ffi.alloc_guard import AllocGuard
 from wgpu._ffi.types import (
-    OpaquePtr, WGPUBufferUsage, WGPUShaderStage,
+    WGPUBufferUsage, WGPUShaderStage,
 )
 from wgpu._ffi.structs import (
     WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
@@ -38,12 +39,12 @@ def _make_bgl_entry(binding: UInt32, read_only: Bool) -> WGPUBindGroupLayoutEntr
     # Type 3 = Storage (read_write), Type 4 = ReadOnlyStorage
     var buf_type: UInt32 = UInt32(4) if read_only else UInt32(3)
     return WGPUBindGroupLayoutEntry(
-        OpaquePtr(), binding,
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), binding,
         WGPUShaderStage.COMPUTE.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), buf_type, UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), buf_type, UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
 
 
@@ -58,7 +59,7 @@ def test_create_compute_pipeline() raises:
         entries_p[i] = _make_bgl_entry(UInt32(i), i < 2)
 
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(3), entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(3), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
@@ -77,7 +78,7 @@ def test_vec_add_compute() raises:
     for i in range(3):
         entries_p[i] = _make_bgl_entry(UInt32(i), i < 2)
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(3), entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(3), entries_p
     )
     var bgl = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
@@ -86,27 +87,27 @@ def test_vec_add_compute() raises:
 
     var pipeline = device.create_compute_pipeline(shader, "main", pl)
 
-    var a_data = alloc[Float32](4)
-    a_data[0] = Float32(1.0); a_data[1] = Float32(2.0)
-    a_data[2] = Float32(3.0); a_data[3] = Float32(4.0)
-    var b_data = alloc[Float32](4)
-    b_data[0] = Float32(10.0); b_data[1] = Float32(20.0)
-    b_data[2] = Float32(30.0); b_data[3] = Float32(40.0)
-
     var buf_a = device.create_buffer(BUF_SIZE, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False, "buf_a")
     var buf_b = device.create_buffer(BUF_SIZE, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False, "buf_b")
     var buf_c = device.create_buffer(BUF_SIZE, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC, False, "buf_c")
     var buf_r = device.create_buffer(BUF_SIZE, WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST, False, "buf_r")
 
-    device.queue_write_buffer(buf_a, UInt64(0), a_data, UInt(16))
-    device.queue_write_buffer(buf_b, UInt64(0), b_data, UInt(16))
+    with AllocGuard[Float32](4) as a_data:
+        a_data[0] = Float32(1.0); a_data[1] = Float32(2.0)
+        a_data[2] = Float32(3.0); a_data[3] = Float32(4.0)
+        device.queue_write_buffer(buf_a, UInt64(0), a_data, UInt(16))
+
+    with AllocGuard[Float32](4) as b_data:
+        b_data[0] = Float32(10.0); b_data[1] = Float32(20.0)
+        b_data[2] = Float32(30.0); b_data[3] = Float32(40.0)
+        device.queue_write_buffer(buf_b, UInt64(0), b_data, UInt(16))
 
     var bg_entries_p = alloc[WGPUBindGroupEntry](3)
-    bg_entries_p[0] = WGPUBindGroupEntry(OpaquePtr(), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr())
-    bg_entries_p[1] = WGPUBindGroupEntry(OpaquePtr(), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr())
-    bg_entries_p[2] = WGPUBindGroupEntry(OpaquePtr(), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePtr(), OpaquePtr())
+    bg_entries_p[0] = WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    bg_entries_p[1] = WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    bg_entries_p[2] = WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
     var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), bgl.handle().raw, UInt(3), bg_entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(3), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
     # Pin: raw handles from bgl/buf_a/buf_b/buf_c are in FFI descriptors

@@ -14,7 +14,6 @@ Run:
 from wgpu.gpu import GPU
 from rendercanvas import RenderCanvas
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUBufferUsage, WGPUTextureUsage, WGPUTextureFormat,
     WGPUShaderStage, WGPUSamplerBindingType, WGPUTextureSampleType,
     WGPUTextureViewDimension, WGPUTextureAspect,
@@ -133,22 +132,22 @@ def main() raises:
 
     var entries_p = alloc[WGPUBindGroupLayoutEntry](2)
     entries_p[0] = WGPUBindGroupLayoutEntry(
-        OpaquePtr(), UInt32(0), WGPUShaderStage.FRAGMENT.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePtr(), WGPUTextureSampleType.Float, WGPUTextureViewDimension.D2, UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), WGPUShaderStage.FRAGMENT.value, UInt32(0),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUTextureSampleType.Float, WGPUTextureViewDimension.D2, UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
     entries_p[1] = WGPUBindGroupLayoutEntry(
-        OpaquePtr(), UInt32(1), WGPUShaderStage.FRAGMENT.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePtr(), WGPUSamplerBindingType.Filtering),
-        WGPUTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePtr(), UInt32(0), UInt32(0), UInt32(0)),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), WGPUShaderStage.FRAGMENT.value, UInt32(0),
+        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUSamplerBindingType.Filtering),
+        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
     )
 
     var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), UInt(2), entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(2), entries_p
     )
     var bind_group_layout = device.create_bind_group_layout(bgl_desc)
     entries_p.free()
@@ -164,13 +163,13 @@ def main() raises:
 
     var bg_entries_p = alloc[WGPUBindGroupEntry](2)
     bg_entries_p[0] = WGPUBindGroupEntry(
-        OpaquePtr(), UInt32(0), OpaquePtr(), UInt64(0), UInt64(0), OpaquePtr(), tex_view.handle().raw
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), tex_view.handle().raw
     )
     bg_entries_p[1] = WGPUBindGroupEntry(
-        OpaquePtr(), UInt32(1), OpaquePtr(), UInt64(0), UInt64(0), sampler.handle().raw, OpaquePtr()
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), sampler.handle().raw, OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
     )
     var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePtr(), WGPUStringView.null_view(), bind_group_layout.handle().raw, UInt(2), bg_entries_p
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bind_group_layout.handle().raw, UInt(2), bg_entries_p
     )
     var bind_group = device.create_bind_group(bg_desc)
     bg_entries_p.free()
@@ -191,10 +190,10 @@ def main() raises:
 
         var color_att_p = alloc[WGPURenderPassColorAttachment](1)
         color_att_p[0] = WGPURenderPassColorAttachment(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             view.handle().raw,
             UInt32(0xFFFFFFFF),
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             UInt32(1),
             UInt32(1),
             WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
@@ -202,12 +201,12 @@ def main() raises:
 
         var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
         rp_desc_p[0] = WGPURenderPassDescriptor(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             WGPUStringView.null_view(),
             UInt(1),
             color_att_p,
             UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin](),
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](),
         )
 

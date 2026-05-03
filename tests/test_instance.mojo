@@ -7,7 +7,6 @@ from std.testing import assert_true, assert_false, assert_equal, assert_not_equa
 from wgpu.gpu import GPU
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUAdapterType, WGPUBackendType,
 )
 from wgpu._ffi.structs import WGPUInstanceDescriptor
@@ -33,14 +32,14 @@ def test_create_instance() raises:
     var lib = WGPULib()
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePtr(unsafe_from_address=0),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
         UInt(0),
         None,
         None,
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
-    assert_true(inst != OpaquePtr(unsafe_from_address=0))
+    assert_true(inst != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
     lib.instance_release(inst)
 
 
@@ -49,18 +48,18 @@ def test_enumerate_adapters() raises:
     var lib = WGPULib()
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePtr(unsafe_from_address=0), UInt(0),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt(0),
         None,
         None,
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
-    var count = lib.enumerate_adapters(inst, OpaquePtr(), UnsafePointer[OpaquePtr, MutExternalOrigin]())
+    var count = lib.enumerate_adapters(inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]())
     print("Adapter count:", count)
     assert_true(count > UInt(0))
-    var adapters = alloc[OpaquePtr](Int(count))
-    _ = lib.enumerate_adapters(inst, OpaquePtr(), adapters)
-    assert_true(adapters[0] != OpaquePtr(unsafe_from_address=0))
+    var adapters = alloc[OpaquePointer[MutExternalOrigin]](Int(count))
+    _ = lib.enumerate_adapters(inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), adapters)
+    assert_true(adapters[0] != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
     adapters.free()
     lib.instance_release(inst)
 

@@ -5,7 +5,6 @@ wgpu.pipeline — ComputePipeline and RenderPipeline RAII wrappers.
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPUComputePipelineHandle, WGPURenderPipelineHandle,
 )
 from wgpu._ffi.structs import WGPUStringView, str_to_sv

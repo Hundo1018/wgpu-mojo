@@ -4,37 +4,35 @@ mirroring webgpu.h for the wgpu-native v27 API.
 """
 
 from std.ffi import OwnedDLHandle
-from std.memory import OpaquePointer
 
 # ---------------------------------------------------------------------------
 # Opaque handle types (all wgpu objects are pointer-sized)
 # ---------------------------------------------------------------------------
-comptime OpaquePtr = OpaquePointer[MutExternalOrigin]
 comptime NullableUnsafePointer[T: AnyType] = Optional[UnsafePointer[T, MutExternalOrigin]]
 
-comptime WGPUAdapterHandle = OpaquePtr
-comptime WGPUBindGroupHandle = OpaquePtr
-comptime WGPUBindGroupLayoutHandle = OpaquePtr
-comptime WGPUBufferHandle = OpaquePtr
-comptime WGPUCommandBufferHandle = OpaquePtr
-comptime WGPUCommandEncoderHandle = OpaquePtr
-comptime WGPUComputePassEncoderHandle = OpaquePtr
-comptime WGPUComputePipelineHandle = OpaquePtr
-comptime WGPUDeviceHandle = OpaquePtr
-comptime WGPUExternalTextureHandle = OpaquePtr
-comptime WGPUInstanceHandle = OpaquePtr
-comptime WGPUPipelineLayoutHandle = OpaquePtr
-comptime WGPUQuerySetHandle = OpaquePtr
-comptime WGPUQueueHandle = OpaquePtr
-comptime WGPURenderBundleHandle = OpaquePtr
-comptime WGPURenderBundleEncoderHandle = OpaquePtr
-comptime WGPURenderPassEncoderHandle = OpaquePtr
-comptime WGPURenderPipelineHandle = OpaquePtr
-comptime WGPUSamplerHandle = OpaquePtr
-comptime WGPUShaderModuleHandle = OpaquePtr
-comptime WGPUSurfaceHandle = OpaquePtr
-comptime WGPUTextureHandle = OpaquePtr
-comptime WGPUTextureViewHandle = OpaquePtr
+comptime WGPUAdapterHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUBindGroupHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUBindGroupLayoutHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUBufferHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUCommandBufferHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUCommandEncoderHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUComputePassEncoderHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUComputePipelineHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUDeviceHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUExternalTextureHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUInstanceHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUPipelineLayoutHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUQuerySetHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUQueueHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPURenderBundleHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPURenderBundleEncoderHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPURenderPassEncoderHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPURenderPipelineHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUSamplerHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUShaderModuleHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUSurfaceHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUTextureHandle = OpaquePointer[MutExternalOrigin]
+comptime WGPUTextureViewHandle = OpaquePointer[MutExternalOrigin]
 
 # WGPUBool is uint32_t in C
 comptime WGPUBool = UInt32

@@ -6,7 +6,6 @@ bridge loads and returns no spurious events.
 """
 
 from std.testing import assert_equal, assert_true, assert_false
-from wgpu._ffi.types import OpaquePtr
 from rendercanvas.glfw import (
     GLFWLib, MojoInputEvent, InputEventType,
     GLFW_CLIENT_API, GLFW_NO_API, GLFW_RESIZABLE, GLFW_FALSE, GLFW_TRUE,
@@ -35,10 +34,10 @@ def test_glfw_input_integration() raises:
     var title = String("test_input")
     var title_bytes = title.as_bytes()
     var raw = title_bytes.unsafe_ptr().bitcast[NoneType]()
-    var title_ptr = rebind[OpaquePtr](raw)
+    var title_ptr = rebind[OpaquePointer[MutExternalOrigin]](raw)
     var window = glfw.create_window(Int32(1), Int32(1), title_ptr)
     _ = title_bytes
-    assert_true(window != OpaquePtr(unsafe_from_address=0))
+    assert_true(window != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
     # Exercise polling functions — should not crash
     var key_state = glfw.get_key(window, GLFW_KEY_A)

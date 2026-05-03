@@ -5,7 +5,6 @@ No GPU required.
 
 from std.testing import assert_equal, assert_true, assert_false
 from wgpu._ffi.types import (
-    OpaquePtr,
     WGPU_FALSE, WGPU_TRUE, WGPU_STRLEN, WGPU_WHOLE_SIZE,
     WGPU_LIMIT_U32_UNDEFINED, WGPU_LIMIT_U64_UNDEFINED,
     WGPU_MIP_LEVEL_COUNT_UNDEFINED, WGPU_ARRAY_LAYER_COUNT_UNDEFINED,
@@ -95,8 +94,8 @@ def test_stype_enum() raises:
 
 
 def test_opaque_ptr_null() raises:
-    var p: OpaquePtr = OpaquePtr(unsafe_from_address=0)
-    assert_true(p == OpaquePtr(unsafe_from_address=0))
+    var p: OpaquePointer[MutExternalOrigin] = OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+    assert_true(p == OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 def main() raises:

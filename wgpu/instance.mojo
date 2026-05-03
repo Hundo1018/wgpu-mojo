@@ -5,8 +5,7 @@ wgpu.instance — High-level Instance wrapper (owns WGPULib + WGPUInstance + WGP
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    WGPUInstanceHandle, WGPUAdapterHandle, WGPUDeviceHandle, OpaquePtr,
-    WGPURequestDeviceStatus,
+    WGPUInstanceHandle, WGPUAdapterHandle, WGPUDeviceHandle, WGPURequestDeviceStatus,
 )
 from wgpu._ffi.structs import (
     WGPUAdapterInfo, WGPUDeviceDescriptor, WGPUDeviceLostCallbackInfo,
@@ -40,7 +39,7 @@ struct Instance(Movable):
         self._adapter = adapter
         var info_p = alloc[WGPUAdapterInfo](1)
         info_p[] = WGPUAdapterInfo(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             WGPUStringView.null_view(),
             WGPUStringView.null_view(),
             WGPUStringView.null_view(),
@@ -91,12 +90,12 @@ struct Instance(Movable):
 
         # Build descriptor
         var lost_cb = WGPUDeviceLostCallbackInfo(
-            OpaquePtr(), 0, OpaquePtr(), OpaquePtr(), OpaquePtr()
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), 0, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
         )
         var err_cb  = WGPUUncapturedErrorCallbackInfo(
-            OpaquePtr(), OpaquePtr(), OpaquePtr(), OpaquePtr()
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
         )
-        var queue_desc = WGPUQueueDescriptor(OpaquePtr(), WGPUStringView.null_view())
+        var queue_desc = WGPUQueueDescriptor(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view())
 
         var feat_ptr = UnsafePointer[UInt32, MutExternalOrigin]()
         if len(required_features) > 0:
@@ -106,7 +105,7 @@ struct Instance(Movable):
 
         var desc_p = alloc[WGPUDeviceDescriptor](1)
         desc_p[] = WGPUDeviceDescriptor(
-            OpaquePtr(),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             label_sv,
             UInt(len(required_features)),
             feat_ptr,
@@ -152,15 +151,15 @@ struct Instance(Movable):
 
     def create_surface_wayland(
         self,
-        display: OpaquePtr,
-        wayland_surface: OpaquePtr,
+        display: OpaquePointer[MutExternalOrigin],
+        wayland_surface: OpaquePointer[MutExternalOrigin],
     ) raises -> Surface:
         """Create a Surface from a Wayland display + wl_surface pointer."""
         return create_surface_wayland(self._lib, self._inst, display, wayland_surface)
 
     def create_surface_xlib(
         self,
-        display: OpaquePtr,
+        display: OpaquePointer[MutExternalOrigin],
         window: UInt64,
     ) raises -> Surface:
         """Create a Surface from an X11 Display* and Window id."""

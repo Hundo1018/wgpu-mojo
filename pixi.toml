@@ -52,10 +52,11 @@ build-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libwgpu_mojo
 build-callback-probe = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.so ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'"
 
 # Run all non-GPU tests
-test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_glfw_constants.mojo && mojo run -I . tests/test_input_state.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
+test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_glfw_constants.mojo && mojo run -I . tests/test_input_state.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
 
 # Run only non-GPU tests (no hardware required)
 test-types       = { cmd = "mojo run -I . tests/test_types.mojo", depends-on = ["build-callbacks"] }
+test-alloc-guard = { cmd = "mojo run -I . tests/test_alloc_guard.mojo", depends-on = ["build-callbacks"] }
 test-handle-newtypes = { cmd = "mojo run -I . tests/test_handle_newtypes.mojo", depends-on = ["build-callbacks"] }
 test-lifetimes-string-view = { cmd = "mojo run -I . tests/test_lifetimes_string_view.mojo", depends-on = ["build-callbacks"] }
 test-structs     = { cmd = "mojo run -I . tests/test_structs.mojo", depends-on = ["build-callbacks"] }

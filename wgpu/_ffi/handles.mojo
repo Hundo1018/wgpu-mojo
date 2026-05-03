@@ -1,183 +1,183 @@
 """wgpu._ffi.handles - strongly typed handle wrappers (newtype pattern)."""
 
-from wgpu._ffi.types import OpaquePtr
+
 
 
 @fieldwise_init
 struct AdapterHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> AdapterHandle:
-        return AdapterHandle(OpaquePtr(unsafe_from_address=0))
+        return AdapterHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct DeviceHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> DeviceHandle:
-        return DeviceHandle(OpaquePtr(unsafe_from_address=0))
+        return DeviceHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct QueueHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> QueueHandle:
-        return QueueHandle(OpaquePtr(unsafe_from_address=0))
+        return QueueHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct BufferHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> BufferHandle:
-        return BufferHandle(OpaquePtr(unsafe_from_address=0))
+        return BufferHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct TextureHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> TextureHandle:
-        return TextureHandle(OpaquePtr(unsafe_from_address=0))
+        return TextureHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct TextureViewHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> TextureViewHandle:
-        return TextureViewHandle(OpaquePtr(unsafe_from_address=0))
+        return TextureViewHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct SamplerHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> SamplerHandle:
-        return SamplerHandle(OpaquePtr(unsafe_from_address=0))
+        return SamplerHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct ShaderModuleHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> ShaderModuleHandle:
-        return ShaderModuleHandle(OpaquePtr(unsafe_from_address=0))
+        return ShaderModuleHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct BindGroupLayoutHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> BindGroupLayoutHandle:
-        return BindGroupLayoutHandle(OpaquePtr(unsafe_from_address=0))
+        return BindGroupLayoutHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct BindGroupHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> BindGroupHandle:
-        return BindGroupHandle(OpaquePtr(unsafe_from_address=0))
+        return BindGroupHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct PipelineLayoutHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> PipelineLayoutHandle:
-        return PipelineLayoutHandle(OpaquePtr(unsafe_from_address=0))
+        return PipelineLayoutHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct ComputePipelineHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> ComputePipelineHandle:
-        return ComputePipelineHandle(OpaquePtr(unsafe_from_address=0))
+        return ComputePipelineHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct RenderPipelineHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> RenderPipelineHandle:
-        return RenderPipelineHandle(OpaquePtr(unsafe_from_address=0))
+        return RenderPipelineHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct CommandEncoderHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> CommandEncoderHandle:
-        return CommandEncoderHandle(OpaquePtr(unsafe_from_address=0))
+        return CommandEncoderHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct CommandBufferHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> CommandBufferHandle:
-        return CommandBufferHandle(OpaquePtr(unsafe_from_address=0))
+        return CommandBufferHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct QuerySetHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> QuerySetHandle:
-        return QuerySetHandle(OpaquePtr(unsafe_from_address=0))
+        return QuerySetHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct SurfaceHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> SurfaceHandle:
-        return SurfaceHandle(OpaquePtr(unsafe_from_address=0))
+        return SurfaceHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct InstanceHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> InstanceHandle:
-        return InstanceHandle(OpaquePtr(unsafe_from_address=0))
+        return InstanceHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct ComputePassEncoderHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> ComputePassEncoderHandle:
-        return ComputePassEncoderHandle(OpaquePtr(unsafe_from_address=0))
+        return ComputePassEncoderHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
 @fieldwise_init
 struct RenderPassEncoderHandle(TrivialRegisterPassable, Copyable):
-    var raw: OpaquePtr
+    var raw: OpaquePointer[MutExternalOrigin]
 
     @staticmethod
     def null() -> RenderPassEncoderHandle:
-        return RenderPassEncoderHandle(OpaquePtr(unsafe_from_address=0))
+        return RenderPassEncoderHandle(OpaquePointer[MutExternalOrigin](unsafe_from_address=0))

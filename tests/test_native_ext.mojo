@@ -9,7 +9,6 @@ from wgpu._native import (
     WGPUInstanceBackend, WGPUInstanceFlag,
     WGPUInstanceExtras,
 )
-from wgpu._ffi.types import OpaquePtr
 from wgpu._ffi.structs import WGPUChainedStruct, WGPUStringView
 
 
@@ -61,14 +60,14 @@ def test_native_feature_values() raises:
 
 def test_instance_extras_construction() raises:
     var sv = WGPUStringView.null_view()
-    var chain = WGPUChainedStruct(OpaquePtr(unsafe_from_address=0), WGPUNativeSType.InstanceExtras)
+    var chain = WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUNativeSType.InstanceExtras)
     var extras = WGPUInstanceExtras(
         chain,
         WGPUInstanceBackend.VULKAN.value,
         WGPUInstanceFlag.DEFAULT.value,
         UInt32(0), UInt32(0), UInt32(0),
         sv, UInt32(0), UInt32(0),
-        OpaquePtr(unsafe_from_address=0), OpaquePtr(unsafe_from_address=0),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
     )
     assert_equal(extras.chain.stype, WGPUNativeSType.InstanceExtras)
     assert_equal(extras.backends, WGPUInstanceBackend.VULKAN.value)

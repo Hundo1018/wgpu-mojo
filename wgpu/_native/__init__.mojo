@@ -1,6 +1,6 @@
 """wgpu._native — wgpu-native extension types and structs."""
 
-from wgpu._ffi.types import OpaquePtr, WGPUFlags
+from wgpu._ffi.types import WGPUFlags
 
 # ---------------------------------------------------------------------------
 # WGPUNativeSType constants
@@ -132,8 +132,8 @@ struct WGPUInstanceExtras:
     var dxc_path:               WGPUStringView
     var dxc_max_shader_model:   UInt32
     var dx12_presentation_system: UInt32
-    var budget_for_device_creation: OpaquePtr  # nullable
-    var budget_for_device_loss: OpaquePtr      # nullable
+    var budget_for_device_creation: OpaquePointer[MutExternalOrigin]  # nullable
+    var budget_for_device_loss: OpaquePointer[MutExternalOrigin]      # nullable
 
 
 @fieldwise_init
@@ -152,7 +152,7 @@ struct WGPUNativeLimits:
 
 @fieldwise_init
 struct WGPUInstanceEnumerateAdapterOptions:
-    var next_in_chain: OpaquePtr  # WGPUChainedStruct* nullable
+    var next_in_chain: OpaquePointer[MutExternalOrigin]  # WGPUChainedStruct* nullable
     var backends:      UInt64    # WGPUInstanceBackend
 
 
@@ -218,11 +218,11 @@ struct WGPUPipelineLayoutExtras:
 @fieldwise_init
 struct WGPUBindGroupEntryExtras:
     var chain:            WGPUChainedStruct
-    var buffers:          UnsafePointer[OpaquePtr, MutExternalOrigin]  # WGPUBuffer*
+    var buffers:          UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]  # WGPUBuffer*
     var buffer_count:     UInt
-    var samplers:         UnsafePointer[OpaquePtr, MutExternalOrigin]  # WGPUSampler*
+    var samplers:         UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]  # WGPUSampler*
     var sampler_count:    UInt
-    var texture_views:    UnsafePointer[OpaquePtr, MutExternalOrigin]  # WGPUTextureView*
+    var texture_views:    UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]  # WGPUTextureView*
     var texture_view_count: UInt
 
 

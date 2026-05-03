@@ -4,7 +4,7 @@ wgpu.texture — Texture and TextureView RAII wrappers.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import OpaquePtr, WGPUTextureHandle, WGPUTextureViewHandle
+from wgpu._ffi.types import WGPUTextureHandle, WGPUTextureViewHandle
 from wgpu._ffi.structs import WGPUTextureViewDescriptor, WGPUStringView, str_to_sv
 from wgpu._ffi.handles import TextureHandle, TextureViewHandle
 
