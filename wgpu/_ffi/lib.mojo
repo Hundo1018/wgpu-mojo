@@ -453,11 +453,11 @@ struct WGPULib(Movable):
 
             with AllocGuard[WGPUBufferMapCallbackInfo](1) as cb_info_p:
                 cb_info_p[] = WGPUBufferMapCallbackInfo(
-                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                    None,
                     WGPUCallbackMode.AllowSpontaneous,
                     self._map_cb_ptr,
                     result.bitcast[NoneType](),
-                    OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                    None,
                 )
                 _ = self._cb.call["wgpu_mojo_buffer_map_async", WGPUFuture](
                     buffer, mode, offset, size, cb_info_p

@@ -157,38 +157,38 @@ struct WGPUFuture(TrivialRegisterPassable):
 
 @fieldwise_init
 struct WGPUBufferMapCallbackInfo:
-    var next_in_chain: OpaquePointer[MutExternalOrigin]
+    var next_in_chain: Optional[OpaquePointer[MutExternalOrigin]]
     var mode: UInt32
     var callback: OpaquePointer[MutExternalOrigin]   # WGPUBufferMapCallback fn ptr
     var userdata1: OpaquePointer[MutExternalOrigin]
-    var userdata2: OpaquePointer[MutExternalOrigin]
+    var userdata2: Optional[OpaquePointer[MutExternalOrigin]]
 
 
 @fieldwise_init
 struct WGPUCompilationInfoCallbackInfo:
-    var next_in_chain: OpaquePointer[MutExternalOrigin]
+    var next_in_chain: Optional[OpaquePointer[MutExternalOrigin]]
     var mode: UInt32
     var callback: OpaquePointer[MutExternalOrigin]   # WGPUCompilationInfoCallback fn ptr
     var userdata1: OpaquePointer[MutExternalOrigin]
-    var userdata2: OpaquePointer[MutExternalOrigin]
+    var userdata2: Optional[OpaquePointer[MutExternalOrigin]]
 
 
 @fieldwise_init
 struct WGPUCreateComputePipelineAsyncCallbackInfo:
-    var next_in_chain: OpaquePointer[MutExternalOrigin]
+    var next_in_chain: Optional[OpaquePointer[MutExternalOrigin]]
     var mode: UInt32
     var callback: OpaquePointer[MutExternalOrigin]
     var userdata1: OpaquePointer[MutExternalOrigin]
-    var userdata2: OpaquePointer[MutExternalOrigin]
+    var userdata2: Optional[OpaquePointer[MutExternalOrigin]]
 
 
 @fieldwise_init
 struct WGPUCreateRenderPipelineAsyncCallbackInfo:
-    var next_in_chain: OpaquePointer[MutExternalOrigin]
+    var next_in_chain: Optional[OpaquePointer[MutExternalOrigin]]
     var mode: UInt32
     var callback: OpaquePointer[MutExternalOrigin]
     var userdata1: OpaquePointer[MutExternalOrigin]
-    var userdata2: OpaquePointer[MutExternalOrigin]
+    var userdata2: Optional[OpaquePointer[MutExternalOrigin]]
 
 
 @fieldwise_init
