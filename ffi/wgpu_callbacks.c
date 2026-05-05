@@ -78,18 +78,6 @@ void* wgpu_mojo_get_buffer_map_callback(void){ return (void*)_wgpu_mojo_buffer_m
 void* wgpu_mojo_get_queue_done_callback(void){ return (void*)_wgpu_mojo_queue_done_cb; }
 void* wgpu_mojo_get_pop_error_callback(void) { return (void*)_wgpu_mojo_pop_error_cb; }
 
-/* ---------------------------------------------------------------------------
- * Struct-by-value wrapper functions.
- *
- * Several wgpu-native functions take callback-info structs **by value**.
- * Mojo's DLHandle.call ABI does not reliably pass >16-byte structs by value
- * on x86_64 (the SysV ABI requires spilling to the stack, which Mojo's
- * TrivialRegisterPassable calling convention does not honour).
- *
- * These thin wrappers accept the callback info **by pointer** and forward
- * to the real wgpu function with a dereference, so Mojo only ever passes
- * pointers through the FFI boundary.
- * ----------------------------------------------------------------------- */
 
 WGPUFuture wgpu_mojo_instance_request_adapter(
     WGPUInstance instance,
@@ -154,9 +142,6 @@ WGPUFuture wgpu_mojo_device_create_render_pipeline_async(
     return wgpuDeviceCreateRenderPipelineAsync(device, descriptor, *cb_info);
 }
 
-/* wgpuSurfaceCapabilitiesFreeMembers takes its arg by value — Mojo FFI can't
- * pass non-TrivialRegisterPassable structs by value safely, so we accept a
- * pointer and dereference on the C side. */
 void wgpu_mojo_surface_capabilities_free_members(
     const WGPUSurfaceCapabilities* caps
 ) {

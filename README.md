@@ -2,9 +2,21 @@
 
 Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native), providing a lightweight WebGPU wrapper for Mojo applications with RAII-friendly GPU objects and GLFW-based examples.
 
-## Requirements
+## Installation
 
-- Mojo `>= 0.26.3`
+To use wgpu-mojo as a dependency in your Pixi project:
+
+```bash
+pixi add --git https://github.com/Hundo1018/wgpu-mojo.git wgpu-mojo
+```
+
+This fetches the package directly from the repository. No manual native library setup is needed when using this method.
+
+## Requirements (Development)
+
+If you are cloning the repository to run examples or contribute:
+
+- Mojo `>= 1.0.0b2.dev2026050406`
 - [Pixi](https://prefix.dev/) package manager
 - `libwgpu_native.so` available at `ffi/lib/libwgpu_native.so`
 - GLFW installed and available through your Conda environment
@@ -76,7 +88,6 @@ If the window appears, the core runtime path is working: `wgpu-native` → FFI b
 
 ```mojo
 from wgpu.gpu import GPU
-from wgpu._ffi.types import OpaquePtr
 from wgpu._ffi.structs import WGPUColor
 from rendercanvas import RenderCanvas
 
@@ -109,11 +120,11 @@ def main() raises:
     var device = gpu.request_device()
     var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: hello triangle")
     var shader = device.create_shader_module_wgsl(WGSL, "hello")
-    var layout = device.create_pipeline_layout(List[OpaquePtr](), "layout")
+    var layout = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "layout")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main",
         canvas.surface_format(), layout,
-        primitive_topology=UInt32(4),  # TriangleList
+        primitive_topology=UInt32(4),  # TriangleStrip
     )
     while canvas.is_open():
         canvas.poll()
@@ -207,26 +218,30 @@ The wrappers are built around RAII, but Mojo lifetime rules still matter when yo
 - Keep owning wrappers alive after extracting raw handles or passing `unsafe_ptr()` references.
 - Prefer wrapper-first APIs instead of raw `WGPU*Handle` values.
 - Call `finish()`, `end()`, or `abandon()` on `CommandEncoder`, `RenderPassEncoder`, and `ComputePassEncoder` when required.
-- When you need to pin an object, use `_ = value^` until the consuming GPU call completes.
+- When you need to pin an object past a GPU call, use `_ = value^`.
 
-Minimal pin example:
+### When tail pins are needed
+
+| Object | Pin needed? | Reason |
+|---|---|---|
+| `gpu` (`GPU`) | **No** | Library lifetime is managed automatically via `ArcPointer`. |
+| `device` | **Sometimes** | wgpu-native v29 may free the device on `Release` even while buffer map callbacks are in flight. Pin past `map_read`/`poll` calls. |
+| `buf`, `bgl`, `pipeline`, … | **When raw handle is in a descriptor** | Mojo's ASAP drop can free the wrapper before the FFI call if you embed `.handle().raw` directly in a descriptor struct. Pin until the FFI call returns. |
+
+Example — pinning a buffer past a map-read:
 
 ```mojo
-var gpu = GPU()
+var gpu    = GPU()
 var device = gpu.request_device()
-var buf = device.create_buffer(UInt64(256), WGPUBufferUsage.STORAGE)
+var buf    = device.create_buffer(UInt64(256), WGPUBufferUsage.STORAGE)
 var raw_handle = buf.handle().raw
 
 # ... use raw_handle in descriptors or FFI calls ...
 
-_ = buf^
-_ = device^
-_ = gpu^
+_ = buf^     # keep buf alive until FFI call using raw_handle returns
+_ = device^  # keep device alive past map_read / poll
+# gpu does NOT need a pin — ArcPointer handles library lifetime
 ```
-
-## Architecture
-
-This project uses a thin, dynamic FFI layer to load `libwgpu_native.so` at runtime. The Mojo wrapper layer exposes high-level WebGPU concepts while the `ffi/` C bridge handles callback-based APIs such as device requests and buffer mapping.
 
 ## Notes
 
@@ -236,5 +251,5 @@ This project uses a thin, dynamic FFI layer to load `libwgpu_native.so` at runti
 
 ## License
 
-See [LICENSE](LICENSE).
+[Apache-2.0](LICENSE).
 
