@@ -97,7 +97,7 @@ struct Instance(Movable):
         )
         var queue_desc = WGPUQueueDescriptor(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view())
 
-        var feat_ptr = UnsafePointer[UInt32, MutExternalOrigin]()
+        var feat_ptr = UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0)
         if len(required_features) > 0:
             feat_ptr = alloc[UInt32](len(required_features))
             for i in range(len(required_features)):
@@ -109,7 +109,7 @@ struct Instance(Movable):
             label_sv,
             UInt(len(required_features)),
             feat_ptr,
-            UnsafePointer[WGPULimits, MutExternalOrigin](),
+            UnsafePointer[WGPULimits, MutExternalOrigin](unsafe_from_address=0),
             queue_desc,
             lost_cb,
             err_cb,

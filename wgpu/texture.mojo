@@ -78,7 +78,7 @@ struct Texture(Movable):
     def create_view_default(self) raises -> TextureView:
         var h = self._lib[].texture_create_view(
             self._handle,
-            UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin](),
+            UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin](unsafe_from_address=0),
         )
         return TextureView(self._lib, h)
 
