@@ -62,6 +62,66 @@ GLFW is provided via Conda through Pixi on Linux. On macOS/Windows, install it v
 
 > **Note:** The Pixi workspace is currently configured for `linux-64`. On macOS or Windows you can still build and run the code manually with `mojo run -I . hello.mojo` after placing the correct native library in `ffi/lib/`.
 
+## Minimal Verified Example
+
+The fastest way to confirm that wgpu-mojo is correctly installed and your GPU stack is working:
+
+```bash
+pixi run build-callbacks          # compile C callback bridge (once)
+pixi run example-clear            # open a cornflower-blue window, then close it
+```
+
+Expected result: a 800×600 window with a solid cornflower blue background appears. Close it to exit. If it appears, the complete runtime path is verified: `libwgpu_native.so` → FFI bridge → Mojo wrappers → GLFW surface → GPU frame present.
+
+Source: [`examples/clear_screen.mojo`](examples/clear_screen.mojo) (48 lines). Key pattern:
+
+```mojo
+from wgpu.gpu import GPU
+from wgpu._ffi.structs import WGPUColor
+from rendercanvas import RenderCanvas
+
+def main() raises:
+    var gpu    = GPU()
+    var device = gpu.request_device()
+    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: clear screen")
+    while canvas.is_open():
+        canvas.poll()
+        var frame = canvas.next_frame()
+        if not frame.is_renderable():
+            continue
+        var enc   = device.create_command_encoder("frame")
+        var rpass = enc.begin_surface_clear_pass(
+            frame.texture,
+            WGPUColor(0.392, 0.584, 0.929, 1.0),  # cornflower blue
+            "clear_pass",
+        )
+        rpass^.end()
+        device.queue_submit(enc^.finish())
+        canvas.present()
+```
+
+**Prerequisites**
+- `pixi run build-callbacks` completed without errors (`ffi/lib/libwgpu_mojo_cb.so` present)
+- GPU hardware with Vulkan drivers installed (Linux: `mesa-vulkan-drivers` or NVIDIA proprietary stack)
+- A display server (X11 or Wayland) — GLFW requires a display
+
+**Headless / CI environments**
+GLFW requires a display. In CI without GPU passthrough, skip windowed examples and use the headless compute path (`examples/compute_add.mojo`) instead.
+
+**Diagnosing load failures**
+Run the preflight check to see which libraries were found and which adapters are available:
+
+```mojo
+from wgpu.gpu import preflight
+print(preflight())
+```
+
+Or use the adapter enumeration example:
+
+```bash
+pixi run example-enumerate
+```
+
 ## Setup
 
 1. Install Mojo and Pixi.

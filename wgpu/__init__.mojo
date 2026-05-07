@@ -10,7 +10,7 @@ Quick start:
 """
 
 # Top-level entry point
-from wgpu.gpu import GPU, set_log_level
+from wgpu.gpu import GPU, set_log_level, preflight
 
 # High-level RAII wrappers
 from wgpu.instance      import Instance
@@ -82,3 +82,6 @@ from wgpu._ffi.structs import (
     WGPUTexelCopyBufferLayout, WGPUTexelCopyBufferInfo, WGPUTexelCopyTextureInfo,
     WGPUAdapterInfo,
 )
+
+# API discovery (works from .mojopkg without source access)
+from wgpu.api_index import api_index

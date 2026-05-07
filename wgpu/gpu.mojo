@@ -11,6 +11,7 @@ from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
     WGPUInstanceHandle, WGPUAdapterHandle, WGPUDeviceHandle, WGPURequestDeviceStatus,
+    WGPUBackendType, WGPUAdapterType,
 )
 
 from wgpu._ffi.structs import (
@@ -62,7 +63,15 @@ struct GPU(Movable):
         )
         if count == 0:
             lib.instance_release(inst)
-            raise Error("No GPU adapters found")
+            raise Error(
+                "No GPU adapters found.\n"
+                + "Possible causes:\n"
+                + "  * No GPU hardware detected (VM, container, headless CI without GPU passthrough)\n"
+                + "  * Missing Vulkan/Metal/D3D12 drivers (Linux: install mesa-vulkan-drivers or NVIDIA stack)\n"
+                + "  * wgpu-native loaded but backend not available for your GPU\n"
+                + "Tip: run 'pixi run example-enumerate' to list available backends, or set\n"
+                + "  WGPU_BACKEND=gl for software (Mesa llvmpipe) fallback."
+            )
 
         var adapters = alloc[WGPUAdapterHandle](Int(count))
         _ = lib.enumerate_adapters(inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), adapters)
@@ -229,3 +238,121 @@ def set_log_level(level: UInt32) raises:
     """Set wgpu-native log level (0=Off, 1=Error, 2=Warn, 3=Info, 4=Debug, 5=Trace)."""
     var lib = WGPULib()
     lib.set_log_level(level)
+
+
+def _backend_type_name(t: UInt32) -> String:
+    if t == WGPUBackendType.Vulkan:   return "Vulkan"
+    if t == WGPUBackendType.Metal:    return "Metal"
+    if t == WGPUBackendType.D3D12:    return "D3D12"
+    if t == WGPUBackendType.D3D11:    return "D3D11"
+    if t == WGPUBackendType.OpenGL:   return "OpenGL"
+    if t == WGPUBackendType.OpenGLES: return "OpenGLES"
+    if t == WGPUBackendType.WebGPU:   return "WebGPU"
+    if t == WGPUBackendType.Null:     return "Null"
+    return "Unknown(" + String(t) + ")"
+
+
+def _adapter_type_name(t: UInt32) -> String:
+    if t == WGPUAdapterType.DiscreteGPU:   return "DiscreteGPU"
+    if t == WGPUAdapterType.IntegratedGPU: return "IntegratedGPU"
+    if t == WGPUAdapterType.CPU:           return "CPU"
+    return "Unknown(" + String(t) + ")"
+
+
+def _sv_to_str(sv: WGPUStringView) -> String:
+    """Convert a WGPUStringView to a Mojo String. Returns '<null>' for null data."""
+    var null_ptr = UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0)
+    if sv.data == null_ptr:
+        return "<null>"
+    var p = sv.data.bitcast[UInt8]()
+    var n = sv.length
+    # WGPU_STRLEN sentinel (size_t max) means null-terminated — cap at 2048
+    if n > 2048:
+        n = 2048
+    var out = String()
+    var i = UInt(0)
+    while i < n and p[Int(i)] != 0:
+        out += chr(Int(p[Int(i)]))
+        i += 1
+    return out
+
+
+def preflight() -> String:
+    """Run a pre-flight check and return a human-readable diagnostic string.
+
+    On success, reports the wgpu-native version and all available adapters.
+    On failure, reports which library paths were searched and how to fix them.
+
+    This function never raises — all errors are captured into the returned string.
+
+    Example::
+
+        from wgpu.gpu import preflight
+        print(preflight())
+    """
+    # Try loading the library
+    var lib: WGPULib
+    try:
+        lib = WGPULib()
+    except e:
+        return "wgpu preflight FAILED (library load error):\n" + String(e)
+
+    var lines = String("wgpu preflight OK\n")
+    lines += "  wgpu-native version: " + String(lib.get_version()) + "\n"
+
+    # Create instance
+    var desc_p = alloc[WGPUInstanceDescriptor](1)
+    desc_p[] = WGPUInstanceDescriptor(
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        UInt(0),
+        UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+    )
+    var inst = lib.create_instance(desc_p)
+    desc_p.free()
+    if inst == OpaquePointer[MutExternalOrigin](unsafe_from_address=0):
+        return lines + "  ERROR: wgpuCreateInstance returned null\n"
+
+    # Enumerate adapters
+    var count = lib.enumerate_adapters(
+        inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin](unsafe_from_address=0),
+    )
+    lines += "  adapters found: " + String(count) + "\n"
+
+    if count == 0:
+        lib.instance_release(inst)
+        lines += (
+            "  WARNING: No GPU adapters detected.\n"
+            + "  Possible causes: missing Vulkan/Metal/D3D12 drivers, "
+            + "headless environment, or VM without GPU passthrough.\n"
+        )
+        return lines
+
+    var adapters = alloc[WGPUAdapterHandle](Int(count))
+    _ = lib.enumerate_adapters(
+        inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), adapters
+    )
+
+    var info_p = alloc[WGPUAdapterInfo](1)
+    for i in range(Int(count)):
+        info_p[] = WGPUAdapterInfo(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            WGPUStringView.null_view(), WGPUStringView.null_view(),
+            WGPUStringView.null_view(), WGPUStringView.null_view(),
+            0, 0, 0, 0, 0, 0,
+        )
+        _ = lib.adapter_get_info(adapters[i], info_p)
+        var info = info_p[]
+        lines += (
+            "  adapter[" + String(i) + "]: "
+            + _sv_to_str(info.device) + " | "
+            + _backend_type_name(info.backend_type) + " | "
+            + _adapter_type_name(info.adapter_type) + "\n"
+        )
+        lib.adapter_release(adapters[i])
+
+    info_p.free()
+    adapters.free()
+    lib.instance_release(inst)
+    return lines

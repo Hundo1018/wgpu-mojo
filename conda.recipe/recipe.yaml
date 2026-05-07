@@ -1,5 +1,5 @@
 context:
-  version: "0.1.0"
+  version: "0.2.0"
   wgpu_native_version: "29.0.0.0"
 
 package:
@@ -139,6 +139,14 @@ build:
         - copy ffi\lib\wgpu_mojo_cb.dll %PREFIX%\Library\bin\ || exit /b 0
         - copy ffi\lib\glfw_input_cb.dll %PREFIX%\Library\bin\ || exit /b 0
         - copy ffi\lib\mojo_callback_probe.dll %PREFIX%\Library\bin\ || exit /b 0
+
+    # -----------------------------
+    # api_index.txt (unix)
+    # -----------------------------
+    - if: unix
+      then:
+        - mkdir -p $PREFIX/share/wgpu-mojo
+        - mojo run -I . -e "from wgpu.api_index import api_index; print(api_index())" > $PREFIX/share/wgpu-mojo/api_index.txt 2>/dev/null || true
 
 requirements:
   build:

@@ -129,6 +129,92 @@ comptime _CB_LIB_NAME   = _cb_lib_name()
 comptime _WGPU_LIB_PATH = _wgpu_dev_path()
 comptime _CB_LIB_PATH   = _cb_dev_path()
 
+# Expected wgpu-native ABI version (matches ffi/wgpu-native-meta/wgpu-native-git-tag)
+comptime _WGPU_NATIVE_VERSION = "v29.0.0.0"
+
+
+# ---------------------------------------------------------------------------
+# Runtime environment helpers (no std.env module in current nightly)
+# ---------------------------------------------------------------------------
+
+def _read_env_var(name: String) raises -> String:
+    """Read an environment variable via libc getenv.
+
+    Returns an empty string when the variable is unset or empty.
+    This avoids depending on std.env (not available in current Mojo nightly).
+    """
+    var libc = OwnedDLHandle("libc.so.6")
+    var name_bytes = name.as_bytes()
+    var raw = libc.call["getenv", OpaquePointer[MutExternalOrigin]](
+        name_bytes.unsafe_ptr()
+    )
+    var null_ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+    if raw == null_ptr:
+        return String("")
+    var p = raw.bitcast[UInt8]()
+    var out = String()
+    var i = 0
+    while p[i] != 0:
+        out += chr(Int(p[i]))
+        i += 1
+    return out
+
+
+def _conda_lib_path(lib_name: String) raises -> String:
+    """Return $CONDA_PREFIX/lib/<lib_name>, or empty string if CONDA_PREFIX is unset."""
+    var prefix = _read_env_var("CONDA_PREFIX")
+    if prefix == "":
+        return String("")
+    return prefix + "/lib/" + lib_name
+
+
+def _load_lib_with_fallback(lib_name: String, dev_path: String) raises -> OwnedDLHandle:
+    """Try to load a shared library from three locations in priority order:
+
+    1. Bare name (resolved via LD_LIBRARY_PATH / DYLD_LIBRARY_PATH / PATH)
+    2. $CONDA_PREFIX/lib/<lib_name>  (conda-installed package without pixi activation)
+    3. ffi/lib/<lib_name>            (dev-tree, CWD must be repo root)
+
+    Raises a descriptive Error listing all searched paths when all three fail.
+    """
+    # Path 1: bare name
+    try:
+        return OwnedDLHandle(lib_name)
+    except:
+        pass
+
+    # Path 2: $CONDA_PREFIX/lib/
+    var conda_path = String("")
+    try:
+        conda_path = _conda_lib_path(lib_name)
+        if conda_path != "":
+            return OwnedDLHandle(conda_path)
+    except:
+        pass
+
+    # Path 3: dev-tree relative path
+    try:
+        return OwnedDLHandle(dev_path)
+    except:
+        pass
+
+    # All three failed — build an actionable error message
+    var msg = (
+        "Failed to load " + lib_name + ". Searched:\n"
+        + "  [1] " + lib_name + "  (via LD_LIBRARY_PATH / DYLD_LIBRARY_PATH)\n"
+    )
+    if conda_path != "":
+        msg += "  [2] " + conda_path + "  (via $CONDA_PREFIX)\n"
+    else:
+        msg += "  [2] <skipped — CONDA_PREFIX is not set>\n"
+    msg += (
+        "  [3] " + dev_path + "  (dev-tree relative path)\n"
+        + "wgpu-native expected ABI: " + _WGPU_NATIVE_VERSION + "\n"
+        + "Fix: run 'pixi install' inside the wgpu-mojo repo, or ensure\n"
+        + "  $CONDA_PREFIX/lib is on LD_LIBRARY_PATH before running your program."
+    )
+    raise Error(msg)
+
 
 # ---------------------------------------------------------------------------
 # WGPULib — owns two DLHandles and dispatches all WGPU function calls
@@ -148,17 +234,13 @@ struct WGPULib(Movable):
     var _pop_error_cb_ptr: OpaquePointer[MutExternalOrigin]
 
     def __init__(out self) raises:
-        # Prefer bare library name so the conda-installed package finds
-        # the library via LD_LIBRARY_PATH / DYLD_LIBRARY_PATH / PATH.
-        # Fall back to the dev-tree relative path for `pixi run` from repo root.
-        try:
-            self._wgpu = OwnedDLHandle(_WGPU_LIB_NAME)
-        except:
-            self._wgpu = OwnedDLHandle(_WGPU_LIB_PATH)
-        try:
-            self._cb = OwnedDLHandle(_CB_LIB_NAME)
-        except:
-            self._cb = OwnedDLHandle(_CB_LIB_PATH)
+        # Three-stage fallback for each library:
+        #   1. Bare name via LD_LIBRARY_PATH / DYLD_LIBRARY_PATH
+        #   2. $CONDA_PREFIX/lib/<name>  (conda-installed, pixi activation not needed)
+        #   3. ffi/lib/<name>            (dev-tree, CWD = repo root)
+        # All three failing raises a descriptive error listing searched paths.
+        self._wgpu = _load_lib_with_fallback(_WGPU_LIB_NAME, _WGPU_LIB_PATH)
+        self._cb   = _load_lib_with_fallback(_CB_LIB_NAME,   _CB_LIB_PATH)
         self._adapter_cb_ptr = self._cb.call["wgpu_mojo_get_adapter_callback", OpaquePointer[MutExternalOrigin]]()
         self._device_cb_ptr  = self._cb.call["wgpu_mojo_get_device_callback",  OpaquePointer[MutExternalOrigin]]()
         self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePointer[MutExternalOrigin]]()
