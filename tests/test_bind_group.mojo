@@ -9,11 +9,10 @@ from wgpu._ffi.types import (
     WGPUBufferUsage, WGPUShaderStage,
 )
 from wgpu._ffi.structs import (
-    WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
+    WGPUBindGroupLayoutEntry,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout,
-    WGPUBindGroupEntry, WGPUBindGroupDescriptor,
-    str_to_sv, WGPUStringView,
+    WGPUBindGroupEntry,
 )
 from wgpu._ffi.types import WGPU_WHOLE_SIZE
 
@@ -42,17 +41,8 @@ def test_create_bind_group_layout() raises:
     var gpu    = GPU()
     var device = gpu.request_device()
 
-    var entries_p = alloc[WGPUBindGroupLayoutEntry](1)
-    entries_p[0] = make_storage_bgl_entry(UInt32(0))
-    var label   = str_to_sv(String("test_bgl"))
-    var desc    = WGPUBindGroupLayoutDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        label,
-        UInt(1),
-        entries_p,
-    )
-    var bgl = device.create_bind_group_layout(desc)
-    entries_p.free()
+    var entries: List[WGPUBindGroupLayoutEntry] = [make_storage_bgl_entry(UInt32(0))]
+    var bgl = device.create_bind_group_layout(entries, "test_bgl")
     assert_true(bgl.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
 
@@ -65,29 +55,21 @@ def test_create_bind_group_with_buffer() raises:
         UInt64(256), WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False
     )
 
-    var entries_p = alloc[WGPUBindGroupLayoutEntry](1)
-    entries_p[0] = make_storage_bgl_entry(UInt32(0))
-    var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(1), entries_p
-    )
-    var bgl = device.create_bind_group_layout(bgl_desc)
-    entries_p.free()
+    var bgl_entries: List[WGPUBindGroupLayoutEntry] = [make_storage_bgl_entry(UInt32(0))]
+    var bgl = device.create_bind_group_layout(bgl_entries)
 
-    var bg_entries_p = alloc[WGPUBindGroupEntry](1)
-    bg_entries_p[0] = WGPUBindGroupEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        UInt32(0),
-        buf.handle().raw,
-        UInt64(0),
-        WGPU_WHOLE_SIZE,
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-    )
-    var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(1), bg_entries_p
-    )
-    var bg = device.create_bind_group(bg_desc)
-    bg_entries_p.free()
+    var bg_entries: List[WGPUBindGroupEntry] = [
+        WGPUBindGroupEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            UInt32(0),
+            buf.handle().raw,
+            UInt64(0),
+            WGPU_WHOLE_SIZE,
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        )
+    ]
+    var bg = device.create_bind_group(bgl, bg_entries)
     assert_true(bg.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
 
     # Pin: raw handles from buf/bgl are embedded in FFI descriptors

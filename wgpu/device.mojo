@@ -256,6 +256,24 @@ struct Device(Movable):
         desc_p.free()
         return BindGroupLayout(self._lib, result)
 
+    def create_bind_group_layout(
+        self,
+        entries: List[WGPUBindGroupLayoutEntry],
+        label: String = "",
+    ) raises -> BindGroupLayout:
+        """High-level BindGroupLayout creation from entry structs."""
+        var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
+        var entries_ptr = UnsafePointer[WGPUBindGroupLayoutEntry, MutExternalOrigin](unsafe_from_address=0)
+        if len(entries) > 0:
+            entries_ptr = rebind[UnsafePointer[WGPUBindGroupLayoutEntry, MutExternalOrigin]](entries.unsafe_ptr())
+        var desc = WGPUBindGroupLayoutDescriptor(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            label_sv,
+            UInt(len(entries)),
+            entries_ptr,
+        )
+        return self.create_bind_group_layout(desc)
+
     def create_bind_group(
         self,
         desc: WGPUBindGroupDescriptor,
@@ -265,6 +283,26 @@ struct Device(Movable):
         var result = self._lib[].device_create_bind_group(self._handle, desc_p)
         desc_p.free()
         return BindGroup(self._lib, result)
+
+    def create_bind_group(
+        self,
+        layout: BindGroupLayout,
+        entries: List[WGPUBindGroupEntry],
+        label: String = "",
+    ) raises -> BindGroup:
+        """High-level BindGroup creation from entry structs."""
+        var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
+        var entries_ptr = UnsafePointer[WGPUBindGroupEntry, MutExternalOrigin](unsafe_from_address=0)
+        if len(entries) > 0:
+            entries_ptr = rebind[UnsafePointer[WGPUBindGroupEntry, MutExternalOrigin]](entries.unsafe_ptr())
+        var desc = WGPUBindGroupDescriptor(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            label_sv,
+            layout.handle().raw,
+            UInt(len(entries)),
+            entries_ptr,
+        )
+        return self.create_bind_group(desc)
 
     def create_pipeline_layout(
         self,
