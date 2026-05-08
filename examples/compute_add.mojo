@@ -16,11 +16,10 @@ from wgpu import (
     GPU,
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE,
     WGPUBufferBindingType,
-    WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
+    WGPUBindGroupLayoutEntry,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout,
-    WGPUBindGroupEntry, WGPUBindGroupDescriptor,
-    WGPUStringView, str_to_sv,
+    WGPUBindGroupEntry,
 )
 
 
@@ -80,15 +79,12 @@ def main() raises:
     # ----------------------------------------------------------------
     # 3. Bind group layout
     # ----------------------------------------------------------------
-    var entries_p = alloc[WGPUBindGroupLayoutEntry](3)
-    entries_p[0] = make_storage_entry(UInt32(0), True)   # a: read
-    entries_p[1] = make_storage_entry(UInt32(1), True)   # b: read
-    entries_p[2] = make_storage_entry(UInt32(2), False)  # c: read_write
-    var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(3), entries_p
-    )
-    var bgl = device.create_bind_group_layout(bgl_desc)
-    entries_p.free()
+    var bgl_entries: List[WGPUBindGroupLayoutEntry] = [
+        make_storage_entry(UInt32(0), True),   # a: read
+        make_storage_entry(UInt32(1), True),   # b: read
+        make_storage_entry(UInt32(2), False),  # c: read_write
+    ]
+    var bgl = device.create_bind_group_layout(bgl_entries)
 
     # ----------------------------------------------------------------
     # 4. Pipeline layout (RAII) — single-BGL convenience overload
@@ -123,18 +119,15 @@ def main() raises:
     # ----------------------------------------------------------------
     # 7. Bind group (RAII)
     # ----------------------------------------------------------------
-    var bg_entries_p = alloc[WGPUBindGroupEntry](3)
-    bg_entries_p[0] = WGPUBindGroupEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
-    bg_entries_p[1] = WGPUBindGroupEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
-    bg_entries_p[2] = WGPUBindGroupEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
-    var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(3), bg_entries_p,
-    )
-    var bg = device.create_bind_group(bg_desc)
-    bg_entries_p.free()
+    var bg_entries: List[WGPUBindGroupEntry] = [
+        WGPUBindGroupEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)),
+        WGPUBindGroupEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)),
+        WGPUBindGroupEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)),
+    ]
+    var bg = device.create_bind_group(bgl, bg_entries)
 
     # ----------------------------------------------------------------
     # 8. Record and submit
