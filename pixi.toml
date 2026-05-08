@@ -38,21 +38,27 @@ mojo-compiler = "==1.0.0b1"
 mojo-compiler = "==1.0.0b1"
 
 [activation]
-# Make ffi/lib discoverable when running from the repo (dev mode).
+# Make ffi/lib and rendercanvas-mojo/ffi/lib discoverable when running from the repo (dev mode).
 # Conda-installed users rely on $CONDA_PREFIX/lib being in the search path.
-env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH" }
+env = { LD_LIBRARY_PATH = "ffi/lib:rendercanvas-mojo/ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIBRARY_PATH = "ffi/lib:rendercanvas-mojo/ffi/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH" }
 
 [dependencies]
 mojo = "==1.0.0b1"
 glfw = ">=3.4,<4"
+# rendercanvas-mojo is consumed from the local staging directory (rendercanvas-mojo/).
+# Once published to a conda channel, replace with: rendercanvas-mojo = ">=0.1"
 
 [tasks]
-# Build the C callback bridge (must be run before any GPU test/example)
-build-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN' && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"
+# Build the wgpu async callback bridge (required for GPU tests/examples)
+build-wgpu-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN'"
+# Build the GLFW input callback bridge from rendercanvas-mojo, then copy to ffi/lib/ for local use
+build-glfw-callbacks = "mkdir -p rendercanvas-mojo/ffi/lib && gcc -shared -fPIC -o rendercanvas-mojo/ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib && mkdir -p ffi/lib && cp rendercanvas-mojo/ffi/lib/libglfw_input_cb.so ffi/lib/"
+# Convenience target: build all callback bridges
+build-callbacks = { depends-on = ["build-wgpu-callbacks", "build-glfw-callbacks"] }
 build-callback-probe = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.so ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'"
 
 # Run all non-GPU tests
-test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_glfw_constants.mojo && mojo run -I . tests/test_input_state.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
+test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
 
 # Run only non-GPU tests (no hardware required)
 test-types       = { cmd = "mojo run -I . tests/test_types.mojo", depends-on = ["build-callbacks"] }
@@ -75,28 +81,25 @@ test-sampler     = { cmd = "mojo run -I . tests/test_sampler.mojo", depends-on =
 test-command     = { cmd = "mojo run -I . tests/test_command_encoder.mojo", depends-on = ["build-callbacks"] }
 test-pipeline-layout = { cmd = "mojo run -I . tests/test_pipeline_layout.mojo", depends-on = ["build-callbacks"] }
 
-# Input system tests (non-GPU)
-test-glfw-constants = { cmd = "mojo run -I . tests/test_glfw_constants.mojo", depends-on = ["build-callbacks"] }
-test-input-state    = { cmd = "mojo run -I . tests/test_input_state.mojo", depends-on = ["build-callbacks"] }
+# Input system tests (non-GPU) — moved to rendercanvas-mojo repo
+# test-glfw-constants: run from rendercanvas-mojo/ with `pixi run test-glfw-constants`
+# test-input-state:    run from rendercanvas-mojo/ with `pixi run test-input-state`
 test-callback-abi   = { cmd = "mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callback-probe"] }
 
-# Input system tests (needs display server + GLFW)
-test-glfw-input     = { cmd = "mojo run -I . tests/test_glfw_input.mojo", depends-on = ["build-callbacks"] }
-
 # Hello Triangle quickstart
-hello             = { cmd = "mojo run -I . hello.mojo", depends-on = ["build-callbacks"] }
+hello             = { cmd = "mojo run -I . -I rendercanvas-mojo hello.mojo", depends-on = ["build-callbacks"] }
 
 # Examples
 example-enumerate = { cmd = "mojo run -I . examples/enumerate_adapters.mojo", depends-on = ["build-callbacks"] }
 example-compute   = { cmd = "mojo run -I . examples/compute_add.mojo", depends-on = ["build-callbacks"] }
-example-clear     = { cmd = "mojo run -I . examples/clear_screen.mojo", depends-on = ["build-callbacks"] }
-example-triangle  = { cmd = "mojo run -I . examples/triangle_window.mojo", depends-on = ["build-callbacks"] }
-example-input     = { cmd = "mojo run -I . examples/input_demo.mojo", depends-on = ["build-callbacks"] }
-example-texture-sample = { cmd = "mojo run -I . examples/texture_sample.mojo", depends-on = ["build-callbacks"] }
+example-clear     = { cmd = "mojo run -I . -I rendercanvas-mojo examples/clear_screen.mojo", depends-on = ["build-callbacks"] }
+example-triangle  = { cmd = "mojo run -I . -I rendercanvas-mojo examples/triangle_window.mojo", depends-on = ["build-callbacks"] }
+example-input     = { cmd = "mojo run -I . -I rendercanvas-mojo examples/input_demo.mojo", depends-on = ["build-callbacks"] }
+example-texture-sample = { cmd = "mojo run -I . -I rendercanvas-mojo examples/texture_sample.mojo", depends-on = ["build-callbacks"] }
 example-native-extensions = { cmd = "mojo run -I . examples/native_extensions.mojo", depends-on = ["build-callbacks"] }
-example-flame     = { cmd = "mojo run -I . hello-fire.mojo", depends-on = ["build-callbacks"] }
+example-flame     = { cmd = "mojo run -I . -I rendercanvas-mojo hello-fire.mojo", depends-on = ["build-callbacks"] }
 examples-input    = { cmd = "pixi run example-input" }
 
 # Linked binary builds (Phase 3 groundwork)
-build-hello-linked = { cmd = "mkdir -p build && mojo build -I . hello.mojo -o build/hello-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
+build-hello-linked = { cmd = "mkdir -p build && mojo build -I . -I rendercanvas-mojo hello.mojo -o build/hello-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
 build-compute-linked = { cmd = "mkdir -p build && mojo build -I . examples/compute_add.mojo -o build/compute-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }

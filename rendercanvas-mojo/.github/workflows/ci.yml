@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Callback Bridge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout rendercanvas-mojo
+        uses: actions/checkout@v4
+        with:
+          path: rendercanvas-mojo
+
+      - name: Checkout wgpu-mojo (for wgpu.* imports)
+        uses: actions/checkout@v4
+        with:
+          repository: Hundo1018/wgpu-mojo
+          path: wgpu-mojo
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          manifest-path: rendercanvas-mojo/pixi.toml
+
+      - name: Build GLFW input callback bridge
+        working-directory: rendercanvas-mojo
+        run: pixi run build-callbacks
+
+  test:
+    name: Non-GPU Test Suite
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout rendercanvas-mojo
+        uses: actions/checkout@v4
+        with:
+          path: rendercanvas-mojo
+
+      - name: Checkout wgpu-mojo (for wgpu.* imports)
+        uses: actions/checkout@v4
+        with:
+          repository: Hundo1018/wgpu-mojo
+          path: wgpu-mojo
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          manifest-path: rendercanvas-mojo/pixi.toml
+
+      - name: Run non-GPU tests
+        working-directory: rendercanvas-mojo
+        run: pixi run test
