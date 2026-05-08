@@ -1,0 +1,65 @@
+[workspace]
+authors = ["Tien-Chueh, Wang <f74169@gmail.com>"]
+channels = ["https://conda.modular.com/max", "conda-forge"]
+name = "rendercanvas-mojo"
+platforms = ["linux-64", "osx-arm64"]
+version = "0.1.0"
+preview = ["pixi-build"]
+
+[package]
+name = "rendercanvas-mojo"
+version = "0.1.0"
+authors = ["Tien-Chueh, Wang <f74169@gmail.com>"]
+description = "GLFW-backed render canvas for wgpu-mojo on-screen rendering"
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/Hundo1018/rendercanvas-mojo"
+
+
+[package.build]
+backend = { name = "pixi-build-mojo", version = "0.1.*" }
+
+
+[package.build.config.pkg]
+name = "rendercanvas"
+path = "$RECIPE_DIR/rendercanvas"
+# wgpu package must be findable at compile time; adjust if wgpu-mojo is installed elsewhere.
+extra-args = ["-I", "$RECIPE_DIR"]
+
+[package.build.config]
+compilers = ["c", "cxx", "gcc"]
+
+[package.host-dependencies]
+mojo-compiler = "==1.0.0b1"
+
+[package.build-dependencies]
+mojo-compiler = "==1.0.0b1"
+
+[package.run-dependencies]
+mojo-compiler = "==1.0.0b1"
+
+[activation]
+# Make ffi/lib discoverable when running from the repo (dev mode).
+# Conda-installed users rely on $CONDA_PREFIX/lib being in the search path.
+env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH" }
+
+[dependencies]
+mojo = "==1.0.0b1"
+glfw = ">=3.4,<4"
+# wgpu-mojo is required at runtime for RenderCanvas (canvas.mojo imports wgpu types).
+# Uncomment once wgpu-mojo is published to a conda channel:
+# wgpu-mojo = ">=0.2"
+
+[tasks]
+# Build the GLFW input callback bridge
+build-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"
+
+# Run all non-GPU tests (no display server required).
+# -I . resolves rendercanvas.* ; -I ../wgpu-mojo resolves wgpu.* for canvas.mojo.
+test = { cmd = "mojo run -I . -I ../wgpu-mojo tests/test_glfw_constants.mojo && mojo run -I . -I ../wgpu-mojo tests/test_input_state.mojo", depends-on = ["build-callbacks"] }
+
+test-glfw-constants = { cmd = "mojo run -I . -I ../wgpu-mojo tests/test_glfw_constants.mojo", depends-on = ["build-callbacks"] }
+test-input-state    = { cmd = "mojo run -I . -I ../wgpu-mojo tests/test_input_state.mojo",    depends-on = ["build-callbacks"] }
+
+# Integration test: requires a running display server (Wayland or X11) and GLFW
+test-glfw-input = { cmd = "mojo run -I . -I ../wgpu-mojo tests/test_glfw_input.mojo", depends-on = ["build-callbacks"] }
