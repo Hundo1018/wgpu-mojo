@@ -67,7 +67,6 @@ build:
     - if: linux
       then:
         - gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include/webgpu -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN'
-        - gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
         - gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.so ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'
 
     # -----------------------------
@@ -76,7 +75,6 @@ build:
     - if: osx
       then:
         - gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.dylib ffi/wgpu_callbacks.c -Iffi/include/webgpu -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN'
-        - gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.dylib rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
         - gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.dylib ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'
 
     # -----------------------------
@@ -87,8 +85,6 @@ build:
         - mkdir -p ffi\lib
 
         - gcc -shared -fPIC -o ffi\lib\wgpu_mojo_cb.dll ffi\wgpu_callbacks.c -Iffi\include -Lffi\lib -lwgpu_native || exit /b 0
-
-        - gcc -shared -fPIC -o ffi\lib\glfw_input_cb.dll rendercanvas-mojo\ffi\glfw_input_callbacks.c -L%CONDA_PREFIX%\Library\lib -lglfw || exit /b 0
 
         - gcc -shared -fPIC -o ffi\lib\mojo_callback_probe.dll ffi\mojo_callback_probe.c || exit /b 0
 
