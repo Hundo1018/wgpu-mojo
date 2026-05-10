@@ -1,5 +1,5 @@
 """
-rendercanvas.canvas — RenderCanvas: GLFW window + wgpu Surface, glued together.
+Rendercanvas.canvas — RenderCanvas: GLFW window + wgpu Surface, glued together.
 
 Usage (typical render loop):
 

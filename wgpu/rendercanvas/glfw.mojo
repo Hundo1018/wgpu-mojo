@@ -1,5 +1,5 @@
 """
-rendercanvas.glfw — Minimal GLFW FFI (DLHandle-based, Wayland-first).
+Rendercanvas.glfw — Minimal GLFW FFI (DLHandle-based, Wayland-first).
 
 Only the functions needed for wgpu surface creation and the render loop are
 bound.  GLFW must be compiled with Wayland + X11 native extensions enabled

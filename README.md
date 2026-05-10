@@ -102,7 +102,7 @@ def main() raises:
 ```
 
 **Prerequisites**
-- `pixi run build-callbacks` completed without errors (`ffi/lib/libwgpu_mojo_cb.so` present)
+- `pixi run build-callbacks` completed without errors (`ffi/lib/libwgpu_mojo_cb.so` and `ffi/lib/libglfw_input_cb.so` present)
 - GPU hardware with Vulkan drivers installed (Linux: `mesa-vulkan-drivers` or NVIDIA proprietary stack)
 - A display server (X11 or Wayland) — GLFW requires a display
 

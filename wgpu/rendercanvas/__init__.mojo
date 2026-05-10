@@ -1,5 +1,5 @@
 """
-rendercanvas — GLFW-backed render canvas for wgpu-mojo on-screen rendering.
+Rendercanvas — GLFW-backed render canvas for wgpu-mojo on-screen rendering.
 
 Quick start:
     from wgpu.rendercanvas import RenderCanvas

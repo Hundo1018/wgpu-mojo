@@ -1,5 +1,5 @@
 """
-rendercanvas.input — High-level input state tracking for GLFW-backed windows.
+Rendercanvas.input — High-level input state tracking for GLFW-backed windows.
 
 Drains the C-side event ring buffer each frame and maintains per-key /
 per-button pressed / just-pressed / just-released state, cursor position

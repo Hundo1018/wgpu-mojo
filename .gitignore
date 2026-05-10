@@ -12,6 +12,8 @@
 /clear_screen
 /triangle_window
 /input_demo
+/hello
+/hello-fire
 /test_types
 /test_structs
 /test_native_ext
