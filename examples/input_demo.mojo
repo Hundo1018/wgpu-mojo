@@ -9,8 +9,8 @@ Run:
 """
 
 from wgpu.instance import Instance
-from rendercanvas import RenderCanvas
-from rendercanvas.glfw import (
+from wgpu.rendercanvas import RenderCanvas
+from wgpu.rendercanvas.glfw import (
     GLFW_KEY_ESCAPE, GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D,
     GLFW_KEY_SPACE,
     GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT,

@@ -29,6 +29,7 @@ from wgpu.command       import CommandEncoder, CommandBuffer
 from wgpu.compute_pass  import ComputePassEncoder
 from wgpu.render_pass   import RenderPassEncoder
 from wgpu.query_set     import QuerySet
+from wgpu.rendercanvas  import RenderCanvas
 
 # Strongly typed handle wrappers (newtype pattern)
 from wgpu._ffi.handles import (

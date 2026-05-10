@@ -78,7 +78,7 @@ Source: [`examples/clear_screen.mojo`](examples/clear_screen.mojo) (48 lines). K
 ```mojo
 from wgpu.instance import Instance
 from wgpu._ffi.structs import WGPUColor
-from rendercanvas import RenderCanvas
+from wgpu.rendercanvas import RenderCanvas
 
 def main() raises:
     var instance = Instance()
@@ -150,7 +150,7 @@ If the window appears, the core runtime path is working: `wgpu-native` → FFI b
 ```mojo
 from wgpu.instance import Instance
 from wgpu._ffi.structs import WGPUColor
-from rendercanvas import RenderCanvas
+from wgpu.rendercanvas import RenderCanvas
 
 comptime WGSL = """
 struct VertexOut {

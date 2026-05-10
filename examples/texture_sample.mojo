@@ -12,7 +12,7 @@ Run:
 """
 
 from wgpu.instance import Instance
-from rendercanvas import RenderCanvas
+from wgpu.rendercanvas import RenderCanvas
 from wgpu._ffi.types import (
     WGPUBufferUsage, WGPUTextureUsage, WGPUTextureFormat,
     WGPUShaderStage, WGPUSamplerBindingType, WGPUTextureSampleType,

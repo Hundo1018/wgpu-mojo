@@ -11,7 +11,7 @@ Run:
 
 from wgpu.instance import Instance
 from wgpu._ffi.structs import WGPUColor
-from rendercanvas import RenderCanvas
+from wgpu.rendercanvas import RenderCanvas
 
 
 # ---------------------------------------------------------------------------
