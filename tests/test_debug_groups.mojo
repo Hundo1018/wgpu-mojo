@@ -75,7 +75,8 @@ def test_render_pass_debug_groups() raises:
         UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](unsafe_from_address=0),
     )
     var rpass = enc.begin_render_pass(rp_desc_p)
-    # Pin: view.handle().raw is in color attachment descriptor
+    # Required: view.handle().raw is embedded in color attachment descriptor.
+    # Removing this pin reproducibly crashes in command_encoder_begin_render_pass.
     _ = view^
     rpass.push_debug_group("render_group")
     rpass.insert_debug_marker("mid_render")
