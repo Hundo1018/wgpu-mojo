@@ -308,6 +308,21 @@ _ = device^  # keep device alive past map_read / poll
 # instance does NOT need a pin — internal shared ownership keeps it alive
 ```
 
+### Memory Safety (No Manual `alloc`/`free` Required)
+
+**User-facing APIs are designed to avoid manual memory allocation.**
+
+High-level wrappers handle internal descriptor allocation, copying, and lifetime automatically:
+
+- `device.create_buffer(size, usage, …)` — internal alloc for `WGPUBufferDescriptor`; you don't allocate
+- `device.create_bind_group(layout, entries_list)` — internal alloc and copy of entries; list API hides descriptor complexity
+- `encoder.copy_buffer_to_texture(src, dst, extent)` — high-level API; no manual `WGPUTexelCopyBufferLayout` needed
+- `encoder.begin_surface_clear_pass(texture, color, label)` — helper that owns render-pass descriptor internally
+
+**You should never need to call `alloc()` or `.free()` for GPU resource management.** Use RAII wrappers as they are; they automatically release GPU resources via `__del__` when they go out of scope.
+
+*Note: `AllocGuard` is available for temporary scratch allocations in your own code, but GPU objects themselves manage their own memory.*
+
 ## Notes
 
 - `pixi run test` is intended for non-GPU tests and does not require a GPU device.

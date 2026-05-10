@@ -103,19 +103,15 @@ def test_vec_add_compute() raises:
         b_data[2] = Float32(30.0); b_data[3] = Float32(40.0)
         device.queue_write_buffer(buf_b, UInt64(0), b_data, UInt(16))
 
-    var bg_entries_p = alloc[WGPUBindGroupEntry](3)
-    bg_entries_p[0] = WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
-    bg_entries_p[1] = WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
-    bg_entries_p[2] = WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
-    var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(3), bg_entries_p
-    )
-    var bg = device.create_bind_group(bg_desc)
+    var bg_entries = List[WGPUBindGroupEntry]()
+    bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
+    bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
+    bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
+    var bg = device.create_bind_group(bgl, bg_entries)
     _ = bgl^
     _ = buf_a^
     _ = buf_b^
     _ = buf_c^
-    bg_entries_p.free()
 
     var enc = device.create_command_encoder("vec_add_enc")
     var cpass = enc.begin_compute_pass()

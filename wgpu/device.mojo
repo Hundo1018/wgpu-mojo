@@ -298,19 +298,41 @@ struct Device(Movable, Boolable):
         entries: List[WGPUBindGroupEntry],
         label: String = "",
     ) raises -> BindGroup:
-        """High-level BindGroup creation from entry structs."""
+        """High-level BindGroup creation from entry structs.
+        
+        This method owns the entries allocation, keeping it alive
+        until after the FFI call completes. This prevents Mojo's
+        last-use drop semantics from invalidating handles in the entries.
+        """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var entries_ptr = UnsafePointer[WGPUBindGroupEntry, MutExternalOrigin](unsafe_from_address=0)
-        if len(entries) > 0:
-            entries_ptr = rebind[UnsafePointer[WGPUBindGroupEntry, MutExternalOrigin]](entries.unsafe_ptr())
+        var entries_len = len(entries)
+        
+        # Allocate and copy entries into our own buffer
+        var entries_ptr = alloc[WGPUBindGroupEntry](entries_len) if entries_len > 0 else UnsafePointer[WGPUBindGroupEntry, MutExternalOrigin](unsafe_from_address=0)
+        if entries_len > 0:
+            for i in range(entries_len):
+                entries_ptr[i] = entries[i]
+        
+        # Build descriptor with our allocated entries
         var desc = WGPUBindGroupDescriptor(
             OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
             label_sv,
             layout.handle().raw,
-            UInt(len(entries)),
+            UInt(entries_len),
             entries_ptr,
         )
-        return self.create_bind_group(desc)
+        
+        # Allocate descriptor and call FFI
+        var desc_p = alloc[WGPUBindGroupDescriptor](1)
+        desc_p[] = desc
+        var result = self._lib[].device_create_bind_group(self._handle, desc_p)
+        desc_p.free()
+        
+        # Free the entries we allocated
+        if entries_len > 0:
+            entries_ptr.free()
+        
+        return BindGroup(self._lib, result)
 
     def create_pipeline_layout(
         self,
