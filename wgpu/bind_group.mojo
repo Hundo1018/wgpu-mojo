@@ -11,7 +11,7 @@ from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import BindGroupHandle, BindGroupLayoutHandle
 
 
-struct BindGroupLayout(Movable):
+struct BindGroupLayout(Movable, Boolable):
     """RAII wrapper around a WGPUBindGroupLayout."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -31,12 +31,15 @@ struct BindGroupLayout(Movable):
     def handle(self) -> BindGroupLayoutHandle:
         return BindGroupLayoutHandle(self._handle)
 
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
+
     def set_label(self, label: String):
         var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         self._lib[].bind_group_layout_set_label(self._handle, sv)
 
 
-struct BindGroup(Movable):
+struct BindGroup(Movable, Boolable):
     """RAII wrapper around a WGPUBindGroup."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -55,6 +58,9 @@ struct BindGroup(Movable):
 
     def handle(self) -> BindGroupHandle:
         return BindGroupHandle(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     def set_label(self, label: String):
         var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()

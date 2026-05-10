@@ -10,13 +10,14 @@ Run:
     pixi run example-native-extensions
 """
 
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from wgpu._native import WGPUNativeFeature
 
 
 def main() raises:
-    var gpu = GPU()
-    var device = gpu.request_device()
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    var device = adapter.request_device()
 
     print("wgpu-native feature support:")
     var feature_list = [

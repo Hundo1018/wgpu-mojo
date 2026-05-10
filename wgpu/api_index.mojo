@@ -25,14 +25,16 @@ def api_index() -> String:
 ================================================================
 
 ## Entry points
-  GPU                         — root owner; call GPU() to bootstrap the GPU stack
-  GPU.request_device()        — create a Device from the selected adapter
-  GPU.adapter_info()          — WGPUAdapterInfo for the selected adapter
-  GPU.backend_type()          — UInt32 backend (use WGPUBackendType constants)
-  GPU.adapter_type()          — UInt32 adapter kind (WGPUAdapterType constants)
-  GPU.get_version()           — wgpu-native library version as UInt32
-  GPU.create_surface_wayland() — create a Surface from Wayland display + wl_surface
-  GPU.create_surface_xlib()   — create a Surface from X11 Display* + Window id
+  Instance                    — owns WGPULib + WGPUInstance
+  Instance.request_adapter()  — select an Adapter by index (default 0)
+  Instance.get_version()      — wgpu-native library version as UInt32
+  Adapter                     — selected GPU adapter
+  Adapter.request_device()    — create a Device from the selected adapter
+  Adapter.adapter_info()      — WGPUAdapterInfo for the selected adapter
+  Adapter.backend_type()      — UInt32 backend (use WGPUBackendType constants)
+  Adapter.adapter_type()      — UInt32 adapter kind (WGPUAdapterType constants)
+  Adapter.create_surface_wayland() — create a Surface from Wayland display + wl_surface
+  Adapter.create_surface_xlib()    — create a Surface from X11 Display* + Window id
   set_log_level(level)        — set wgpu-native log verbosity (0=Off … 5=Trace)
   preflight()                 — diagnostic string: library paths, adapter list
 
@@ -55,7 +57,6 @@ def api_index() -> String:
   ComputePassEncoder          — encodes compute dispatch commands
   RenderPassEncoder           — encodes render draw commands
   QuerySet                    — GPU timing / occlusion query set
-  Instance                    — raw wgpu instance wrapper
 
 ## Strongly typed handle newtypes (TrivialRegisterPassable, for FFI boundaries)
   AdapterHandle, DeviceHandle, QueueHandle

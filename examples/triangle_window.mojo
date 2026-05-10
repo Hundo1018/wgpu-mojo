@@ -1,5 +1,5 @@
 """
-examples/triangle_window.mojo — Hello Triangle in a real window.
+Examples/triangle_window.mojo — Hello Triangle in a real window.
 
 Renders a coloured triangle (RGB vertices) on a black background.
 This is the classical first rendering test: if the triangle appears,
@@ -9,9 +9,7 @@ Run:
     pixi run example-triangle
 """
 
-from wgpu.gpu import GPU
-from wgpu._ffi.types import (
-)
+from wgpu.instance import Instance
 from wgpu._ffi.structs import (
     WGPUColor,
 )
@@ -51,9 +49,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
 def main() raises:
     # --- GPU + window setup -----------------------------------------------
-    var gpu    = GPU()
-    var device = gpu.request_device()
-    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: hello triangle")
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
+    var canvas   = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: hello triangle")
 
     # --- Compile shader ---------------------------------------------------
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")

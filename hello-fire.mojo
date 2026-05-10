@@ -8,7 +8,7 @@ Run:
     pixi run hello
 """
 
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from wgpu._ffi.types import WGPUBufferUsage
 from wgpu._ffi.structs import WGPUColor
 from rendercanvas import RenderCanvas
@@ -19,12 +19,13 @@ from std import io
 # ---------------------------------------------------------------------------
 
 def main() raises:
-    # 1. Boot the GPU stack
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    # 1. Create an instance, choose an adapter, then create a device.
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
 
     # 2. Open a window (800 × 600, GLFW-backed)
-    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: hello triangle")
+    var canvas = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: hello triangle")
 
     # 3. Compile the WGSL shader
     var shader = device.create_shader_module_wgsl(open("wgsl/hello-fire.wgsl", "r").read(), "hello-fire")

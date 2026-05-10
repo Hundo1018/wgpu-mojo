@@ -18,7 +18,7 @@ def _sizeof[T: AnyType]() -> Int:
     return Int(p + 1) - Int(p)
 
 
-struct Buffer(Movable):
+struct Buffer(Movable, Boolable):
     """RAII wrapper around a WGPUBuffer."""
 
     var _lib:      ArcPointer[WGPULib]
@@ -70,6 +70,9 @@ struct Buffer(Movable):
 
     def handle(self) -> BufferHandle:
         return BufferHandle(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     # ------------------------------------------------------------------
     # Mapping

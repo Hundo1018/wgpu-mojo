@@ -39,6 +39,7 @@ from wgpu._ffi.structs import (
 )
 from wgpu._ffi.types import WGPUSType
 from wgpu.buffer import Buffer, _sizeof
+from wgpu.instance_owner import InstanceOwner
 from wgpu.texture import Texture, TextureView
 from wgpu.sampler import Sampler
 from wgpu.shader import ShaderModule
@@ -49,38 +50,45 @@ from wgpu.command import CommandEncoder, CommandBuffer
 from wgpu.query_set import QuerySet
 
 
-struct Device(Movable):
+struct Device(Movable, Boolable):
     """
     Owns a WGPUDevice + WGPUQueue.
     Holds an ArcPointer clone of WGPULib for shared library access.
     """
 
-    var _lib:      ArcPointer[WGPULib]
+    var _owner: ArcPointer[InstanceOwner]
+    var _lib: ArcPointer[WGPULib]
     var _instance: WGPUInstanceHandle
-    var _handle:   WGPUDeviceHandle
-    var _queue:    WGPUQueueHandle
+    var _handle: WGPUDeviceHandle
+    var _queue: WGPUQueueHandle
 
     def __init__(
         out self,
+        owner: ArcPointer[InstanceOwner],
         lib: ArcPointer[WGPULib],
         instance: WGPUInstanceHandle,
         handle: WGPUDeviceHandle,
         queue: WGPUQueueHandle,
     ):
-        self._lib      = lib
+        self._owner = owner
+        self._lib = lib
         self._instance = instance
-        self._handle   = handle
-        self._queue    = queue
+        self._handle = handle
+        self._queue = queue
 
     def __init__(out self, *, deinit take: Self):
-        self._lib      = take._lib^
+        self._owner = take._owner^
+        self._lib = take._lib^
         self._instance = take._instance
-        self._handle   = take._handle
-        self._queue    = take._queue
+        self._handle = take._handle
+        self._queue = take._queue
 
     def __del__(deinit self):
         self._lib[].queue_release(self._queue)
         self._lib[].device_release(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     # ------------------------------------------------------------------
     # Limits / features

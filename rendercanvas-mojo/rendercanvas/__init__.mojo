@@ -3,11 +3,12 @@ rendercanvas — GLFW-backed render canvas for wgpu-mojo on-screen rendering.
 
 Quick start:
     from rendercanvas import RenderCanvas
-    from wgpu.gpu import GPU
+    from wgpu.instance import Instance
 
-    var gpu    = GPU()
-    var device = gpu.request_device()
-    var canvas = RenderCanvas(gpu, device, 800, 600, "Hello wgpu")
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
+    var canvas   = RenderCanvas(adapter, device, 800, 600, "Hello wgpu")
 
     while canvas.is_open():
         canvas.poll()

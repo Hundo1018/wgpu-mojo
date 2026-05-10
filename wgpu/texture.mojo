@@ -9,7 +9,7 @@ from wgpu._ffi.structs import WGPUTextureViewDescriptor, WGPUStringView, str_to_
 from wgpu._ffi.handles import TextureHandle, TextureViewHandle
 
 
-struct TextureView(Movable):
+struct TextureView(Movable, Boolable):
     """RAII wrapper around a WGPUTextureView."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -29,12 +29,15 @@ struct TextureView(Movable):
     def handle(self) -> TextureViewHandle:
         return TextureViewHandle(self._handle)
 
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
+
     def set_label(self, label: String):
         var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         self._lib[].texture_view_set_label(self._handle, sv)
 
 
-struct Texture(Movable):
+struct Texture(Movable, Boolable):
     """RAII wrapper around a WGPUTexture."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -53,6 +56,9 @@ struct Texture(Movable):
 
     def handle(self) -> TextureHandle:
         return TextureHandle(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     def width(self) -> UInt32:
         return self._lib[].texture_get_width(self._handle)

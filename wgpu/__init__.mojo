@@ -1,19 +1,21 @@
 """
-wgpu — Pure Mojo bindings for wgpu-native (WebGPU).
+Wgpu — Pure Mojo bindings for wgpu-native (WebGPU).
 
 Quick start:
-    from wgpu.gpu import GPU
+    from wgpu.instance import Instance
 
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
     ...
 """
 
-# Top-level entry point
-from wgpu.gpu import GPU, set_log_level, preflight
+# Top-level entry points
+from wgpu.instance import Instance
+from wgpu.adapter import Adapter
+from wgpu.diagnostics import set_log_level, preflight
 
 # High-level RAII wrappers
-from wgpu.instance      import Instance
 from wgpu.device        import Device
 from wgpu.buffer        import Buffer
 from wgpu.texture       import Texture, TextureView

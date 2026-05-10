@@ -9,7 +9,7 @@ Run:
     pixi run hello
 """
 
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from wgpu._ffi.structs import WGPUColor
 from rendercanvas import RenderCanvas
 
@@ -49,12 +49,13 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 
 
 def main() raises:
-    # 1. Boot the GPU stack
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    # 1. Create an instance, choose an adapter, then create a device.
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
 
     # 2. Open a window (800 × 600, GLFW-backed)
-    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: hello triangle")
+    var canvas = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: hello triangle")
 
     # 3. Compile the WGSL shader
     var shader = device.create_shader_module_wgsl(WGSL, "hello")

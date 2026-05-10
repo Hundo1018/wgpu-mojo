@@ -9,7 +9,7 @@ from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import SamplerHandle
 
 
-struct Sampler(Movable):
+struct Sampler(Movable, Boolable):
     """RAII wrapper around a WGPUSampler."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -28,6 +28,9 @@ struct Sampler(Movable):
 
     def handle(self) -> SamplerHandle:
         return SamplerHandle(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     def set_label(self, label: String):
         var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()

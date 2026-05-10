@@ -1,10 +1,11 @@
 """
-tests/test_compute_pipeline.mojo — Tests for compute pipeline creation and dispatch.
+Tests/test_compute_pipeline.mojo — Tests for compute pipeline creation and dispatch.
 Requires GPU hardware.
 """
 
 from std.testing import assert_true, assert_equal
-from wgpu.gpu import GPU
+from wgpu.device import Device
+from wgpu.instance import Instance
 from wgpu._ffi.alloc_guard import AllocGuard
 from wgpu._ffi.types import (
     WGPUBufferUsage, WGPUShaderStage,
@@ -17,6 +18,12 @@ from wgpu._ffi.structs import (
     WGPUStringView,
 )
 from wgpu._ffi.types import WGPU_WHOLE_SIZE
+
+
+def create_test_device() raises -> Device:
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    return adapter.request_device()
 
 
 comptime ADD_WGSL = """
@@ -50,8 +57,7 @@ def _make_bgl_entry(binding: UInt32, read_only: Bool) -> WGPUBindGroupLayoutEntr
 
 def test_create_compute_pipeline() raises:
     """Compute pipeline creation from WGSL shader should succeed."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var shader = device.create_shader_module_wgsl(ADD_WGSL, "add")
 
     var entries_p = alloc[WGPUBindGroupLayoutEntry](3)
@@ -70,8 +76,7 @@ def test_create_compute_pipeline() raises:
 
 def test_vec_add_compute() raises:
     """Full GPU vector addition: upload, dispatch, readback."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var shader = device.create_shader_module_wgsl(ADD_WGSL, "vec_add")
 
     var entries_p = alloc[WGPUBindGroupLayoutEntry](3)

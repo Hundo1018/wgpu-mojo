@@ -11,7 +11,7 @@ Run:
     pixi run example-texture-sample
 """
 
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from rendercanvas import RenderCanvas
 from wgpu._ffi.types import (
     WGPUBufferUsage, WGPUTextureUsage, WGPUTextureFormat,
@@ -72,9 +72,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
 
 def main() raises:
-    var gpu = GPU()
-    var device = gpu.request_device()
-    var canvas = RenderCanvas(gpu, device, 640, 480, "wgpu-mojo: texture sample")
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    var device = adapter.request_device()
+    var canvas = RenderCanvas(adapter, device, 640, 480, "wgpu-mojo: texture sample")
 
     # Create a small 2×2 texture and upload texel data directly.
     var texture = device.create_texture(

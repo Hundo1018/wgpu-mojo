@@ -1,5 +1,5 @@
 """
-examples/input_demo.mojo — Interactive input demo.
+Examples/input_demo.mojo — Interactive input demo.
 
 Opens a window and prints keyboard/mouse events in real-time.
 Press ESC to quit.
@@ -8,7 +8,7 @@ Run:
     pixi run mojo run -I . examples/input_demo.mojo
 """
 
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from rendercanvas import RenderCanvas
 from rendercanvas.glfw import (
     GLFW_KEY_ESCAPE, GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D,
@@ -18,9 +18,10 @@ from rendercanvas.glfw import (
 
 
 def main() raises:
-    var gpu    = GPU()
-    var device = gpu.request_device()
-    var canvas = RenderCanvas(gpu, device, 640, 480, "wgpu-mojo: input demo")
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
+    var canvas   = RenderCanvas(adapter, device, 640, 480, "wgpu-mojo: input demo")
 
     print("=== Input Demo ===")
     print("WASD / Space / Mouse — press keys and click to see events")

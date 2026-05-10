@@ -1,13 +1,13 @@
 """
-tests/test_instance.mojo — Integration tests for Instance creation.
+Tests/test_instance.mojo — Integration tests for Instance creation.
 Requires: libwgpu_native.so, libwgpu_mojo_cb.so, GPU hardware.
 """
 
 from std.testing import assert_true, assert_false, assert_equal, assert_not_equal
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    WGPUAdapterType, WGPUBackendType,
+    WGPUAdapterHandle, WGPUAdapterType, WGPUBackendType,
 )
 from wgpu._ffi.structs import WGPUInstanceDescriptor
 
@@ -28,7 +28,7 @@ def test_wgpu_version_format() raises:
 
 
 def test_create_instance() raises:
-    """wgpuCreateInstance should return non-null."""
+    """WgpuCreateInstance should return non-null."""
     var lib = WGPULib()
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
@@ -54,20 +54,27 @@ def test_enumerate_adapters() raises:
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
-    var count = lib.enumerate_adapters(inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]())
+    var count = lib.enumerate_adapters(
+        inst,
+        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        UnsafePointer[WGPUAdapterHandle, MutExternalOrigin](unsafe_from_address=0),
+    )
     print("Adapter count:", count)
     assert_true(count > UInt(0))
-    var adapters = alloc[OpaquePointer[MutExternalOrigin]](Int(count))
+    var adapters = alloc[WGPUAdapterHandle](Int(count))
     _ = lib.enumerate_adapters(inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), adapters)
     assert_true(adapters[0] != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    for i in range(Int(count)):
+        lib.adapter_release(adapters[i])
     adapters.free()
     lib.instance_release(inst)
 
 
 def test_request_adapter() raises:
-    """GPU() should create a working GPU with adapter."""
-    var gpu = GPU()
-    var info = gpu.adapter_info()
+    """Instance.request_adapter() should return a working adapter."""
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    var info = adapter.adapter_info()
     print("Backend type:", info.backend_type)
     print("Adapter type:", info.adapter_type)
     assert_true(info.backend_type > UInt32(0))
@@ -75,15 +82,16 @@ def test_request_adapter() raises:
 
 def test_adapter_info_fields() raises:
     """AdapterInfo fields should be populated after get_info."""
-    var gpu = GPU()
-    var info = gpu.adapter_info()
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    var info = adapter.adapter_info()
     assert_true(info.vendor.data != UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0))
 
 
 def test_get_version_via_instance() raises:
-    """Test get_version via the GPU high-level API."""
-    var gpu = GPU()
-    var v = gpu.get_version()
+    """Test get_version via the Instance API."""
+    var instance = Instance()
+    var v = instance.get_version()
     assert_true(v > UInt32(0))
 
 

@@ -1,10 +1,17 @@
 """
-tests/test_shader.mojo — Tests for shader module creation (WGSL).
+Tests/test_shader.mojo — Tests for shader module creation (WGSL).
 Requires GPU hardware.
 """
 
 from std.testing import assert_true
-from wgpu.gpu import GPU
+from wgpu.device import Device
+from wgpu.instance import Instance
+
+
+def create_test_device() raises -> Device:
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    return adapter.request_device()
 
 
 comptime NOOP_WGSL = """
@@ -29,26 +36,23 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 def test_create_shader_module_wgsl_noop() raises:
     """A minimal WGSL shader should compile without errors."""
-    var gpu     = GPU()
-    var device  = gpu.request_device()
+    var device  = create_test_device()
     var shader  = device.create_shader_module_wgsl(NOOP_WGSL, "noop")
-    assert_true(shader.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(shader)
 
 
 def test_create_shader_module_wgsl_add() raises:
     """A compute shader with storage buffer bindings should compile."""
-    var gpu     = GPU()
-    var device  = gpu.request_device()
+    var device  = create_test_device()
     var shader  = device.create_shader_module_wgsl(ADD_WGSL, "vec_add")
-    assert_true(shader.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(shader)
 
 
 def test_shader_module_handle_nonnull() raises:
     """Returned handle should be non-null pointer."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var shader = device.create_shader_module_wgsl(NOOP_WGSL)
-    assert_true(shader.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(shader)
 
 
 def main() raises:

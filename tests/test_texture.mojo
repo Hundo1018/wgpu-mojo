@@ -1,27 +1,33 @@
 """
-tests/test_texture.mojo — Tests for Texture and TextureView creation.
+Tests/test_texture.mojo — Tests for Texture and TextureView creation.
 Requires GPU hardware.
 """
 
 from std.testing import assert_true, assert_equal
-from wgpu.gpu import GPU
+from wgpu.device import Device
+from wgpu.instance import Instance
 from wgpu._ffi.types import (
     WGPUTextureUsage, WGPUTextureFormat,
 )
 from wgpu._ffi.structs import WGPUTextureViewDescriptor
 
 
+def create_test_device() raises -> Device:
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    return adapter.request_device()
+
+
 def test_create_2d_texture() raises:
     """Create a simple 2D RGBA8Unorm texture."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var tex = device.create_texture(
         UInt32(256), UInt32(256), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
         WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_SRC,
         2, 1, 1, "tex2d"
     )
-    assert_true(tex.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(tex)
     assert_equal(tex.width(), UInt32(256))
     assert_equal(tex.height(), UInt32(256))
     assert_equal(tex.format(), WGPUTextureFormat.RGBA8Unorm)
@@ -29,8 +35,7 @@ def test_create_2d_texture() raises:
 
 def test_create_texture_view() raises:
     """Create a default TextureView from a 2D texture."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var tex = device.create_texture(
         UInt32(64), UInt32(64), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
@@ -38,13 +43,12 @@ def test_create_texture_view() raises:
         2, 1, 1
     )
     var view = tex.create_view_default()
-    assert_true(view.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(view)
 
 
 def test_texture_dimensions() raises:
     """Texture dimensions match what was specified at creation."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var w: UInt32 = 512
     var h: UInt32 = 256
     var tex = device.create_texture(

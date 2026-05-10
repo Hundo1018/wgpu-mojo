@@ -1,34 +1,39 @@
 """
-tests/test_buffer.mojo — Integration tests for Buffer creation, write, map, read.
+Tests/test_buffer.mojo — Integration tests for Buffer creation, write, map, read.
 Requires GPU hardware.
 """
 
 from std.testing import assert_true, assert_equal
-from wgpu.gpu import GPU
+from wgpu.device import Device
+from wgpu.instance import Instance
 from wgpu._ffi.alloc_guard import AllocGuard
 from wgpu._ffi.types import WGPUBufferUsage
 
 
+def create_test_device() raises -> Device:
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    return adapter.request_device()
+
+
 def test_create_storage_buffer() raises:
     """Create a GPU storage buffer; handle should be non-null."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var buf = device.create_buffer(
         UInt64(256),
         WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST,
         False,
         "test_storage_buf",
     )
-    assert_true(buf.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(buf)
 
 
 def test_create_staging_buffer_mapped() raises:
     """Create a mappable staging buffer with mapped_at_creation=True."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var usage  = WGPUBufferUsage.MAP_WRITE | WGPUBufferUsage.COPY_SRC
     var buf = device.create_buffer(UInt64(64), usage, True, "staging")
-    assert_true(buf.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(buf)
     var ptr = device._lib[].buffer_get_mapped_range(buf.handle().raw, UInt(0), UInt(64))
     assert_true(ptr != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
     buf.unmap()
@@ -36,8 +41,7 @@ def test_create_staging_buffer_mapped() raises:
 
 def test_queue_write_and_map_read_buffer() raises:
     """Write to a buffer via queue, copy to readback, map and verify data."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
 
     var n: UInt64 = 16
 

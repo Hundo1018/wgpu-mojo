@@ -76,14 +76,15 @@ Expected result: a 800×600 window with a solid cornflower blue background appea
 Source: [`examples/clear_screen.mojo`](examples/clear_screen.mojo) (48 lines). Key pattern:
 
 ```mojo
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from wgpu._ffi.structs import WGPUColor
 from rendercanvas import RenderCanvas
 
 def main() raises:
-    var gpu    = GPU()
-    var device = gpu.request_device()
-    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: clear screen")
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
+    var canvas   = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: clear screen")
     while canvas.is_open():
         canvas.poll()
         var frame = canvas.next_frame()
@@ -112,7 +113,7 @@ GLFW requires a display. In CI without GPU passthrough, skip windowed examples a
 Run the preflight check to see which libraries were found and which adapters are available:
 
 ```mojo
-from wgpu.gpu import preflight
+from wgpu.diagnostics import preflight
 print(preflight())
 ```
 
@@ -147,7 +148,7 @@ If the window appears, the core runtime path is working: `wgpu-native` → FFI b
 `hello.mojo` renders an RGB vertex-coloured triangle in a GLFW window. This is the exact pattern the file uses:
 
 ```mojo
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from wgpu._ffi.structs import WGPUColor
 from rendercanvas import RenderCanvas
 
@@ -176,9 +177,10 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 """
 
 def main() raises:
-    var gpu    = GPU()
-    var device = gpu.request_device()
-    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: hello triangle")
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
+    var canvas   = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: hello triangle")
     var shader = device.create_shader_module_wgsl(WGSL, "hello")
     var layout = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "layout")
     var pipeline = device.create_render_pipeline(
@@ -211,11 +213,12 @@ Run it with `pixi run hello`. See `examples/triangle_window.mojo` for an identic
 For headless work (ML, simulation, data processing), skip `RenderCanvas` entirely:
 
 ```mojo
-from wgpu import GPU, WGPUBufferUsage
+from wgpu import Instance, WGPUBufferUsage
 
 def main() raises:
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
 
     var buf = device.create_buffer(
         UInt64(1024),
@@ -256,8 +259,9 @@ See `examples/compute_add.mojo` for a full vector-addition pipeline with buffer 
 
 ### Core wrapper modules
 
-- `wgpu/gpu.mojo` — `GPU()` entrypoint, adapter/device request, logging control
-- `wgpu/instance.mojo` — adapter enumeration and device discovery
+- `wgpu/instance.mojo` — instance creation, version query, and adapter selection
+- `wgpu/adapter.mojo` — adapter info, device creation, and surface creation
+- `wgpu/diagnostics.mojo` — logging control and preflight diagnostics
 - `wgpu/device.mojo` — device creation, queue submission, buffer/texture/pipeline helpers
 - `wgpu/buffer.mojo` — buffer creation, mapping, and data transfer helpers
 - `wgpu/texture.mojo` — texture and texture view handling
@@ -284,15 +288,16 @@ The wrappers are built around RAII, but Mojo lifetime rules still matter when yo
 
 | Object | Pin needed? | Reason |
 |---|---|---|
-| `gpu` (`GPU`) | **No** | Library lifetime is managed automatically via `ArcPointer`. |
+| `instance` (`Instance`) | **No** | Instance lifetime is shared through internal owner objects. |
 | `device` | **Sometimes** | wgpu-native v29 may free the device on `Release` even while buffer map callbacks are in flight. Pin past `map_read`/`poll` calls. |
 | `buf`, `bgl`, `pipeline`, … | **When raw handle is in a descriptor** | Mojo's ASAP drop can free the wrapper before the FFI call if you embed `.handle().raw` directly in a descriptor struct. Pin until the FFI call returns. |
 
 Example — pinning a buffer past a map-read:
 
 ```mojo
-var gpu    = GPU()
-var device = gpu.request_device()
+var instance = Instance()
+var adapter  = instance.request_adapter()
+var device   = adapter.request_device()
 var buf    = device.create_buffer(UInt64(256), WGPUBufferUsage.STORAGE)
 var raw_handle = buf.handle().raw
 
@@ -300,7 +305,7 @@ var raw_handle = buf.handle().raw
 
 _ = buf^     # keep buf alive until FFI call using raw_handle returns
 _ = device^  # keep device alive past map_read / poll
-# gpu does NOT need a pin — ArcPointer handles library lifetime
+# instance does NOT need a pin — internal shared ownership keeps it alive
 ```
 
 ## Notes

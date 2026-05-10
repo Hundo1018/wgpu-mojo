@@ -1,18 +1,24 @@
 """
-tests/test_query_set.mojo — Tests for QuerySet creation and properties.
+Tests/test_query_set.mojo — Tests for QuerySet creation and properties.
 Requires GPU hardware.
 """
 
 from std.testing import assert_true, assert_equal
-from wgpu.gpu import GPU
+from wgpu.device import Device
+from wgpu.instance import Instance
+
+
+def create_test_device() raises -> Device:
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    return adapter.request_device()
 
 
 def test_create_occlusion_query_set() raises:
     """Create an occlusion query set with 8 queries."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var qs     = device.create_query_set(UInt32(1), UInt32(8), "occlusion_qs")  # Occlusion = 1
-    assert_true(qs.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(qs)
     assert_equal(qs.get_count(), UInt32(8))
     assert_equal(qs.get_type(), UInt32(1))  # Occlusion
 

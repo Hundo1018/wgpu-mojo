@@ -1,5 +1,5 @@
 """
-examples/clear_screen.mojo — Minimal on-screen rendering verification.
+Examples/clear_screen.mojo — Minimal on-screen rendering verification.
 
 Renders a solid cornflower-blue background to a GLFW window.
 If you see a blue window, the full pipeline works:
@@ -9,18 +9,19 @@ Run:
     pixi run example-clear
 """
 
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 from wgpu._ffi.structs import WGPUColor
 from rendercanvas import RenderCanvas
 
 
 def main() raises:
     # --- GPU setup -------------------------------------------------------
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
 
     # --- Window + Surface ------------------------------------------------
-    var canvas = RenderCanvas(gpu, device, 800, 600, "wgpu-mojo: clear screen")
+    var canvas = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: clear screen")
 
     print("Window open — cornflower blue should be visible. Close window to quit.")
 

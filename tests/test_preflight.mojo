@@ -1,5 +1,5 @@
 """
-tests/test_preflight.mojo — Verify wgpu.preflight() returns a usable diagnostic string.
+Tests/test_preflight.mojo — Verify wgpu.preflight() returns a usable diagnostic string.
 
 Requires: GPU hardware + built callback libraries (pixi run build-callbacks).
 Run:
@@ -7,7 +7,7 @@ Run:
 """
 
 from std.testing import assert_true
-from wgpu.gpu import preflight
+from wgpu.diagnostics import preflight
 
 
 def test_preflight_returns_string() raises:

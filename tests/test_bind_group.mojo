@@ -1,10 +1,11 @@
 """
-tests/test_bind_group.mojo — Tests for BindGroupLayout and BindGroup creation.
+Tests/test_bind_group.mojo — Tests for BindGroupLayout and BindGroup creation.
 Requires GPU hardware.
 """
 
 from std.testing import assert_true
-from wgpu.gpu import GPU
+from wgpu.device import Device
+from wgpu.instance import Instance
 from wgpu._ffi.types import (
     WGPUBufferUsage, WGPUShaderStage,
 )
@@ -15,6 +16,12 @@ from wgpu._ffi.structs import (
     WGPUBindGroupEntry,
 )
 from wgpu._ffi.types import WGPU_WHOLE_SIZE
+
+
+def create_test_device() raises -> Device:
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    return adapter.request_device()
 
 
 def make_storage_bgl_entry(
@@ -38,18 +45,16 @@ def make_storage_bgl_entry(
 
 def test_create_bind_group_layout() raises:
     """Create a BindGroupLayout with one storage buffer binding."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
 
     var entries: List[WGPUBindGroupLayoutEntry] = [make_storage_bgl_entry(UInt32(0))]
     var bgl = device.create_bind_group_layout(entries, "test_bgl")
-    assert_true(bgl.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(bgl)
 
 
 def test_create_bind_group_with_buffer() raises:
     """Create a BindGroup referencing a storage buffer."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
 
     var buf = device.create_buffer(
         UInt64(256), WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False
@@ -70,7 +75,7 @@ def test_create_bind_group_with_buffer() raises:
         )
     ]
     var bg = device.create_bind_group(bgl, bg_entries)
-    assert_true(bg.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(bg)
 
     # Pin: raw handles from buf/bgl are embedded in FFI descriptors
     # passed to create_bind_group — ASAP could destroy them after .handle().raw

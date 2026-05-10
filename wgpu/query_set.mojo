@@ -9,7 +9,7 @@ from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import QuerySetHandle
 
 
-struct QuerySet(Movable):
+struct QuerySet(Movable, Boolable):
     """RAII wrapper around a WGPUQuerySet."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -35,6 +35,9 @@ struct QuerySet(Movable):
 
     def handle(self) -> QuerySetHandle:
         return QuerySetHandle(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     def get_count(self) -> UInt32:
         return self._lib[].query_set_get_count(self._handle)

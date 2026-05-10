@@ -1,22 +1,16 @@
 """
-tests/test_render_pipeline.mojo — Tests for RenderPipeline creation and headless render pass.
+Tests/test_render_pipeline.mojo — Tests for RenderPipeline creation and headless render pass.
 Requires GPU hardware.
 """
 
 from std.testing import assert_true, assert_equal
-from wgpu.gpu import GPU
+from wgpu.device import Device
+from wgpu.instance import Instance
 from wgpu._ffi.types import (
     WGPUTextureUsage, WGPUTextureFormat,
     WGPUBufferUsage,
 )
-from wgpu._ffi.structs import (
-    WGPUColor,
-    WGPURenderPassDescriptor,
-    WGPURenderPassColorAttachment,
-    WGPURenderPassDepthStencilAttachment,
-    WGPUStringView,
-    WGPUPassTimestampWrites,
-)
+from wgpu._ffi.structs import WGPUColor
 
 
 comptime TRIANGLE_WGSL = """
@@ -41,24 +35,28 @@ comptime TEX_HEIGHT: UInt32 = 64
 comptime TEX_FMT:    UInt32 = WGPUTextureFormat.RGBA8Unorm
 
 
+def create_test_device() raises -> Device:
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    return adapter.request_device()
+
+
 def test_create_render_pipeline() raises:
     """Render pipeline creation with vertex+fragment shaders should succeed."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
-    assert_true(shader.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(shader)
 
     var pl = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "render_pl")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main", TEX_FMT, pl,
     )
-    assert_true(pipeline.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(pipeline)
 
 
 def test_headless_render_pass() raises:
     """Render a triangle to an offscreen texture and readback center pixel."""
-    var gpu    = GPU()
-    var device = gpu.request_device()
+    var device = create_test_device()
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
 
     # Build render pipeline
@@ -83,40 +81,14 @@ def test_headless_render_pass() raises:
 
     # Encode render pass
     var enc = device.create_command_encoder("render_enc")
-
-    var color_att_p = alloc[WGPURenderPassColorAttachment](1)
-    color_att_p[0] = WGPURenderPassColorAttachment(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        view.handle().raw,
-        UInt32(0xFFFFFFFF),  # depth_slice (WGPU_DEPTH_SLICE_UNDEFINED for 2D)
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),    # no resolve target
-        UInt32(1),      # LoadOp.Clear
-        UInt32(1),      # StoreOp.Store
+    var rpass = enc.begin_render_pass_clear(
+        view^,
         WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
+        "headless_clear",
     )
-
-    var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
-    rp_desc_p[0] = WGPURenderPassDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        WGPUStringView.null_view(),
-        UInt(1),
-        color_att_p,
-        UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin](),
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),    # no occlusion query
-        UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](),
-    )
-
-    var rpass = enc.begin_render_pass(rp_desc_p)
-    # Pin: view.handle().raw is in color attachment descriptor
-    _ = view^
     rpass.set_pipeline(pipeline)
-    # Pin: pipeline.handle().raw used between set_pipeline and draw
-    _ = pipeline^
     rpass.draw(UInt32(3), UInt32(1), UInt32(0), UInt32(0))
     rpass^.end()
-
-    color_att_p.free()
-    rp_desc_p.free()
 
     # Copy texture → buffer for readback
     # We skip the readback validation here (texture-to-buffer copy requires

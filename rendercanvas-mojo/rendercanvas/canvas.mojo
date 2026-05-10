@@ -3,9 +3,10 @@ rendercanvas.canvas — RenderCanvas: GLFW window + wgpu Surface, glued together
 
 Usage (typical render loop):
 
-    var gpu    = GPU()
-    var device = gpu.request_device()
-    var canvas = RenderCanvas(gpu, device, 800, 600, "Hello wgpu")
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
+    var canvas   = RenderCanvas(adapter, device, 800, 600, "Hello wgpu")
 
     while canvas.is_open():
         canvas.poll()
@@ -20,17 +21,20 @@ The title String must not be empty (GLFW requirement).
 """
 
 from wgpu._ffi.types import WGPUTextureHandle
-from wgpu.gpu import GPU
+from wgpu.adapter import Adapter
 from wgpu.device import Device
 from wgpu.surface import Surface, SurfaceFrame
 from rendercanvas.glfw import GLFWLib, GLFW_CLIENT_API, GLFW_NO_API, GLFW_RESIZABLE, GLFW_TRUE
 from rendercanvas.input import InputState
 
 
+comptime NULL_PTR = OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+
+
 struct RenderCanvas(Movable):
     """Owns a GLFW window and a configured wgpu Surface.
 
-    The caller retains ownership of their GPU and Device —
+    The caller retains ownership of their Adapter and Device —
     both must outlive the RenderCanvas.
     """
 
@@ -43,7 +47,7 @@ struct RenderCanvas(Movable):
 
     def __init__(
         out self,
-        gpu: GPU,
+        adapter: Adapter,
         device: Device,
         width:  Int32,
         height: Int32,
@@ -64,7 +68,7 @@ struct RenderCanvas(Movable):
         var title_ptr   = rebind[OpaquePointer[MutExternalOrigin]](raw)
         var window = glfw.create_window(width, height, title_ptr)
         _ = title_bytes  # keep alive past glfwCreateWindow
-        if not Bool(window):
+        if window == NULL_PTR:
             glfw.terminate()
             raise Error("glfwCreateWindow() returned NULL")
 
@@ -74,22 +78,22 @@ struct RenderCanvas(Movable):
         # try:
         # Try Wayland first (preferred on modern Linux); fall back to X11.
         var display = glfw.get_wayland_display()
-        if Bool(display):
+        if display != NULL_PTR:
             var wl_surf = glfw.get_wayland_window(window)
-            if not Bool(wl_surf):
+            if wl_surf == NULL_PTR:
                 pass
                 # raise Error("glfwGetWaylandWindow() returned NULL")
-            surface = gpu.create_surface_wayland(display, wl_surf)
+            surface = adapter.create_surface_wayland(display, wl_surf)
         else:
             var x11_disp = glfw.get_x11_display()
-            if not Bool(x11_disp):
+            if x11_disp == NULL_PTR:
                 pass
                 # raise Error("No Wayland or X11 display available from GLFW")
             var x11_win = glfw.get_x11_window(window)
-            surface = gpu.create_surface_xlib(x11_disp, x11_win)
+            surface = adapter.create_surface_xlib(x11_disp, x11_win)
 
         # Configure surface (pick format, set up swapchain).
-        surface.configure(gpu.adapter_handle(), device.handle().raw, UInt32(width), UInt32(height))
+        surface.configure(adapter.handle(), device.handle().raw, UInt32(width), UInt32(height))
         # except:
         #     glfw.destroy_window(window)
         #     glfw.terminate()

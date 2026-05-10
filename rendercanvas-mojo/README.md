@@ -10,11 +10,12 @@ interactive GPU applications in Mojo without any boilerplate.
 
 ```mojo
 from rendercanvas import RenderCanvas
-from wgpu.gpu import GPU
+from wgpu.instance import Instance
 
-var gpu    = GPU()
-var device = gpu.request_device()
-var canvas = RenderCanvas(gpu, device, 800, 600, "Hello wgpu")
+var instance = Instance()
+var adapter  = instance.request_adapter()
+var device   = adapter.request_device()
+var canvas   = RenderCanvas(adapter, device, 800, 600, "Hello wgpu")
 
 while canvas.is_open():
     canvas.poll()
@@ -28,7 +29,7 @@ while canvas.is_open():
 ## Dependency
 
 `rendercanvas-mojo` depends on [wgpu-mojo](https://github.com/Hundo1018/wgpu-mojo)
-for `GPU`, `Device`, and `Surface` types.
+for `Adapter`, `Device`, and `Surface` types.
 
 ### Local development (before wgpu-mojo is on a conda channel)
 

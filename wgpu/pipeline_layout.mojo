@@ -9,7 +9,7 @@ from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import PipelineLayoutHandle
 
 
-struct PipelineLayout(Movable):
+struct PipelineLayout(Movable, Boolable):
     """RAII wrapper around a WGPUPipelineLayout."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -28,6 +28,9 @@ struct PipelineLayout(Movable):
 
     def handle(self) -> PipelineLayoutHandle:
         return PipelineLayoutHandle(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     def set_label(self, label: String):
         var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()

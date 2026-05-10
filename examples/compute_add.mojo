@@ -1,8 +1,8 @@
 """
-examples/compute_add.mojo — GPU vector addition using high-level wgpu RAII wrappers.
+Examples/compute_add.mojo — GPU vector addition using high-level wgpu RAII wrappers.
 
 Demonstrates:
-  1. GPU + Device creation via GPU()
+    1. Instance + Adapter + Device creation
   2. RAII Buffer, ShaderModule, Pipeline, CommandEncoder wrappers
   3. Typed buffer upload via queue_write_buffer
   4. Compute shader dispatch
@@ -13,7 +13,7 @@ Run from project root:
 """
 
 from wgpu import (
-    GPU,
+    Instance,
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE,
     WGPUBufferBindingType,
     WGPUBindGroupLayoutEntry,
@@ -66,8 +66,9 @@ def main() raises:
     # ----------------------------------------------------------------
     # 1. Instance + Device (high-level)
     # ----------------------------------------------------------------
-    var instance = GPU()
-    var device = instance.request_device()
+    var instance = Instance()
+    var adapter = instance.request_adapter()
+    var device = adapter.request_device()
     print("Device and queue ready.")
 
     # ----------------------------------------------------------------

@@ -12,7 +12,7 @@ from wgpu._ffi.handles import ComputePipelineHandle, RenderPipelineHandle
 from wgpu.bind_group import BindGroupLayout
 
 
-struct ComputePipeline(Movable):
+struct ComputePipeline(Movable, Boolable):
     """RAII wrapper around a WGPUComputePipeline."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -32,6 +32,9 @@ struct ComputePipeline(Movable):
     def handle(self) -> ComputePipelineHandle:
         return ComputePipelineHandle(self._handle)
 
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
+
     def get_bind_group_layout(self, index: UInt32) -> BindGroupLayout:
         var h = self._lib[].compute_pipeline_get_bind_group_layout(self._handle, index)
         return BindGroupLayout(self._lib, h)
@@ -41,7 +44,7 @@ struct ComputePipeline(Movable):
         self._lib[].compute_pipeline_set_label(self._handle, sv)
 
 
-struct RenderPipeline(Movable):
+struct RenderPipeline(Movable, Boolable):
     """RAII wrapper around a WGPURenderPipeline."""
 
     var _lib:    ArcPointer[WGPULib]
@@ -60,6 +63,9 @@ struct RenderPipeline(Movable):
 
     def handle(self) -> RenderPipelineHandle:
         return RenderPipelineHandle(self._handle)
+
+    def __bool__(self) -> Bool:
+        return Int(self._handle) != 0
 
     def get_bind_group_layout(self, index: UInt32) -> BindGroupLayout:
         var h = self._lib[].render_pipeline_get_bind_group_layout(self._handle, index)
