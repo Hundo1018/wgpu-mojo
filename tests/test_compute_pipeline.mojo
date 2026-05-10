@@ -108,6 +108,8 @@ def test_vec_add_compute() raises:
     bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
     bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
     var bg = device.create_bind_group(bgl, bg_entries)
+    # Required: removing these pins reproducibly crashes in device_create_bind_group
+    # due to Mojo ASAP lifetime + raw handles embedded in entry structs.
     _ = bgl^
     _ = buf_a^
     _ = buf_b^

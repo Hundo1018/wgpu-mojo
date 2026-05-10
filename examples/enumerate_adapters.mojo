@@ -1,5 +1,5 @@
 """
-examples/enumerate_adapters.mojo — List all available GPU adapters.
+Examples/enumerate_adapters.mojo — List all available GPU adapters.
 
 Uses the high-level wgpu API for instance creation, then the native
 wgpuInstanceEnumerateAdapters extension to list all backends.
@@ -33,7 +33,7 @@ def adapter_type_name(t: UInt32) -> String:
 
 def print_sv(label: String, sv: WGPUStringView):
     """Print a WGPUStringView field safely."""
-    if Bool(sv.data):
+    if Int(sv.data) != 0:
         var cstr = sv.data.bitcast[UInt8]()
         var i = UInt(0)
         var result = String()
@@ -55,19 +55,19 @@ def main() raises:
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
         OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt(0),
-        UnsafePointer[UInt32, MutExternalOrigin](),
-        UnsafePointer[NoneType, MutExternalOrigin](),
+        UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
+        UnsafePointer[NoneType, MutExternalOrigin](unsafe_from_address=0),
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
-    if not inst:
+    if Int(inst) == 0:
         print("ERROR: wgpuCreateInstance returned null")
         return
 
     # Count adapters
     var count = lib.enumerate_adapters(
         inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]()
+        UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin](unsafe_from_address=0)
     )
     print("Adapters found:", count)
 
