@@ -4,13 +4,25 @@ Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native), providin
 
 ## Installation
 
-To use wgpu-mojo as a dependency in your Pixi project:
+To use wgpu-mojo as a dependency in another Pixi project:
 
-```bash
-pixi add --git https://github.com/Hundo1018/wgpu-mojo.git wgpu-mojo
+First, ensure the consuming project's manifest enables the `pixi-build` preview and includes the same channels used by this package:
+
+```toml
+[workspace]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+preview = ["pixi-build"]
 ```
 
-This fetches the package directly from the repository. No manual native library setup is needed when using this method.
+Then add the dependency from GitHub:
+
+```bash
+pixi add -g https://github.com/Hundo1018/wgpu-mojo wgpu-mojo
+```
+
+Verified in a clean temporary Pixi project on 2026-05-11: this installs `wgpu.mojopkg`, and import smoke tests for `from wgpu import RenderCanvas` and `from wgpu.rendercanvas import RenderCanvas` compile successfully.
+
+This installs the Mojo package itself. Running examples or creating real surfaces still requires the target machine to provide the native runtime pieces described below, especially `wgpu-native`, GLFW, and platform GPU drivers.
 
 ## Requirements (Development)
 
