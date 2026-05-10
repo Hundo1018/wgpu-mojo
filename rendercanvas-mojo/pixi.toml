@@ -1,6 +1,6 @@
 [workspace]
 authors = ["Tien-Chueh, Wang <f74169@gmail.com>"]
-channels = ["https://conda.modular.com/max", "conda-forge"]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
 name = "rendercanvas-mojo"
 platforms = ["linux-64", "osx-arm64"]
 version = "0.1.0"
@@ -24,19 +24,19 @@ backend = { name = "pixi-build-mojo", version = "0.1.*" }
 name = "rendercanvas"
 path = "$RECIPE_DIR/rendercanvas"
 # wgpu package must be findable at compile time; adjust if wgpu-mojo is installed elsewhere.
-extra-args = ["-I", "$RECIPE_DIR"]
+extra-args = ["-I", "$RECIPE_DIR", "-I", "$RECIPE_DIR/.."]
 
 [package.build.config]
 compilers = ["c", "cxx", "gcc"]
 
 [package.host-dependencies]
-mojo-compiler = "==1.0.0b1"
+mojo-compiler = ">=1.0.0b"
 
 [package.build-dependencies]
-mojo-compiler = "==1.0.0b1"
+mojo-compiler = ">=1.0.0b"
 
 [package.run-dependencies]
-mojo-compiler = "==1.0.0b1"
+mojo-compiler = ">=1.0.0b"
 
 [activation]
 # Make ffi/lib discoverable when running from the repo (dev mode).
@@ -44,7 +44,7 @@ mojo-compiler = "==1.0.0b1"
 env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH" }
 
 [dependencies]
-mojo = "==1.0.0b1"
+mojo = ">=1.0.0b2.dev2026051006,<2"
 glfw = ">=3.4,<4"
 # wgpu-mojo is required at runtime for RenderCanvas (canvas.mojo imports wgpu types).
 # Uncomment once wgpu-mojo is published to a conda channel:

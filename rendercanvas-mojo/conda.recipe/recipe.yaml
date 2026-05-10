@@ -6,7 +6,7 @@ package:
   version: ${{ version }}
 
 source:
-  - path: ../
+  - path: ../../
     use_gitignore: false
 
 build:
@@ -17,29 +17,29 @@ build:
     # -----------------------------
     - if: linux
       then:
-        - mkdir -p ffi/lib
-        - gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
+        - mkdir -p rendercanvas-mojo/ffi/lib
+        - gcc -shared -fPIC -o rendercanvas-mojo/ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
 
     # -----------------------------
     # GLFW input callback bridge (macOS)
     # -----------------------------
     - if: osx
       then:
-        - mkdir -p ffi/lib
-        - gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.dylib ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
+        - mkdir -p rendercanvas-mojo/ffi/lib
+        - gcc -shared -fPIC -o rendercanvas-mojo/ffi/lib/libglfw_input_cb.dylib rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
 
     # -----------------------------
     # GLFW input callback bridge (windows)
     # -----------------------------
     - if: win
       then:
-        - mkdir -p ffi\lib
-        - gcc -shared -fPIC -o ffi\lib\glfw_input_cb.dll ffi\glfw_input_callbacks.c -L%CONDA_PREFIX%\Library\lib -lglfw || exit /b 0
+        - mkdir -p rendercanvas-mojo\ffi\lib
+        - gcc -shared -fPIC -o rendercanvas-mojo\ffi\lib\glfw_input_cb.dll rendercanvas-mojo\ffi\glfw_input_callbacks.c -L%CONDA_PREFIX%\Library\lib -lglfw || exit /b 0
 
     # -----------------------------
     # package mojo
     # -----------------------------
-    - mojo package rendercanvas -o rendercanvas.mojopkg -I .
+    - mojo package rendercanvas -o rendercanvas.mojopkg -I rendercanvas-mojo -I .
 
     - if: unix
       then:
@@ -57,7 +57,7 @@ build:
     - if: linux
       then:
         - mkdir -p $PREFIX/lib
-        - cp ffi/lib/libglfw_input_cb.so $PREFIX/lib/ 2>/dev/null || true
+        - cp rendercanvas-mojo/ffi/lib/libglfw_input_cb.so $PREFIX/lib/ 2>/dev/null || true
 
     # -----------------------------
     # install libs (macOS)
@@ -65,7 +65,7 @@ build:
     - if: osx
       then:
         - mkdir -p $PREFIX/lib
-        - cp ffi/lib/libglfw_input_cb.dylib $PREFIX/lib/ 2>/dev/null || true
+        - cp rendercanvas-mojo/ffi/lib/libglfw_input_cb.dylib $PREFIX/lib/ 2>/dev/null || true
 
     # -----------------------------
     # install libs (windows)
@@ -73,18 +73,18 @@ build:
     - if: win
       then:
         - mkdir -p %PREFIX%\Library\bin
-        - copy ffi\lib\glfw_input_cb.dll %PREFIX%\Library\bin\ || exit /b 0
+        - copy rendercanvas-mojo\ffi\lib\glfw_input_cb.dll %PREFIX%\Library\bin\ || exit /b 0
 
 requirements:
   build:
-    - mojo-compiler >=0.26.2
+    - mojo-compiler >=1.0.0b
     - gcc  # [unix]
     - libgcc  # [linux]
     - curl  # [unix]
     - glfw  # [unix]
 
   host:
-    - mojo-compiler >=0.26.2
+    - mojo-compiler >=1.0.0b
     - libgcc  # [linux]
     - glfw  # [unix]
     # wgpu-mojo is required at compile time (canvas.mojo imports wgpu types).
@@ -102,7 +102,7 @@ about:
   homepage: https://github.com/Hundo1018/rendercanvas-mojo
   repository: https://github.com/Hundo1018/rendercanvas-mojo
   license: Apache-2.0
-  license_file: LICENSE
+  license_file: rendercanvas-mojo/LICENSE
   summary: GLFW-backed render canvas for wgpu-mojo on-screen rendering
 
 extra:

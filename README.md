@@ -28,11 +28,27 @@ This installs the Mojo package itself. Running examples or creating real surface
 
 If you are cloning the repository to run examples or contribute:
 
-- Mojo `>= 1.0.0b2.dev2026050406`
+- Mojo `>= 1.0.0b2.dev2026051006`
 - [Pixi](https://prefix.dev/) package manager
 - `libwgpu_native.so` available at `ffi/lib/libwgpu_native.so`
 - GLFW installed and available through your Conda environment
 - Platform GPU drivers and runtime support for your system
+
+## Verified Nightly Smoke Checks
+
+Verified on 2026-05-11 against Mojo 1.0.0b2.dev2026051006:
+
+```bash
+pixi run test
+pixi build
+
+cd rendercanvas-mojo
+pixi install
+pixi run test
+pixi build
+```
+
+These checks cover the root package's non-GPU test suite and package build, plus the rendercanvas subproject's environment solve, non-GPU tests, and package build.
 
 ## Platform Dependencies
 
@@ -255,7 +271,8 @@ See `examples/compute_add.mojo` for a full vector-addition pipeline with buffer 
 - `pixi run example-texture-sample` — run `examples/texture_sample.mojo`
 - `pixi run example-native-extensions` — run `examples/native_extensions.mojo`
 - `pixi run test` — run non-GPU tests
-- `pixi run test-glfw-input` — run GLFW input integration test
+
+For the GLFW input integration test, run `pixi run test-glfw-input` from `rendercanvas-mojo/`.
 
 ## Project Layout
 

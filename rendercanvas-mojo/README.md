@@ -6,6 +6,20 @@ Provides `RenderCanvas` — a GLFW window wired to a `wgpu` Surface — plus a f
 input system (`InputState`, key/mouse/cursor/scroll events) so you can write
 interactive GPU applications in Mojo without any boilerplate.
 
+## Nightly Toolchain
+
+This package currently tracks the same Modular nightly toolchain as the root monorepo.
+
+For a Pixi workspace, use:
+
+```toml
+[workspace]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+preview = ["pixi-build"]
+```
+
+The package has been verified on Mojo `1.0.0b2.dev2026051006`.
+
 ## Quick start
 
 ```mojo
@@ -54,7 +68,22 @@ pixi run test
 
 # Integration test (requires a running display server)
 pixi run test-glfw-input
+
+# Package build
+pixi build
 ```
+
+## Verified Smoke Checks
+
+Verified on 2026-05-11:
+
+```bash
+pixi install
+pixi run test
+pixi build
+```
+
+For local monorepo development, the package build now also resolves `wgpu` imports during isolated packaging, so `pixi build` is expected to succeed when run from this directory inside the repo.
 
 ## Platforms
 
