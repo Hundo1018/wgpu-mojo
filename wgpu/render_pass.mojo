@@ -51,6 +51,16 @@ struct FrameRenderPass(Movable):
     def set_pipeline(self, pipeline: RenderPipeline):
         self._lib[].render_pass_set_pipeline(self._handle, pipeline.handle().raw)
 
+    def set_bind_group(self, index: UInt32, bind_group: WGPUBindGroupHandle):
+        self._lib[].render_pass_set_bind_group(
+            self._handle, index, bind_group, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+        )
+
+    def set_bind_group(self, index: UInt32, bind_group: BindGroup):
+        self._lib[].render_pass_set_bind_group(
+            self._handle, index, bind_group.handle().raw, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+        )
+
     def draw(
         self,
         vertex_count: UInt32,

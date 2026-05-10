@@ -18,9 +18,11 @@ from wgpu._ffi.structs import (
     WGPURenderPassDepthStencilAttachment,
     WGPUPassTimestampWrites,
     WGPUTextureViewDescriptor,
+    WGPUTexelCopyBufferLayout,
     WGPUTexelCopyBufferInfo,
     WGPUTexelCopyTextureInfo,
     WGPUExtent3D,
+    WGPUOrigin3D,
     WGPUColor,
     WGPUStringView,
     str_to_sv,
@@ -29,7 +31,7 @@ from wgpu.compute_pass import ComputePassEncoder
 from wgpu.render_pass import RenderPassEncoder, FrameRenderPass
 from wgpu.buffer import Buffer
 from wgpu.query_set import QuerySet
-from wgpu.texture import TextureView
+from wgpu.texture import Texture, TextureView
 
 
 struct CommandBuffer(Movable, Boolable):
@@ -210,6 +212,72 @@ struct CommandEncoder(Movable):
         size: UnsafePointer[WGPUExtent3D, MutExternalOrigin],
     ):
         self._lib[].command_encoder_copy_texture_to_buffer(self._handle, src, dst, size)
+
+    def copy_buffer_to_texture(
+        self,
+        src: Buffer,
+        src_offset: UInt64,
+        bytes_per_row: UInt32,
+        rows_per_image: UInt32,
+        dst: Texture,
+        width: UInt32,
+        height: UInt32,
+        depth_or_array_layers: UInt32 = 1,
+        mip_level: UInt32 = 0,
+        origin: WGPUOrigin3D = WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
+        aspect: UInt32 = 0,
+    ):
+        var src_p = alloc[WGPUTexelCopyBufferInfo](1)
+        src_p[0] = WGPUTexelCopyBufferInfo(
+            WGPUTexelCopyBufferLayout(src_offset, bytes_per_row, rows_per_image),
+            src.handle().raw,
+        )
+        var dst_p = alloc[WGPUTexelCopyTextureInfo](1)
+        dst_p[0] = WGPUTexelCopyTextureInfo(
+            dst.handle().raw,
+            mip_level,
+            origin,
+            aspect,
+        )
+        var size_p = alloc[WGPUExtent3D](1)
+        size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
+        self._lib[].command_encoder_copy_buffer_to_texture(self._handle, src_p, dst_p, size_p)
+        src_p.free()
+        dst_p.free()
+        size_p.free()
+
+    def copy_texture_to_buffer(
+        self,
+        src: Texture,
+        dst: Buffer,
+        dst_offset: UInt64,
+        bytes_per_row: UInt32,
+        rows_per_image: UInt32,
+        width: UInt32,
+        height: UInt32,
+        depth_or_array_layers: UInt32 = 1,
+        mip_level: UInt32 = 0,
+        origin: WGPUOrigin3D = WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
+        aspect: UInt32 = 0,
+    ):
+        var src_p = alloc[WGPUTexelCopyTextureInfo](1)
+        src_p[0] = WGPUTexelCopyTextureInfo(
+            src.handle().raw,
+            mip_level,
+            origin,
+            aspect,
+        )
+        var dst_p = alloc[WGPUTexelCopyBufferInfo](1)
+        dst_p[0] = WGPUTexelCopyBufferInfo(
+            WGPUTexelCopyBufferLayout(dst_offset, bytes_per_row, rows_per_image),
+            dst.handle().raw,
+        )
+        var size_p = alloc[WGPUExtent3D](1)
+        size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
+        self._lib[].command_encoder_copy_texture_to_buffer(self._handle, src_p, dst_p, size_p)
+        src_p.free()
+        dst_p.free()
+        size_p.free()
 
     def copy_texture_to_texture(
         self,

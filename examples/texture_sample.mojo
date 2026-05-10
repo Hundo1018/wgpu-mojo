@@ -24,11 +24,7 @@ from wgpu._ffi.structs import (
     WGPUBindGroupEntry,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout,
-    WGPUExtent3D, WGPUTexelCopyBufferInfo, WGPUTexelCopyBufferLayout,
-    WGPUTexelCopyTextureInfo, WGPUOrigin3D, WGPUColor,
-    WGPURenderPassColorAttachment, WGPURenderPassDescriptor,
-    WGPURenderPassDepthStencilAttachment, WGPUPassTimestampWrites,
-    WGPUStringView,
+    WGPUColor,
 )
 
 comptime TEXTURE_WGSL = """
@@ -101,32 +97,21 @@ def main() raises:
     )
     device.queue_write_data(staging, UInt64(0), tex_data)
 
-    var copy_src = alloc[WGPUTexelCopyBufferInfo](1)
-    copy_src[0] = WGPUTexelCopyBufferInfo(
-        WGPUTexelCopyBufferLayout(UInt64(0), UInt32(256), UInt32(2)),  # rows_per_image must match texture height for a 2×2 copy
-        staging.handle().raw,
-    )
-
-    var copy_dst = alloc[WGPUTexelCopyTextureInfo](1)
-    copy_dst[0] = WGPUTexelCopyTextureInfo(
-        texture.handle().raw,
-        UInt32(0),
-        WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
-        WGPUTextureAspect.All,
-    )
-
-    var copy_size = alloc[WGPUExtent3D](1)
-    copy_size[0] = WGPUExtent3D(UInt32(2), UInt32(2), UInt32(1))
-
     var upload_enc = device.create_command_encoder("upload_tex")
-    upload_enc.copy_buffer_to_texture(copy_src, copy_dst, copy_size)
+    upload_enc.copy_buffer_to_texture(
+        staging,
+        UInt64(0),
+        UInt32(256),
+        UInt32(2),
+        texture,
+        UInt32(2),
+        UInt32(2),
+        aspect=WGPUTextureAspect.All,
+    )
     device.queue_submit(upload_enc^.finish())
     _ = device.poll(True)
 
     _ = staging^  # keep staging alive through submit
-    copy_src.free()
-    copy_dst.free()
-    copy_size.free()
 
     var tex_view = texture.create_view_default()
     var sampler = device.create_sampler()
@@ -180,39 +165,15 @@ def main() raises:
             continue
 
         var enc = device.create_command_encoder("frame")
-        var view = device.create_texture_view(frame.texture)
-
-        var color_att_p = alloc[WGPURenderPassColorAttachment](1)
-        color_att_p[0] = WGPURenderPassColorAttachment(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            view.handle().raw,
-            UInt32(0xFFFFFFFF),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            UInt32(1),
-            UInt32(1),
+        var rpass = enc.begin_surface_clear_pass(
+            frame.texture,
             WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
+            "frame_clear",
         )
-
-        var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
-        rp_desc_p[0] = WGPURenderPassDescriptor(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            WGPUStringView.null_view(),
-            UInt(1),
-            color_att_p,
-            UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin](),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](),
-        )
-
-        var rpass = enc.begin_render_pass(rp_desc_p)
-        _ = view^
         rpass.set_pipeline(pipeline)
         rpass.set_bind_group(UInt32(0), bind_group)
         rpass.draw(UInt32(6), UInt32(1), UInt32(0), UInt32(0))
         rpass^.end()
-
-        color_att_p.free()
-        rp_desc_p.free()
 
         device.queue_submit(enc^.finish())
         canvas.present()

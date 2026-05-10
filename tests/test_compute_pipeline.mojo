@@ -11,7 +11,8 @@ from wgpu._ffi.types import (
     WGPUBufferUsage, WGPUShaderStage,
 )
 from wgpu._ffi.structs import (
-    WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
+    WGPUBindGroupLayoutEntry,
+    WGPUBindGroupLayoutDescriptor,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout,
     WGPUBindGroupEntry, WGPUBindGroupDescriptor,
@@ -60,15 +61,12 @@ def test_create_compute_pipeline() raises:
     var device = create_test_device()
     var shader = device.create_shader_module_wgsl(ADD_WGSL, "add")
 
-    var entries_p = alloc[WGPUBindGroupLayoutEntry](3)
-    for i in range(3):
-        entries_p[i] = _make_bgl_entry(UInt32(i), i < 2)
-
-    var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(3), entries_p
-    )
-    var bgl = device.create_bind_group_layout(bgl_desc)
-    entries_p.free()
+    var bgl_entries: List[WGPUBindGroupLayoutEntry] = [
+        _make_bgl_entry(UInt32(0), True),
+        _make_bgl_entry(UInt32(1), True),
+        _make_bgl_entry(UInt32(2), False),
+    ]
+    var bgl = device.create_bind_group_layout(bgl_entries)
 
     var pl = device.create_pipeline_layout(bgl)
     var pipeline = device.create_compute_pipeline(shader, "main", pl)
@@ -79,14 +77,12 @@ def test_vec_add_compute() raises:
     var device = create_test_device()
     var shader = device.create_shader_module_wgsl(ADD_WGSL, "vec_add")
 
-    var entries_p = alloc[WGPUBindGroupLayoutEntry](3)
-    for i in range(3):
-        entries_p[i] = _make_bgl_entry(UInt32(i), i < 2)
-    var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(3), entries_p
-    )
-    var bgl = device.create_bind_group_layout(bgl_desc)
-    entries_p.free()
+    var bgl_entries: List[WGPUBindGroupLayoutEntry] = [
+        _make_bgl_entry(UInt32(0), True),
+        _make_bgl_entry(UInt32(1), True),
+        _make_bgl_entry(UInt32(2), False),
+    ]
+    var bgl = device.create_bind_group_layout(bgl_entries)
 
     var pl = device.create_pipeline_layout(bgl)
 
@@ -115,7 +111,6 @@ def test_vec_add_compute() raises:
         OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(3), bg_entries_p
     )
     var bg = device.create_bind_group(bg_desc)
-    # Pin: raw handles from bgl/buf_a/buf_b/buf_c are in FFI descriptors
     _ = bgl^
     _ = buf_a^
     _ = buf_b^

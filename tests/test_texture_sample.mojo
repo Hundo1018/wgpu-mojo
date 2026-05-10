@@ -177,21 +177,16 @@ def test_offscreen_render_texture_readback() raises:
     _ = device.poll(True)
 
     var copy_enc = device.create_command_encoder("texture_readback")
-    var copy_dst = alloc[WGPUTexelCopyBufferInfo](1)
-    copy_dst[0] = WGPUTexelCopyBufferInfo(
-        WGPUTexelCopyBufferLayout(UInt64(0), UInt32(256), UInt32(2)),
-        readback.handle().raw,
+    copy_enc.copy_texture_to_buffer(
+        target_texture,
+        readback,
+        UInt64(0),
+        UInt32(256),
+        UInt32(2),
+        UInt32(2),
+        UInt32(2),
+        aspect=WGPUTextureAspect.All,
     )
-    var copy_src = alloc[WGPUTexelCopyTextureInfo](1)
-    copy_src[0] = WGPUTexelCopyTextureInfo(
-        target_texture.handle().raw,
-        UInt32(0),
-        WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
-        WGPUTextureAspect.All,
-    )
-    var copy_size = alloc[WGPUExtent3D](1)
-    copy_size[0] = WGPUExtent3D(UInt32(2), UInt32(2), UInt32(1))
-    copy_enc.copy_texture_to_buffer(copy_src, copy_dst, copy_size)
     device.queue_submit(copy_enc^.finish())
 
     var device_pin = device^
@@ -220,10 +215,6 @@ def test_offscreen_render_texture_readback() raises:
 
     readback.unmap()
     _ = device_pin^
-
-    copy_dst.free()
-    copy_src.free()
-    copy_size.free()
     _ = target_texture^
     _ = readback^
 
@@ -254,25 +245,17 @@ def test_example_texture_sample_upload_readback() raises:
     )
     device.queue_write_data(staging, UInt64(0), tex_data)
 
-    var copy_src = alloc[WGPUTexelCopyBufferInfo](1)
-    copy_src[0] = WGPUTexelCopyBufferInfo(
-        WGPUTexelCopyBufferLayout(UInt64(0), UInt32(256), UInt32(2)),
-        staging.handle().raw,
-    )
-
-    var copy_dst = alloc[WGPUTexelCopyTextureInfo](1)
-    copy_dst[0] = WGPUTexelCopyTextureInfo(
-        texture.handle().raw,
-        UInt32(0),
-        WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
-        WGPUTextureAspect.All,
-    )
-
-    var copy_size = alloc[WGPUExtent3D](1)
-    copy_size[0] = WGPUExtent3D(UInt32(2), UInt32(2), UInt32(1))
-
     var upload_enc = device.create_command_encoder("example_upload")
-    upload_enc.copy_buffer_to_texture(copy_src, copy_dst, copy_size)
+    upload_enc.copy_buffer_to_texture(
+        staging,
+        UInt64(0),
+        UInt32(256),
+        UInt32(2),
+        texture,
+        UInt32(2),
+        UInt32(2),
+        aspect=WGPUTextureAspect.All,
+    )
     device.queue_submit(upload_enc^.finish())
     _ = device.poll(True)
     _ = staging^
@@ -284,22 +267,17 @@ def test_example_texture_sample_upload_readback() raises:
         "example_texture_sample_readback",
     )
 
-    var copy_back_src = alloc[WGPUTexelCopyTextureInfo](1)
-    copy_back_src[0] = WGPUTexelCopyTextureInfo(
-        texture.handle().raw,
-        UInt32(0),
-        WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
-        WGPUTextureAspect.All,
-    )
-
-    var copy_back_dst = alloc[WGPUTexelCopyBufferInfo](1)
-    copy_back_dst[0] = WGPUTexelCopyBufferInfo(
-        WGPUTexelCopyBufferLayout(UInt64(0), UInt32(256), UInt32(2)),
-        readback.handle().raw,
-    )
-
     var copy_back_enc = device.create_command_encoder("example_readback")
-    copy_back_enc.copy_texture_to_buffer(copy_back_src, copy_back_dst, copy_size)
+    copy_back_enc.copy_texture_to_buffer(
+        texture,
+        readback,
+        UInt64(0),
+        UInt32(256),
+        UInt32(2),
+        UInt32(2),
+        UInt32(2),
+        aspect=WGPUTextureAspect.All,
+    )
     device.queue_submit(copy_back_enc^.finish())
     _ = device.poll(True)
 
@@ -329,12 +307,6 @@ def test_example_texture_sample_upload_readback() raises:
 
     readback.unmap()
     _ = device_pin^
-
-    copy_src.free()
-    copy_dst.free()
-    copy_size.free()
-    copy_back_src.free()
-    copy_back_dst.free()
     _ = texture^
     _ = readback^
 
@@ -364,32 +336,21 @@ def test_texture_upload_copy_buffer_to_texture() raises:
     )
     device.queue_write_data(staging, UInt64(0), tex_data)
 
-    var copy_src = alloc[WGPUTexelCopyBufferInfo](1)
-    copy_src[0] = WGPUTexelCopyBufferInfo(
-        WGPUTexelCopyBufferLayout(UInt64(0), UInt32(256), UInt32(2)),
-        staging.handle().raw,
-    )
-
-    var copy_dst = alloc[WGPUTexelCopyTextureInfo](1)
-    copy_dst[0] = WGPUTexelCopyTextureInfo(
-        texture.handle().raw,
-        UInt32(0),
-        WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
-        WGPUTextureAspect.All,
-    )
-
-    var copy_size = alloc[WGPUExtent3D](1)
-    copy_size[0] = WGPUExtent3D(UInt32(2), UInt32(2), UInt32(1))
-
     var enc = device.create_command_encoder("test_upload")
-    enc.copy_buffer_to_texture(copy_src, copy_dst, copy_size)
+    enc.copy_buffer_to_texture(
+        staging,
+        UInt64(0),
+        UInt32(256),
+        UInt32(2),
+        texture,
+        UInt32(2),
+        UInt32(2),
+        aspect=WGPUTextureAspect.All,
+    )
     device.queue_submit(enc^.finish())
     _ = device.poll(True)
 
     _ = staging^  # keep staging alive through submit
-    copy_src.free()
-    copy_dst.free()
-    copy_size.free()
 
     assert_true(texture)
 
@@ -420,25 +381,17 @@ def test_texture_upload_readback() raises:
     )
     device.queue_write_data(staging, UInt64(0), tex_data)
 
-    var copy_src = alloc[WGPUTexelCopyBufferInfo](1)
-    copy_src[0] = WGPUTexelCopyBufferInfo(
-        WGPUTexelCopyBufferLayout(UInt64(0), UInt32(256), UInt32(2)),
-        staging.handle().raw,
-    )
-
-    var copy_dst = alloc[WGPUTexelCopyTextureInfo](1)
-    copy_dst[0] = WGPUTexelCopyTextureInfo(
-        texture.handle().raw,
-        UInt32(0),
-        WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
-        WGPUTextureAspect.All,
-    )
-
-    var copy_size = alloc[WGPUExtent3D](1)
-    copy_size[0] = WGPUExtent3D(UInt32(2), UInt32(2), UInt32(1))
-
     var upload_enc = device.create_command_encoder("upload_tex")
-    upload_enc.copy_buffer_to_texture(copy_src, copy_dst, copy_size)
+    upload_enc.copy_buffer_to_texture(
+        staging,
+        UInt64(0),
+        UInt32(256),
+        UInt32(2),
+        texture,
+        UInt32(2),
+        UInt32(2),
+        aspect=WGPUTextureAspect.All,
+    )
     device.queue_submit(upload_enc^.finish())
     _ = device.poll(True)
 
@@ -458,47 +411,37 @@ def test_texture_upload_readback() raises:
 
     var shader = device.create_shader_module_wgsl(TEXTURE_READBACK_WGSL, "test_texture_readback_shader")
 
-    var entries_p = alloc[WGPUBindGroupLayoutEntry](2)
-    entries_p[0] = WGPUBindGroupLayoutEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), WGPUShaderStage.COMPUTE.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUTextureSampleType.UnfilterableFloat, WGPUTextureViewDimension.D2, UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-    )
-    entries_p[1] = WGPUBindGroupLayoutEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), WGPUShaderStage.COMPUTE.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUBufferBindingType.Storage, UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-    )
-
-    var bgl_desc = WGPUBindGroupLayoutDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), UInt(2), entries_p
-    )
-    var bgl = device.create_bind_group_layout(bgl_desc)
-    entries_p.free()
+    var bgl_entries: List[WGPUBindGroupLayoutEntry] = [
+        WGPUBindGroupLayoutEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), WGPUShaderStage.COMPUTE.value, UInt32(0),
+            WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
+            WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+            WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUTextureSampleType.UnfilterableFloat, WGPUTextureViewDimension.D2, UInt32(0)),
+            WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        ),
+        WGPUBindGroupLayoutEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), WGPUShaderStage.COMPUTE.value, UInt32(0),
+            WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUBufferBindingType.Storage, UInt32(0), UInt64(0)),
+            WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
+            WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+            WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        ),
+    ]
+    var bgl = device.create_bind_group_layout(bgl_entries)
 
     var pl = device.create_pipeline_layout(bgl, "test_texture_readback_layout")
     var pipeline = device.create_compute_pipeline(shader, "cs_main", pl, "test_texture_readback_pipeline")
 
     var tex_view = texture.create_view_default()
-    var bg_entries_p = alloc[WGPUBindGroupEntry](2)
-    bg_entries_p[0] = WGPUBindGroupEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), tex_view.handle().raw
-    )
-    bg_entries_p[1] = WGPUBindGroupEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), storage_buffer.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
-    )
-    var bg_desc = WGPUBindGroupDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(), bgl.handle().raw, UInt(2), bg_entries_p
-    )
-    var bg = device.create_bind_group(bg_desc)
-    bg_entries_p.free()
-    _ = bgl^
-    _ = tex_view^
-    _ = readback^
+    var bg_entries: List[WGPUBindGroupEntry] = [
+        WGPUBindGroupEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), tex_view.handle().raw
+        ),
+        WGPUBindGroupEntry(
+            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), storage_buffer.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+        ),
+    ]
+    var bg = device.create_bind_group(bgl, bg_entries)
 
     var enc = device.create_command_encoder("compute_readback")
     var cpass = enc.begin_compute_pass("readback_pass")
@@ -526,9 +469,6 @@ def test_texture_upload_readback() raises:
     _ = storage_buffer^
     _ = readback^
     _ = texture^
-    copy_src.free()
-    copy_dst.free()
-    copy_size.free()
 
 
 def main() raises:
