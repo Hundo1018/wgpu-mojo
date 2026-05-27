@@ -43,7 +43,7 @@ mojo-compiler = ">=1.0.0b"
 env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH" }
 
 [dependencies]
-mojo = ">=1.0.0b2.dev2026051006,<2"
+mojo = ">=1.0.0b2.dev2026052706,<2"
 glfw = ">=3.4,<4"
 
 [tasks]
