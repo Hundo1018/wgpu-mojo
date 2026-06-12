@@ -4,6 +4,7 @@ wgpu.command — CommandEncoder RAII wrapper.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPUCommandEncoderHandle, WGPUCommandBufferHandle,
     WGPUComputePassEncoderHandle, WGPURenderPassEncoderHandle,
@@ -99,13 +100,13 @@ struct CommandEncoder(Movable):
     ) -> ComputePassEncoder:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUComputePassDescriptor](1)
-        desc_p[] = WGPUComputePassDescriptor(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), label_sv, OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+        desc_p[] = WGPUComputePassDescriptor(null_opaque(), label_sv, null_opaque())
         var result = self._lib[].command_encoder_begin_compute_pass(self._handle, desc_p)
         desc_p.free()
         return ComputePassEncoder(self._lib, result)
 
     def begin_render_pass(
-        self, desc: UnsafePointer[WGPURenderPassDescriptor, MutExternalOrigin]
+        self, desc: UnsafePointer[WGPURenderPassDescriptor, MutUntrackedOrigin]
     ) -> RenderPassEncoder:
         var result = self._lib[].command_encoder_begin_render_pass(self._handle, desc)
         return RenderPassEncoder(self._lib, result)
@@ -125,10 +126,10 @@ struct CommandEncoder(Movable):
 
         var color_att_p = alloc[WGPURenderPassColorAttachment](1)
         color_att_p[0] = WGPURenderPassColorAttachment(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             view.handle().raw,
             UInt32(0xFFFFFFFF),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             UInt32(2),
             UInt32(1),
             clear_color,
@@ -136,13 +137,13 @@ struct CommandEncoder(Movable):
 
         var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
         rp_desc_p[0] = WGPURenderPassDescriptor(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             label_sv,
             UInt(1),
             color_att_p,
-            UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](unsafe_from_address=0),
+            null_ptr[WGPURenderPassDepthStencilAttachment](),
+            null_opaque(),
+            null_ptr[WGPUPassTimestampWrites](),
         )
 
         var result = self._lib[].command_encoder_begin_render_pass(self._handle, rp_desc_p)
@@ -163,7 +164,7 @@ struct CommandEncoder(Movable):
         """
         var view_h = self._lib[].texture_create_view(
             surface_texture,
-            UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin](unsafe_from_address=0),
+            null_ptr[WGPUTextureViewDescriptor](),
         )
         var view = TextureView(self._lib, view_h)
         return self.begin_render_pass_clear(view^, clear_color, label)
@@ -199,17 +200,17 @@ struct CommandEncoder(Movable):
 
     def copy_buffer_to_texture(
         self,
-        src: UnsafePointer[WGPUTexelCopyBufferInfo, MutExternalOrigin],
-        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutExternalOrigin],
+        src: UnsafePointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
+        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._lib[].command_encoder_copy_buffer_to_texture(self._handle, src, dst, size)
 
     def copy_texture_to_buffer(
         self,
-        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
-        dst: UnsafePointer[WGPUTexelCopyBufferInfo, MutExternalOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutExternalOrigin],
+        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        dst: UnsafePointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
+        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._lib[].command_encoder_copy_texture_to_buffer(self._handle, src, dst, size)
 
@@ -281,9 +282,9 @@ struct CommandEncoder(Movable):
 
     def copy_texture_to_texture(
         self,
-        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
-        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutExternalOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutExternalOrigin],
+        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._lib[].command_encoder_copy_texture_to_texture(self._handle, src, dst, size)
 
@@ -361,7 +362,7 @@ struct CommandEncoder(Movable):
         """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUCommandBufferDescriptor](1)
-        desc_p[] = WGPUCommandBufferDescriptor(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), label_sv)
+        desc_p[] = WGPUCommandBufferDescriptor(null_opaque(), label_sv)
         var result = self._lib[].command_encoder_finish(self._handle, desc_p)
         desc_p.free()
         # Release the encoder handle — no __del__ with @explicit_destroy.

@@ -4,6 +4,7 @@ wgpu.buffer — Buffer RAII wrapper with map/read/write helpers.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPUInstanceHandle, WGPUDeviceHandle, WGPUBufferHandle,
     WGPUBufferUsage, WGPUMapMode, WGPU_WHOLE_SIZE,
@@ -14,7 +15,7 @@ from wgpu._ffi.handles import BufferHandle
 
 
 def _sizeof[T: AnyType]() -> Int:
-    var p = UnsafePointer[T, MutExternalOrigin](unsafe_from_address=0)
+    var p = null_ptr[T]()
     return Int(p + 1) - Int(p)
 
 
@@ -78,7 +79,7 @@ struct Buffer(Movable, Boolable):
     # Mapping
     # ------------------------------------------------------------------
 
-    def map_read(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> OpaquePointer[MutExternalOrigin]:
+    def map_read(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> OpaquePointer[MutUntrackedOrigin]:
         """Block until mapped for reading, return raw pointer."""
         var byte_size = UInt(size) if size != WGPU_WHOLE_SIZE else UInt(self._size - offset)
         var status = self._lib[].buffer_map_async(
@@ -95,7 +96,7 @@ struct Buffer(Movable, Boolable):
             self._handle, UInt(offset), byte_size
         )
 
-    def map_write(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> OpaquePointer[MutExternalOrigin]:
+    def map_write(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> OpaquePointer[MutUntrackedOrigin]:
         """Block until mapped for writing, return raw pointer."""
         var byte_size = UInt(size) if size != WGPU_WHOLE_SIZE else UInt(self._size - offset)
         var status = self._lib[].buffer_map_async(

@@ -14,6 +14,7 @@ render into.  The normal flow is:
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPUSurfaceHandle, WGPUInstanceHandle, WGPUAdapterHandle, WGPUDeviceHandle, WGPUTextureHandle,
     WGPUTextureUsage, WGPUSType, WGPUPresentMode, WGPUCompositeAlphaMode,
@@ -121,10 +122,10 @@ struct Surface(Movable):
         var fmt: UInt32 = 0x1B  # Bgra8Unorm fallback
         with AllocGuard[WGPUSurfaceCapabilities](1) as caps_p:
             caps_p[] = WGPUSurfaceCapabilities(
-                OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0),
-                UInt(0), UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
-                UInt(0), UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
-                UInt(0), UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
+                null_opaque(), UInt64(0),
+                UInt(0), null_ptr[UInt32](),
+                UInt(0), null_ptr[UInt32](),
+                UInt(0), null_ptr[UInt32](),
             )
             _ = self._lib[].surface_get_capabilities(self._handle, adapter, caps_p)
             if caps_p[].format_count > 0:
@@ -137,14 +138,14 @@ struct Surface(Movable):
 
         with AllocGuard[WGPUSurfaceConfiguration](1) as config_p:
             config_p[] = WGPUSurfaceConfiguration(
-                OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+                null_opaque(),
                 device,
                 fmt,
-                WGPUTextureUsage.RENDER_ATTACHMENT.value,
+                UInt64(WGPUTextureUsage.RENDER_ATTACHMENT.value),
                 width,
                 height,
                 UInt(0),
-                UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
+                null_ptr[UInt32](),
                 WGPUCompositeAlphaMode.Auto,
                 present_mode,
             )
@@ -161,8 +162,8 @@ struct Surface(Movable):
         """
         with AllocGuard[WGPUSurfaceTexture](1) as st_p:
             st_p[] = WGPUSurfaceTexture(
-                OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-                WGPUTextureHandle(unsafe_from_address=0),
+                null_opaque(),
+                null_opaque(),
                 UInt32(0),
             )
             self._lib[].surface_get_current_texture(self._handle, st_p)
@@ -181,13 +182,13 @@ struct Surface(Movable):
 def create_surface_wayland(
     lib: ArcPointer[WGPULib],
     inst: WGPUInstanceHandle,
-    display: OpaquePointer[MutExternalOrigin],
-    wayland_surface: OpaquePointer[MutExternalOrigin],
+    display: OpaquePointer[MutUntrackedOrigin],
+    wayland_surface: OpaquePointer[MutUntrackedOrigin],
 ) raises -> Surface:
     """Create a surface from a Wayland display and wl_surface pointer."""
     var src_guard = AllocGuard[WGPUSurfaceSourceWaylandSurface](1)
     src_guard.ptr()[] = WGPUSurfaceSourceWaylandSurface(
-        WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUSType.SurfaceSourceWaylandSurface),
+        WGPUChainedStruct(null_opaque(), WGPUSType.SurfaceSourceWaylandSurface),
         display,
         wayland_surface,
     )
@@ -197,20 +198,20 @@ def create_surface_wayland(
         WGPUStringView.null_view(),
     )
     var h = lib[].instance_create_surface(inst, desc_guard.ptr())
-    if h == OpaquePointer[MutExternalOrigin](unsafe_from_address=0):
+    if h == null_opaque():
         raise Error("wgpuInstanceCreateSurface returned null (Wayland)")
     return Surface(lib, h)
 
 def create_surface_xlib(
     lib: ArcPointer[WGPULib],
     inst: WGPUInstanceHandle,
-    display: OpaquePointer[MutExternalOrigin],
+    display: OpaquePointer[MutUntrackedOrigin],
     window: UInt64,
 ) raises -> Surface:
     """Create a surface from an X11 Display* and Window id."""
     var src_guard = AllocGuard[WGPUSurfaceSourceXlibWindow](1)
     src_guard.ptr()[] = WGPUSurfaceSourceXlibWindow(
-        WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUSType.SurfaceSourceXlibWindow),
+        WGPUChainedStruct(null_opaque(), WGPUSType.SurfaceSourceXlibWindow),
         display,
         window,
     )
@@ -220,6 +221,6 @@ def create_surface_xlib(
         WGPUStringView.null_view(),
     )
     var h = lib[].instance_create_surface(inst, desc_guard.ptr())
-    if h == OpaquePointer[MutExternalOrigin](unsafe_from_address=0):
+    if h == null_opaque():
         raise Error("wgpuInstanceCreateSurface returned null (X11)")
     return Surface(lib, h)

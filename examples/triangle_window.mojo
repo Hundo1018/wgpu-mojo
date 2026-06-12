@@ -58,7 +58,7 @@ def main() raises:
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
 
     # --- Build render pipeline --------------------------------------------
-    var pl = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "tri_layout")
+    var pl = device.create_pipeline_layout(List[OpaquePointer[MutUntrackedOrigin]](), "tri_layout")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main",
         canvas.surface_format(), pl,

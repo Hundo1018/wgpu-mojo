@@ -1,6 +1,6 @@
-"""wgpu._ffi — Low-level FFI layer for wgpu-native."""
+"""wgpu._ffi — Backward-compat shim. Import from wgpu._backend.wgpu_native instead."""
 
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPUAdapterHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
     WGPUBufferHandle, WGPUCommandBufferHandle, WGPUCommandEncoderHandle,
     WGPUComputePassEncoderHandle, WGPUComputePipelineHandle, WGPUDeviceHandle,
@@ -32,7 +32,7 @@ from wgpu._ffi.types import (
     WGPUWaitStatus, WGPUWGSLLanguageFeatureName,
     WGPUBufferUsage, WGPUColorWriteMask, WGPUMapMode, WGPUShaderStage, WGPUTextureUsage,
 )
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUStringView, WGPUChainedStruct, WGPUFuture, WGPUFutureWaitInfo,
     WGPUAdapterInfo, WGPUBlendComponent, WGPUBlendState, WGPUColor,
     WGPUExtent3D, WGPUOrigin3D, WGPULimits, WGPUSupportedFeatures,
@@ -64,8 +64,9 @@ from wgpu._ffi.structs import (
     WGPUBorrowedStringView,
     str_to_borrowed_sv, str_to_sv, wgpu_limits_default,
 )
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.handles import (
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.handles import (
     AdapterHandle, DeviceHandle, QueueHandle, BufferHandle,
     TextureHandle, TextureViewHandle, SamplerHandle, ShaderModuleHandle,
     BindGroupLayoutHandle, BindGroupHandle, PipelineLayoutHandle,

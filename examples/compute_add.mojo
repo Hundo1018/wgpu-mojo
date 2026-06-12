@@ -12,6 +12,7 @@ Run from project root:
     pixi run example-compute
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu import (
     Instance,
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE,
@@ -51,11 +52,11 @@ def make_data(n: Int, start: Float32, stride: Float32) -> List[Float32]:
 def make_storage_entry(binding: UInt32, readonly: Bool) -> WGPUBindGroupLayoutEntry:
     var buf_type = WGPUBufferBindingType.ReadOnlyStorage if readonly else WGPUBufferBindingType.Storage
     return WGPUBindGroupLayoutEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), binding, WGPUShaderStage.COMPUTE.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), buf_type, UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        null_opaque(), binding, WGPUShaderStage.COMPUTE.value, UInt32(0),
+        WGPUBufferBindingLayout(null_opaque(), buf_type, UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(null_opaque(), UInt32(0)),
+        WGPUTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
     )
 
 
@@ -122,11 +123,11 @@ def main() raises:
     # ----------------------------------------------------------------
     var bg_entries: List[WGPUBindGroupEntry] = [
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)),
+            null_opaque(), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()),
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)),
+            null_opaque(), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()),
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)),
+            null_opaque(), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()),
     ]
     var bg = device.create_bind_group(bgl, bg_entries)
 

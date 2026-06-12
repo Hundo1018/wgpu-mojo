@@ -4,6 +4,7 @@ wgpu.render_pass — RenderPassEncoder RAII wrapper.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPURenderPassEncoderHandle, WGPURenderPipelineHandle,
     WGPUBindGroupHandle, WGPUBufferHandle, WGPURenderBundleHandle,
@@ -53,12 +54,12 @@ struct FrameRenderPass(Movable):
 
     def set_bind_group(self, index: UInt32, bind_group: WGPUBindGroupHandle):
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+            self._handle, index, bind_group, UInt(0), null_opaque()
         )
 
     def set_bind_group(self, index: UInt32, bind_group: BindGroup):
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group.handle().raw, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+            self._handle, index, bind_group.handle().raw, UInt(0), null_opaque()
         )
 
     def draw(
@@ -108,13 +109,13 @@ struct RenderPassEncoder(Movable):
 
     def set_bind_group(self, index: UInt32, bind_group: WGPUBindGroupHandle):
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+            self._handle, index, bind_group, UInt(0), null_opaque()
         )
 
     def set_bind_group(self, index: UInt32, bind_group: BindGroup):
         """Wrapper-first overload — accepts RAII BindGroup directly."""
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group.handle().raw, UInt(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+            self._handle, index, bind_group.handle().raw, UInt(0), null_opaque()
         )
 
     def set_bind_group_with_offsets(
@@ -123,9 +124,9 @@ struct RenderPassEncoder(Movable):
         bind_group: WGPUBindGroupHandle,
         offsets: List[UInt32],
     ):
-        var ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=Int(offsets.unsafe_ptr()))
+        var ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group, UInt(len(offsets)), ptr
+            self._handle, index, bind_group, UInt(len(offsets)), ptr.bitcast[NoneType]()
         )
 
     def set_vertex_buffer(
@@ -217,7 +218,7 @@ struct RenderPassEncoder(Movable):
     def set_scissor_rect(self, x: UInt32, y: UInt32, width: UInt32, height: UInt32):
         self._lib[].render_pass_set_scissor_rect(self._handle, x, y, width, height)
 
-    def set_blend_constant(self, color: UnsafePointer[WGPUColor, MutExternalOrigin]):
+    def set_blend_constant(self, color: UnsafePointer[WGPUColor, MutUntrackedOrigin]):
         self._lib[].render_pass_set_blend_constant(self._handle, color.bitcast[NoneType]())
 
     def set_stencil_reference(self, reference: UInt32):
@@ -230,7 +231,7 @@ struct RenderPassEncoder(Movable):
         self._lib[].render_pass_end_occlusion_query(self._handle)
 
     def execute_bundles(self, bundles: List[WGPURenderBundleHandle]):
-        var ptr = rebind[UnsafePointer[WGPURenderBundleHandle, MutExternalOrigin]](bundles.unsafe_ptr())
+        var ptr = rebind[UnsafePointer[WGPURenderBundleHandle, MutUntrackedOrigin]](bundles.unsafe_ptr())
         self._lib[].render_pass_execute_bundles(self._handle, UInt(len(bundles)), ptr)
 
     # ------------------------------------------------------------------
@@ -273,7 +274,7 @@ struct RenderPassEncoder(Movable):
     # ------------------------------------------------------------------
 
     def set_push_constants(
-        self, stages: UInt64, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutExternalOrigin]
+        self, stages: UInt64, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]
     ):
         self._lib[].render_pass_set_push_constants(
             self._handle, stages, offset, size_bytes, data

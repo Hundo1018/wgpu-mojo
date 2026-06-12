@@ -8,6 +8,7 @@ Run from project root:
     pixi run example-enumerate
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import WGPUAdapterType, WGPUBackendType
 from wgpu._ffi.structs import WGPUInstanceDescriptor, WGPUAdapterInfo, WGPUStringView
@@ -54,9 +55,9 @@ def main() raises:
     # Create instance
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt(0),
-        UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
-        UnsafePointer[NoneType, MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(), UInt(0),
+        null_ptr[UInt32](),
+        null_ptr[NoneType](),
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
@@ -66,8 +67,8 @@ def main() raises:
 
     # Count adapters
     var count = lib.enumerate_adapters(
-        inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin](unsafe_from_address=0)
+        inst, null_opaque(),
+        null_ptr[OpaquePointer[MutUntrackedOrigin]]()
     )
     print("Adapters found:", count)
 
@@ -77,14 +78,14 @@ def main() raises:
         return
 
     # Fill adapter list
-    var adapters = alloc[OpaquePointer[MutExternalOrigin]](Int(count))
-    _ = lib.enumerate_adapters(inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), adapters)
+    var adapters = alloc[OpaquePointer[MutUntrackedOrigin]](Int(count))
+    _ = lib.enumerate_adapters(inst, null_opaque(), adapters)
 
     for i in range(count):
         var adapter = adapters[i]
         var info_p = alloc[WGPUAdapterInfo](1)
         info_p[] = WGPUAdapterInfo(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             WGPUStringView.null_view(), WGPUStringView.null_view(),
             WGPUStringView.null_view(), WGPUStringView.null_view(),
             0, 0, 0, 0, 0, 0,

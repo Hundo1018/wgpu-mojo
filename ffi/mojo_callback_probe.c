@@ -95,3 +95,23 @@ uint64_t mojo_probe_invoke_raw_fnptr(void* fnptr) {
     cb(99, (void*)(uintptr_t)0xCAFE, msg, (void*)&result, (void*)0);
     return result.handle;
 }
+
+// Probe 5: >16-byte struct by value (40-byte callback-info-like payload)
+typedef struct {
+    void*    next_in_chain;
+    uint32_t mode;
+    // 4-byte ABI padding here on x86_64 SysV before next pointer field
+    void*    callback;
+    void*    userdata1;
+    void*    userdata2;
+} CallbackInfo40;
+
+uint64_t mojo_probe_cbinfo40_checksum(CallbackInfo40 info) {
+    uint64_t out = 0;
+    out ^= (uint64_t)(uintptr_t)info.next_in_chain;
+    out ^= ((uint64_t)info.mode) << 32;
+    out ^= (uint64_t)(uintptr_t)info.callback;
+    out ^= (uint64_t)(uintptr_t)info.userdata1;
+    out ^= (uint64_t)(uintptr_t)info.userdata2;
+    return out;
+}

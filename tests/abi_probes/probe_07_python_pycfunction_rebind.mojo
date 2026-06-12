@@ -17,5 +17,5 @@ def my_c_func(py_self: PyObjectPtr, args: PyObjectPtr) -> PyObjectPtr:
 def main() raises:
     # Expected to fail with kgen.generator vs kgen.pointer mismatch.
     var f: PyCFunctionLike = my_c_func
-    var raw = rebind[OpaquePointer[MutExternalOrigin]](f)
+    var raw = rebind[OpaquePointer[MutUntrackedOrigin]](f)
     print(raw)

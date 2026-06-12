@@ -3,6 +3,7 @@ Tests/test_bind_group.mojo — Tests for BindGroupLayout and BindGroup creation.
 Requires GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true
 from wgpu.device import Device
 from wgpu.instance import Instance
@@ -32,14 +33,14 @@ def make_storage_bgl_entry(
     # Type 3 = Storage (read_write), Type 4 = ReadOnlyStorage
     var buf_type: UInt32 = UInt32(4) if read_only else UInt32(3)
     return WGPUBindGroupLayoutEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(),
         binding,
         WGPUShaderStage.COMPUTE.value,
         UInt32(0),
-        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), buf_type, UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUBufferBindingLayout(null_opaque(), buf_type, UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(null_opaque(), UInt32(0)),
+        WGPUTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
     )
 
 
@@ -57,7 +58,7 @@ def test_create_bind_group_with_buffer() raises:
     var device = create_test_device()
 
     var buf = device.create_buffer(
-        UInt64(256), WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False
+        UInt64(256), WGPUBufferUsage.STORAGE.value | WGPUBufferUsage.COPY_DST.value, False
     )
 
     var bgl_entries: List[WGPUBindGroupLayoutEntry] = [make_storage_bgl_entry(UInt32(0))]
@@ -65,13 +66,13 @@ def test_create_bind_group_with_buffer() raises:
 
     var bg_entries: List[WGPUBindGroupEntry] = [
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             UInt32(0),
             buf.handle().raw,
             UInt64(0),
             WGPU_WHOLE_SIZE,
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
+            null_opaque(),
         )
     ]
     var bg = device.create_bind_group(bgl, bg_entries)

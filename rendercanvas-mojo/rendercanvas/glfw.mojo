@@ -19,6 +19,7 @@ Usage:
 """
 
 from std.ffi import OwnedDLHandle
+from rendercanvas.nulls import null_opaque
 
 
 # ---------------------------------------------------------------------------
@@ -190,8 +191,8 @@ struct GLFWLib(Movable):
         width: Int32,
         height: Int32,
         title: OpaquePointer[MutExternalOrigin],
-        monitor: OpaquePointer[MutExternalOrigin] = OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        share: OpaquePointer[MutExternalOrigin] = OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        monitor: OpaquePointer[MutExternalOrigin] = null_opaque(),
+        share: OpaquePointer[MutExternalOrigin] = null_opaque(),
     ) -> OpaquePointer[MutExternalOrigin]:
         """Create a GLFW window; returns GLFWwindow* (or NULL on failure)."""
         return self._lib.call["glfwCreateWindow", OpaquePointer[MutExternalOrigin]](

@@ -3,6 +3,7 @@ tests/test_structs.mojo — Unit tests for FFI struct construction and layout.
 No GPU required.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_equal, assert_true, assert_false
 from wgpu._ffi.types import (
     WGPU_STRLEN, WGPU_WHOLE_SIZE, WGPU_LIMIT_U32_UNDEFINED,
@@ -19,20 +20,20 @@ from wgpu._ffi.structs import (
 def test_stringview_null() raises:
     var sv = WGPUStringView.null_view()
     assert_equal(sv.length, WGPU_STRLEN)
-    assert_true(sv.data == UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0))
+    assert_true(sv.data == null_any_ptr())
 
 
 def test_stringview_from_string() raises:
     var s = String("hello")
     var sv = str_to_sv(s)
     assert_equal(sv.length, UInt(5))
-    assert_true(sv.data != UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0))
+    assert_true(sv.data != null_any_ptr())
 
 
 def test_chained_struct() raises:
-    var cs = WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1))
+    var cs = WGPUChainedStruct(null_opaque(), UInt32(1))
     assert_equal(cs.stype, UInt32(1))
-    assert_true(cs.next == UnsafePointer[NoneType, MutExternalOrigin](unsafe_from_address=0))
+    assert_true(cs.next == null_ptr[NoneType]())
 
 
 def test_future() raises:

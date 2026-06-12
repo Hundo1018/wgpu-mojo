@@ -3,6 +3,7 @@ Tests/test_buffer.mojo — Integration tests for Buffer creation, write, map, re
 Requires GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
@@ -21,7 +22,7 @@ def test_create_storage_buffer() raises:
     var device = create_test_device()
     var buf = device.create_buffer(
         UInt64(256),
-        WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST,
+        WGPUBufferUsage.STORAGE.value | WGPUBufferUsage.COPY_DST.value,
         False,
         "test_storage_buf",
     )
@@ -31,11 +32,11 @@ def test_create_storage_buffer() raises:
 def test_create_staging_buffer_mapped() raises:
     """Create a mappable staging buffer with mapped_at_creation=True."""
     var device = create_test_device()
-    var usage  = WGPUBufferUsage.MAP_WRITE | WGPUBufferUsage.COPY_SRC
+    var usage  = WGPUBufferUsage.MAP_WRITE.value | WGPUBufferUsage.COPY_SRC.value
     var buf = device.create_buffer(UInt64(64), usage, True, "staging")
     assert_true(buf)
     var ptr = device._lib[].buffer_get_mapped_range(buf.handle().raw, UInt(0), UInt(64))
-    assert_true(ptr != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(ptr != null_opaque())
     buf.unmap()
 
 
@@ -47,11 +48,11 @@ def test_queue_write_and_map_read_buffer() raises:
 
     # GPU storage buffer (CopyDst | CopySrc)
     var gpu_buf = device.create_buffer(
-        n, WGPUBufferUsage.COPY_DST | WGPUBufferUsage.COPY_SRC, False, "gpu"
+        n, WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.COPY_SRC.value, False, "gpu"
     )
     # CPU readback buffer (MapRead | CopyDst)
     var read_buf = device.create_buffer(
-        n, WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST, False, "readback"
+        n, WGPUBufferUsage.MAP_READ.value | WGPUBufferUsage.COPY_DST.value, False, "readback"
     )
 
     # Upload data

@@ -7,13 +7,21 @@ from wgpu._ffi.structs import WGPURequestAdapterCallbackInfo
 from wgpu._ffi.types import WGPUCallbackMode
 
 
+def _dummy_ptr(addr: Int) -> OpaquePointer[MutUntrackedOrigin]:
+    return rebind[OpaquePointer[MutUntrackedOrigin]](
+        UnsafePointer[NoneType, MutUntrackedOrigin](unsafe_from_address=addr)
+    )
+
+
 def main() raises:
-    var null_ptr = OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+    # OpaquePointer/UnsafePointer are non-nullable in current Mojo nightly;
+    # this probe only validates struct construction, so a non-null dummy is fine.
+    var p = _dummy_ptr(1)
     var info = WGPURequestAdapterCallbackInfo(
-        null_ptr,
+        p,
         WGPUCallbackMode.AllowSpontaneous,
-        null_ptr,
-        null_ptr,
-        null_ptr,
+        p,
+        p,
+        p,
     )
     print("PASS: callback-info struct constructed, callback field:", info.callback)

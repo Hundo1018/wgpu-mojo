@@ -132,8 +132,8 @@ struct WGPUInstanceExtras:
     var dxc_path:               WGPUStringView
     var dxc_max_shader_model:   UInt32
     var dx12_presentation_system: UInt32
-    var budget_for_device_creation: OpaquePointer[MutExternalOrigin]  # nullable
-    var budget_for_device_loss: OpaquePointer[MutExternalOrigin]      # nullable
+    var budget_for_device_creation: OpaquePointer[MutUntrackedOrigin]  # nullable
+    var budget_for_device_loss: OpaquePointer[MutUntrackedOrigin]      # nullable
 
 
 @fieldwise_init
@@ -152,7 +152,7 @@ struct WGPUNativeLimits:
 
 @fieldwise_init
 struct WGPUInstanceEnumerateAdapterOptions:
-    var next_in_chain: OpaquePointer[MutExternalOrigin]  # WGPUChainedStruct* nullable
+    var next_in_chain: OpaquePointer[MutUntrackedOrigin]  # WGPUChainedStruct* nullable
     var backends:      UInt64    # WGPUInstanceBackend
 
 
@@ -212,17 +212,17 @@ struct WGPUPushConstantRange(TrivialRegisterPassable):
 struct WGPUPipelineLayoutExtras:
     var chain: WGPUChainedStruct
     var push_constant_range_count: UInt
-    var push_constant_ranges: UnsafePointer[WGPUPushConstantRange, MutExternalOrigin]
+    var push_constant_ranges: UnsafePointer[WGPUPushConstantRange, MutUntrackedOrigin]
 
 
 @fieldwise_init
 struct WGPUBindGroupEntryExtras:
     var chain:            WGPUChainedStruct
-    var buffers:          UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]  # WGPUBuffer*
+    var buffers:          UnsafePointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUBuffer*
     var buffer_count:     UInt
-    var samplers:         UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]  # WGPUSampler*
+    var samplers:         UnsafePointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUSampler*
     var sampler_count:    UInt
-    var texture_views:    UnsafePointer[OpaquePointer[MutExternalOrigin], MutExternalOrigin]  # WGPUTextureView*
+    var texture_views:    UnsafePointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUTextureView*
     var texture_view_count: UInt
 
 
@@ -235,7 +235,7 @@ struct WGPUBindGroupLayoutEntryExtras:
 @fieldwise_init
 struct WGPUQuerySetDescriptorExtras:
     var chain:                      WGPUChainedStruct
-    var pipeline_statistics:        UnsafePointer[UInt32, MutExternalOrigin]
+    var pipeline_statistics:        UnsafePointer[UInt32, MutUntrackedOrigin]
     var pipeline_statistic_count:   UInt
 
 

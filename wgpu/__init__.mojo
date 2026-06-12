@@ -86,5 +86,13 @@ from wgpu._ffi.structs import (
     WGPUAdapterInfo,
 )
 
+# New Layer 3 high-level API
+from wgpu.gpu         import GPU, WgpuComputeProgram
+from wgpu.descriptors import BGL
+
+# Safe core types (Layer 2 additions)
+from wgpu._core.session import Session
+from wgpu._core.wgpu_native.buffer import MappedBuffer
+
 # API discovery (works from .mojopkg without source access)
 from wgpu.api_index import api_index

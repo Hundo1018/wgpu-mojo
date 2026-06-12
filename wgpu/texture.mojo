@@ -4,6 +4,7 @@ wgpu.texture — Texture and TextureView RAII wrappers.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import WGPUTextureHandle, WGPUTextureViewHandle
 from wgpu._ffi.structs import WGPUTextureViewDescriptor, WGPUStringView, str_to_sv
 from wgpu._ffi.handles import TextureHandle, TextureViewHandle
@@ -84,13 +85,13 @@ struct Texture(Movable, Boolable):
     def create_view_default(self) raises -> TextureView:
         var h = self._lib[].texture_create_view(
             self._handle,
-            UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin](unsafe_from_address=0),
+            null_ptr[WGPUTextureViewDescriptor](),
         )
         return TextureView(self._lib, h)
 
     def create_view(
         self,
-        desc: UnsafePointer[WGPUTextureViewDescriptor, MutExternalOrigin],
+        desc: UnsafePointer[WGPUTextureViewDescriptor, MutUntrackedOrigin],
     ) raises -> TextureView:
         var h = self._lib[].texture_create_view(self._handle, desc)
         return TextureView(self._lib, h)

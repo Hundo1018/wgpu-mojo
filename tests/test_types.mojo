@@ -3,6 +3,7 @@ tests/test_types.mojo — Unit tests for FFI type definitions.
 No GPU required.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_equal, assert_true, assert_false
 from wgpu._ffi.types import (
     WGPU_FALSE, WGPU_TRUE, WGPU_STRLEN, WGPU_WHOLE_SIZE,
@@ -94,8 +95,8 @@ def test_stype_enum() raises:
 
 
 def test_opaque_ptr_null() raises:
-    var p: OpaquePointer[MutExternalOrigin] = OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
-    assert_true(p == OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    var p: OpaquePointer[MutUntrackedOrigin] = null_opaque()
+    assert_true(p == null_opaque())
 
 
 def main() raises:

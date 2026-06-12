@@ -7,6 +7,7 @@ device creation, adapter info queries, and surface creation.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPUAdapterHandle, WGPUDeviceHandle, WGPUInstanceHandle, WGPURequestDeviceStatus,
 )
@@ -44,7 +45,7 @@ struct Adapter(Movable):
         self._handle = handle
         var info_p = alloc[WGPUAdapterInfo](1)
         info_p[] = WGPUAdapterInfo(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             WGPUStringView.null_view(),
             WGPUStringView.null_view(),
             WGPUStringView.null_view(),
@@ -85,24 +86,24 @@ struct Adapter(Movable):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
 
         var lost_cb = WGPUDeviceLostCallbackInfo(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             0,
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
+            null_opaque(),
+            null_opaque(),
         )
         var err_cb = WGPUUncapturedErrorCallbackInfo(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
+            null_opaque(),
+            null_opaque(),
+            null_opaque(),
         )
         var queue_desc = WGPUQueueDescriptor(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             WGPUStringView.null_view(),
         )
 
-        var feat_ptr = UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0)
+        var feat_ptr = null_ptr[UInt32]()
         if len(required_features) > 0:
             feat_ptr = alloc[UInt32](len(required_features))
             for i in range(len(required_features)):
@@ -110,11 +111,11 @@ struct Adapter(Movable):
 
         var desc_p = alloc[WGPUDeviceDescriptor](1)
         desc_p[] = WGPUDeviceDescriptor(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             label_sv,
             UInt(len(required_features)),
             feat_ptr,
-            UnsafePointer[WGPULimits, MutExternalOrigin](unsafe_from_address=0),
+            null_ptr[WGPULimits](),
             queue_desc,
             lost_cb,
             err_cb,
@@ -132,7 +133,7 @@ struct Adapter(Movable):
         var status = dev_result.status
         if status != WGPURequestDeviceStatus.Success:
             raise Error("wgpuAdapterRequestDevice failed, status=" + String(status))
-        if device == OpaquePointer[MutExternalOrigin](unsafe_from_address=0):
+        if device == null_opaque():
             raise Error("wgpuAdapterRequestDevice returned null device")
 
         var queue = self._lib[].device_get_queue(device)
@@ -140,14 +141,14 @@ struct Adapter(Movable):
 
     def create_surface_wayland(
         self,
-        display: OpaquePointer[MutExternalOrigin],
-        wayland_surface: OpaquePointer[MutExternalOrigin],
+        display: OpaquePointer[MutUntrackedOrigin],
+        wayland_surface: OpaquePointer[MutUntrackedOrigin],
     ) raises -> Surface:
         return create_surface_wayland(self._lib, self._inst, display, wayland_surface)
 
     def create_surface_xlib(
         self,
-        display: OpaquePointer[MutExternalOrigin],
+        display: OpaquePointer[MutUntrackedOrigin],
         window: UInt64,
     ) raises -> Surface:
         return create_surface_xlib(self._lib, self._inst, display, window)

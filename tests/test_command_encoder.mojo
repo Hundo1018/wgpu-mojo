@@ -3,6 +3,7 @@ Tests/test_command_encoder.mojo — Tests for CommandEncoder operations.
 Requires GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
@@ -19,7 +20,7 @@ def test_create_command_encoder() raises:
     """CommandEncoder creation should return non-null."""
     var device = create_test_device()
     var enc    = device.create_command_encoder("test_enc")
-    var is_valid = enc.handle().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+    var is_valid = enc.handle().raw != null_opaque()
     enc^.abandon()  # linear type: must explicitly consume
     assert_true(is_valid)
 
@@ -29,7 +30,7 @@ def test_finish_empty_encoder() raises:
     var device = create_test_device()
     var enc    = device.create_command_encoder()
     var cmd    = enc^.finish()
-    assert_true(cmd.raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(cmd.raw != null_opaque())
 
 
 def test_submit_empty_command_buffer() raises:

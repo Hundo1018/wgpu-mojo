@@ -35,14 +35,14 @@ struct InputState(Movable):
     """
 
     # Key state arrays — indexed by GLFW key code (0..511)
-    var _keys_pressed:       UnsafePointer[Bool, MutExternalOrigin]
-    var _keys_just_pressed:  UnsafePointer[Bool, MutExternalOrigin]
-    var _keys_just_released: UnsafePointer[Bool, MutExternalOrigin]
+    var _keys_pressed:       UnsafePointer[Bool, MutUntrackedOrigin]
+    var _keys_just_pressed:  UnsafePointer[Bool, MutUntrackedOrigin]
+    var _keys_just_released: UnsafePointer[Bool, MutUntrackedOrigin]
 
     # Mouse button state (0..7)
-    var _mouse_pressed:       UnsafePointer[Bool, MutExternalOrigin]
-    var _mouse_just_pressed:  UnsafePointer[Bool, MutExternalOrigin]
-    var _mouse_just_released: UnsafePointer[Bool, MutExternalOrigin]
+    var _mouse_pressed:       UnsafePointer[Bool, MutUntrackedOrigin]
+    var _mouse_just_pressed:  UnsafePointer[Bool, MutUntrackedOrigin]
+    var _mouse_just_released: UnsafePointer[Bool, MutUntrackedOrigin]
 
     # Cursor position and per-frame delta
     var mouse_x:  Float64

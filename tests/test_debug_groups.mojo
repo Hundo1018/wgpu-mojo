@@ -3,6 +3,7 @@ Tests/test_debug_groups.mojo — Tests for debug group/marker methods on encoder
 Requires GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true
 from wgpu.device import Device
 from wgpu.instance import Instance
@@ -30,7 +31,7 @@ def test_command_encoder_debug_groups() raises:
     enc.pop_debug_group()
     enc.pop_debug_group()
     var cmd = enc^.finish()
-    assert_true(cmd.raw() != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(cmd.raw() != null_opaque())
 
 
 def test_compute_pass_debug_groups() raises:
@@ -43,7 +44,7 @@ def test_compute_pass_debug_groups() raises:
     cpass.pop_debug_group()
     cpass^.end()
     var cmd = enc^.finish()
-    assert_true(cmd.raw() != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(cmd.raw() != null_opaque())
 
 
 def test_render_pass_debug_groups() raises:
@@ -54,7 +55,7 @@ def test_render_pass_debug_groups() raises:
     var tex = device.create_texture(
         UInt32(4), UInt32(4), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.RENDER_ATTACHMENT,
+        WGPUTextureUsage.RENDER_ATTACHMENT.value,
         label="debug_rt",
     )
     var view = tex.create_view_default()
@@ -62,17 +63,17 @@ def test_render_pass_debug_groups() raises:
     var enc = device.create_command_encoder()
     var color_att_p = alloc[WGPURenderPassColorAttachment](1)
     color_att_p[0] = WGPURenderPassColorAttachment(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), view.handle().raw, UInt32(0xFFFFFFFF), OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(), view.handle().raw, UInt32(0xFFFFFFFF), null_opaque(),
         UInt32(1), UInt32(1),  # Clear, Store
         WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
     )
     var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
     rp_desc_p[0] = WGPURenderPassDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUStringView.null_view(),
+        null_opaque(), WGPUStringView.null_view(),
         UInt(1), color_att_p,
-        UnsafePointer[WGPURenderPassDepthStencilAttachment, MutExternalOrigin](unsafe_from_address=0),
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        UnsafePointer[WGPUPassTimestampWrites, MutExternalOrigin](unsafe_from_address=0),
+        null_ptr[WGPURenderPassDepthStencilAttachment](),
+        null_opaque(),
+        null_ptr[WGPUPassTimestampWrites](),
     )
     var rpass = enc.begin_render_pass(rp_desc_p)
     # Required: view.handle().raw is embedded in color attachment descriptor.
@@ -85,7 +86,7 @@ def test_render_pass_debug_groups() raises:
     color_att_p.free()
     rp_desc_p.free()
     var cmd = enc^.finish()
-    assert_true(cmd.raw() != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(cmd.raw() != null_opaque())
 
 
 def test_encoder_set_label() raises:

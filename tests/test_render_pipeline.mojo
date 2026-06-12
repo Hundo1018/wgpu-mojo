@@ -47,7 +47,7 @@ def test_create_render_pipeline() raises:
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
     assert_true(shader)
 
-    var pl = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "render_pl")
+    var pl = device.create_pipeline_layout(List[OpaquePointer[MutUntrackedOrigin]](), "render_pl")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main", TEX_FMT, pl,
     )
@@ -60,7 +60,7 @@ def test_headless_render_pass() raises:
     var shader = device.create_shader_module_wgsl(TRIANGLE_WGSL, "triangle")
 
     # Build render pipeline
-    var pl = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "render_pl")
+    var pl = device.create_pipeline_layout(List[OpaquePointer[MutUntrackedOrigin]](), "render_pl")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main", TEX_FMT, pl,
     )
@@ -68,7 +68,7 @@ def test_headless_render_pass() raises:
     # Create offscreen render target
     var tex = device.create_texture(
         TEX_WIDTH, TEX_HEIGHT, UInt32(1), TEX_FMT,
-        WGPUTextureUsage.RENDER_ATTACHMENT | WGPUTextureUsage.COPY_SRC,
+        WGPUTextureUsage.RENDER_ATTACHMENT.value | WGPUTextureUsage.COPY_SRC.value,
         label="render_target",
     )
     var view = tex.create_view_default()
@@ -76,7 +76,7 @@ def test_headless_render_pass() raises:
     # Create readback buffer (4 bytes per pixel RGBA8)
     var buf_size = UInt64(TEX_WIDTH) * UInt64(TEX_HEIGHT) * UInt64(4)
     var readback = device.create_buffer(
-        buf_size, WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ, False, "readback"
+        buf_size, WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value, False, "readback"
     )
 
     # Encode render pass

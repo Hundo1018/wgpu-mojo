@@ -25,10 +25,11 @@ from wgpu.adapter import Adapter
 from wgpu.device import Device
 from wgpu.surface import Surface, SurfaceFrame
 from rendercanvas.glfw import GLFWLib, GLFW_CLIENT_API, GLFW_NO_API, GLFW_RESIZABLE, GLFW_TRUE
+from rendercanvas.nulls import null_opaque
 from rendercanvas.input import InputState
 
 
-comptime NULL_PTR = OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+comptime NULL_PTR = null_opaque()
 
 
 struct RenderCanvas(Movable):

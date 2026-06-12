@@ -24,7 +24,7 @@ def test_create_2d_texture() raises:
     var tex = device.create_texture(
         UInt32(256), UInt32(256), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_SRC,
+        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_SRC.value,
         2, 1, 1, "tex2d"
     )
     assert_true(tex)
@@ -39,7 +39,7 @@ def test_create_texture_view() raises:
     var tex = device.create_texture(
         UInt32(64), UInt32(64), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
+        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
         2, 1, 1
     )
     var view = tex.create_view_default()
@@ -54,7 +54,7 @@ def test_texture_dimensions() raises:
     var tex = device.create_texture(
         w, h, UInt32(1),
         WGPUTextureFormat.BGRA8Unorm,
-        WGPUTextureUsage.COPY_DST | WGPUTextureUsage.COPY_SRC,
+        WGPUTextureUsage.COPY_DST.value | WGPUTextureUsage.COPY_SRC.value,
         2, 1, 1
     )
     assert_equal(tex.width(), w)

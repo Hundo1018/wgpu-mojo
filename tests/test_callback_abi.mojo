@@ -26,33 +26,33 @@ struct _ProbeAdapterResult(TrivialRegisterPassable):
 # Probe A: callback with scalars only (StringView decomposed into ptr+len)
 def mojo_scalar_adapter_cb(
     status: UInt32,
-    adapter: OpaquePointer[MutExternalOrigin],
-    msg_data: OpaquePointer[MutExternalOrigin],
+    adapter: OpaquePointer[MutUntrackedOrigin],
+    msg_data: OpaquePointer[MutUntrackedOrigin],
     msg_len: UInt64,
-    ud1: OpaquePointer[MutExternalOrigin],
-    ud2: OpaquePointer[MutExternalOrigin],
+    ud1: OpaquePointer[MutUntrackedOrigin],
+    ud2: OpaquePointer[MutUntrackedOrigin],
 ):
     """Scalar-only callback: receive StringView as two separate args."""
-    var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutExternalOrigin]](ud1)
+    var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutUntrackedOrigin]](ud1)
     result_p[] = _ProbeAdapterResult(UInt64(Int(adapter)), status)
 
 
 # Probe B: callback with 16-byte struct by value (WGPUStringView equivalent)
 @fieldwise_init
 struct _StringView16(TrivialRegisterPassable):
-    var data: OpaquePointer[MutExternalOrigin]
+    var data: OpaquePointer[MutUntrackedOrigin]
     var length: UInt64
 
 
 def mojo_struct_adapter_cb(
     status: UInt32,
-    adapter: OpaquePointer[MutExternalOrigin],
+    adapter: OpaquePointer[MutUntrackedOrigin],
     msg: _StringView16,
-    ud1: OpaquePointer[MutExternalOrigin],
-    ud2: OpaquePointer[MutExternalOrigin],
+    ud1: OpaquePointer[MutUntrackedOrigin],
+    ud2: OpaquePointer[MutUntrackedOrigin],
 ):
     """Struct-by-value callback: receive 16-byte StringView as single param."""
-    var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutExternalOrigin]](ud1)
+    var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutUntrackedOrigin]](ud1)
     result_p[] = _ProbeAdapterResult(UInt64(Int(adapter)), status)
 
 
@@ -86,9 +86,9 @@ def main() raises:
     assert_equal(status_v, UInt32(42))
     print("  PASS: struct-by-value callback status =", status_v)
 
-    # NOTE: Extracting a Mojo def as OpaquePointer[MutExternalOrigin] for storage in C structs
+    # NOTE: Extracting a Mojo def as OpaquePointer[MutUntrackedOrigin] for storage in C structs
     # does NOT work. Mojo def functions are kgen.generator internally, not
-    # plain function pointers. rebind[OpaquePointer[MutExternalOrigin]](fn) fails.
+    # plain function pointers. rebind[OpaquePointer[MutUntrackedOrigin]](fn) fails.
     # This means wgpu callbacks (which require storing a function pointer in
     # WGPURequestAdapterCallbackInfo) must remain as C implementations.
     # DLHandle.call handles the conversion implicitly when passing functions

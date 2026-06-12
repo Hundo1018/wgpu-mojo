@@ -3,6 +3,7 @@ Tests/test_compute_pipeline.mojo — Tests for compute pipeline creation and dis
 Requires GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
@@ -47,12 +48,12 @@ def _make_bgl_entry(binding: UInt32, read_only: Bool) -> WGPUBindGroupLayoutEntr
     # Type 3 = Storage (read_write), Type 4 = ReadOnlyStorage
     var buf_type: UInt32 = UInt32(4) if read_only else UInt32(3)
     return WGPUBindGroupLayoutEntry(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), binding,
+        null_opaque(), binding,
         WGPUShaderStage.COMPUTE.value, UInt32(0),
-        WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), buf_type, UInt32(0), UInt64(0)),
-        WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-        WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-        WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUBufferBindingLayout(null_opaque(), buf_type, UInt32(0), UInt64(0)),
+        WGPUSamplerBindingLayout(null_opaque(), UInt32(0)),
+        WGPUTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
+        WGPUStorageTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
     )
 
 
@@ -104,9 +105,9 @@ def test_vec_add_compute() raises:
         device.queue_write_buffer(buf_b, UInt64(0), b_data, UInt(16))
 
     var bg_entries = List[WGPUBindGroupEntry]()
-    bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
-    bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
-    bg_entries.append(WGPUBindGroupEntry(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)))
+    bg_entries.append(WGPUBindGroupEntry(null_opaque(), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()))
+    bg_entries.append(WGPUBindGroupEntry(null_opaque(), UInt32(1), buf_b.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()))
+    bg_entries.append(WGPUBindGroupEntry(null_opaque(), UInt32(2), buf_c.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()))
     var bg = device.create_bind_group(bgl, bg_entries)
     # Required: removing these pins reproducibly crashes in device_create_bind_group
     # due to Mojo ASAP lifetime + raw handles embedded in entry structs.

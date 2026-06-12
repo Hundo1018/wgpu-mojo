@@ -3,6 +3,7 @@ Wgpu.diagnostics — Logging and preflight helpers for wgpu-mojo.
 """
 
 from wgpu._ffi.lib import WGPULib
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import WGPUAdapterHandle, WGPUAdapterType, WGPUBackendType
 from wgpu._ffi.structs import (
     WGPUAdapterInfo, WGPUInstanceDescriptor, WGPUStringView,
@@ -35,7 +36,7 @@ def _adapter_type_name(t: UInt32) -> String:
 
 
 def _sv_to_str(sv: WGPUStringView) -> String:
-    var null_ptr = UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0)
+    var null_ptr = null_any_ptr()
     if sv.data == null_ptr:
         return "<null>"
     var p = sv.data.bitcast[UInt8]()
@@ -63,20 +64,20 @@ def preflight() -> String:
 
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(),
         UInt(0),
-        UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        null_ptr[UInt32](),
+        null_opaque(),
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
-    if inst == OpaquePointer[MutExternalOrigin](unsafe_from_address=0):
+    if inst == null_opaque():
         return lines + "  ERROR: wgpuCreateInstance returned null\n"
 
     var count = lib.enumerate_adapters(
         inst,
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        UnsafePointer[WGPUAdapterHandle, MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(),
+        null_ptr[WGPUAdapterHandle](),
     )
     lines += "  adapters found: " + String(count) + "\n"
 
@@ -92,14 +93,14 @@ def preflight() -> String:
     var adapters = alloc[WGPUAdapterHandle](Int(count))
     _ = lib.enumerate_adapters(
         inst,
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(),
         adapters,
     )
 
     var info_p = alloc[WGPUAdapterInfo](1)
     for i in range(Int(count)):
         info_p[] = WGPUAdapterInfo(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             WGPUStringView.null_view(), WGPUStringView.null_view(),
             WGPUStringView.null_view(), WGPUStringView.null_view(),
             0, 0, 0, 0, 0, 0,

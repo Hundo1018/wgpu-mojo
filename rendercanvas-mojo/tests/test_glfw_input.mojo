@@ -6,6 +6,7 @@ bridge loads and returns no spurious events.
 """
 
 from std.testing import assert_equal, assert_true, assert_false
+from rendercanvas.nulls import null_opaque
 from rendercanvas.glfw import (
     GLFWLib, MojoInputEvent, InputEventType,
     GLFW_CLIENT_API, GLFW_NO_API, GLFW_RESIZABLE, GLFW_FALSE, GLFW_TRUE,
@@ -37,7 +38,7 @@ def test_glfw_input_integration() raises:
     var title_ptr = rebind[OpaquePointer[MutExternalOrigin]](raw)
     var window = glfw.create_window(Int32(1), Int32(1), title_ptr)
     _ = title_bytes
-    assert_true(window != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(window != null_opaque())
 
     # Exercise polling functions — should not crash
     var key_state = glfw.get_key(window, GLFW_KEY_A)

@@ -3,6 +3,7 @@ tests/test_native_ext.mojo — Unit tests for wgpu-native extension types.
 No GPU required.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_equal, assert_true, assert_false
 from wgpu._native import (
     WGPUNativeSType, WGPUNativeFeature, WGPULogLevel,
@@ -60,14 +61,14 @@ def test_native_feature_values() raises:
 
 def test_instance_extras_construction() raises:
     var sv = WGPUStringView.null_view()
-    var chain = WGPUChainedStruct(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUNativeSType.InstanceExtras)
+    var chain = WGPUChainedStruct(null_opaque(), WGPUNativeSType.InstanceExtras)
     var extras = WGPUInstanceExtras(
         chain,
         WGPUInstanceBackend.VULKAN.value,
         WGPUInstanceFlag.DEFAULT.value,
         UInt32(0), UInt32(0), UInt32(0),
         sv, UInt32(0), UInt32(0),
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(), null_opaque(),
     )
     assert_equal(extras.chain.stype, WGPUNativeSType.InstanceExtras)
     assert_equal(extras.backends, WGPUInstanceBackend.VULKAN.value)

@@ -3,6 +3,7 @@ Tests/test_texture_sample.mojo — validate sampled texture bind group and rende
 Requires GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true
 from std.memory import alloc
 from wgpu.device import Device
@@ -100,7 +101,7 @@ def test_sampled_texture_pipeline_creation() raises:
     var tex = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
+        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
         UInt32(2), UInt32(1), UInt32(1),
         "test_sample_texture",
     )
@@ -109,28 +110,28 @@ def test_sampled_texture_pipeline_creation() raises:
 
     var bgl_entries: List[WGPUBindGroupLayoutEntry] = [
         WGPUBindGroupLayoutEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), WGPUShaderStage.FRAGMENT.value, UInt32(0),
-            WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
-            WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-            WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUTextureSampleType.Float, WGPUTextureViewDimension.D2, UInt32(0)),
-            WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+            null_opaque(), UInt32(0), WGPUShaderStage.FRAGMENT.value, UInt32(0),
+            WGPUBufferBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt64(0)),
+            WGPUSamplerBindingLayout(null_opaque(), UInt32(0)),
+            WGPUTextureBindingLayout(null_opaque(), WGPUTextureSampleType.Float, WGPUTextureViewDimension.D2, UInt32(0)),
+            WGPUStorageTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
         ),
         WGPUBindGroupLayoutEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), WGPUShaderStage.FRAGMENT.value, UInt32(0),
-            WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
-            WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUSamplerBindingType.Filtering),
-            WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-            WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+            null_opaque(), UInt32(1), WGPUShaderStage.FRAGMENT.value, UInt32(0),
+            WGPUBufferBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt64(0)),
+            WGPUSamplerBindingLayout(null_opaque(), WGPUSamplerBindingType.Filtering),
+            WGPUTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
+            WGPUStorageTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
         ),
     ]
     var bgl = device.create_bind_group_layout(bgl_entries)
 
     var bg_entries: List[WGPUBindGroupEntry] = [
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), view.handle().raw
+            null_opaque(), UInt32(0), null_opaque(), UInt64(0), UInt64(0), null_opaque(), view.handle().raw
         ),
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), sampler.handle().raw, OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+            null_opaque(), UInt32(1), null_opaque(), UInt64(0), UInt64(0), sampler.handle().raw, null_opaque()
         ),
     ]
     var bg = device.create_bind_group(bgl, bg_entries)
@@ -152,7 +153,7 @@ def test_offscreen_render_texture_readback() raises:
     var target_texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.RENDER_ATTACHMENT | WGPUTextureUsage.COPY_SRC,
+        WGPUTextureUsage.RENDER_ATTACHMENT.value | WGPUTextureUsage.COPY_SRC.value,
         UInt32(2), UInt32(1), UInt32(1),
         "test_offscreen_readback_target",
     )
@@ -160,7 +161,7 @@ def test_offscreen_render_texture_readback() raises:
 
     var readback = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ,
+        WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value,
         False,
         "test_offscreen_readback_buffer",
     )
@@ -225,7 +226,7 @@ def test_example_texture_sample_upload_readback() raises:
     var texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
+        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
         UInt32(2), UInt32(1), UInt32(1),
         "example_texture_sample_tex",
     )
@@ -239,7 +240,7 @@ def test_example_texture_sample_upload_readback() raises:
 
     var staging = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST,
+        WGPUBufferUsage.COPY_SRC.value | WGPUBufferUsage.COPY_DST.value,
         False,
         "example_texture_sample_staging",
     )
@@ -262,7 +263,7 @@ def test_example_texture_sample_upload_readback() raises:
 
     var readback = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ,
+        WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value,
         False,
         "example_texture_sample_readback",
     )
@@ -316,7 +317,7 @@ def test_texture_upload_copy_buffer_to_texture() raises:
     var texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
+        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
         UInt32(2), UInt32(1), UInt32(1),
         "test_texture_upload",
     )
@@ -330,7 +331,7 @@ def test_texture_upload_copy_buffer_to_texture() raises:
 
     var staging = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST,
+        WGPUBufferUsage.COPY_SRC.value | WGPUBufferUsage.COPY_DST.value,
         False,
         "test_texture_upload_staging",
     )
@@ -361,7 +362,7 @@ def test_texture_upload_readback() raises:
     var texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST | WGPUTextureUsage.COPY_SRC,
+        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value | WGPUTextureUsage.COPY_SRC.value,
         UInt32(2), UInt32(1), UInt32(1),
         "test_texture_readback",
     )
@@ -375,7 +376,7 @@ def test_texture_upload_readback() raises:
 
     var staging = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST,
+        WGPUBufferUsage.COPY_SRC.value | WGPUBufferUsage.COPY_DST.value,
         False,
         "test_texture_readback_staging",
     )
@@ -397,14 +398,14 @@ def test_texture_upload_readback() raises:
 
     var storage_buffer = device.create_buffer(
         UInt64(64),
-        WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC,
+        WGPUBufferUsage.STORAGE.value | WGPUBufferUsage.COPY_SRC.value,
         False,
         "test_texture_readback_storage",
     )
 
     var readback = device.create_buffer(
         UInt64(64),
-        WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ,
+        WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value,
         False,
         "test_texture_readback_buffer",
     )
@@ -413,18 +414,18 @@ def test_texture_upload_readback() raises:
 
     var bgl_entries: List[WGPUBindGroupLayoutEntry] = [
         WGPUBindGroupLayoutEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), WGPUShaderStage.COMPUTE.value, UInt32(0),
-            WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt64(0)),
-            WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-            WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUTextureSampleType.UnfilterableFloat, WGPUTextureViewDimension.D2, UInt32(0)),
-            WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+            null_opaque(), UInt32(0), WGPUShaderStage.COMPUTE.value, UInt32(0),
+            WGPUBufferBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt64(0)),
+            WGPUSamplerBindingLayout(null_opaque(), UInt32(0)),
+            WGPUTextureBindingLayout(null_opaque(), WGPUTextureSampleType.UnfilterableFloat, WGPUTextureViewDimension.D2, UInt32(0)),
+            WGPUStorageTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
         ),
         WGPUBindGroupLayoutEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), WGPUShaderStage.COMPUTE.value, UInt32(0),
-            WGPUBufferBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), WGPUBufferBindingType.Storage, UInt32(0), UInt64(0)),
-            WGPUSamplerBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0)),
-            WGPUTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
-            WGPUStorageTextureBindingLayout(OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), UInt32(0), UInt32(0)),
+            null_opaque(), UInt32(1), WGPUShaderStage.COMPUTE.value, UInt32(0),
+            WGPUBufferBindingLayout(null_opaque(), WGPUBufferBindingType.Storage, UInt32(0), UInt64(0)),
+            WGPUSamplerBindingLayout(null_opaque(), UInt32(0)),
+            WGPUTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
+            WGPUStorageTextureBindingLayout(null_opaque(), UInt32(0), UInt32(0), UInt32(0)),
         ),
     ]
     var bgl = device.create_bind_group_layout(bgl_entries)
@@ -435,10 +436,10 @@ def test_texture_upload_readback() raises:
     var tex_view = texture.create_view_default()
     var bg_entries: List[WGPUBindGroupEntry] = [
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt64(0), UInt64(0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0), tex_view.handle().raw
+            null_opaque(), UInt32(0), null_opaque(), UInt64(0), UInt64(0), null_opaque(), tex_view.handle().raw
         ),
         WGPUBindGroupEntry(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt32(1), storage_buffer.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+            null_opaque(), UInt32(1), storage_buffer.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()
         ),
     ]
     var bg = device.create_bind_group(bgl, bg_entries)

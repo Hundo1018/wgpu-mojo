@@ -4,6 +4,7 @@ Wgpu.instance — Instance wrapper (owns WGPULib + WGPUInstance).
 
 from std.memory import ArcPointer
 from wgpu.adapter import Adapter
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
     WGPUAdapterHandle, WGPUInstanceHandle,
@@ -28,14 +29,14 @@ struct Instance(Movable):
         var lib = WGPULib()
         var desc_p = alloc[WGPUInstanceDescriptor](1)
         desc_p[] = WGPUInstanceDescriptor(
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             UInt(0),
-            UnsafePointer[UInt32, MutExternalOrigin](unsafe_from_address=0),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_ptr[UInt32](),
+            null_opaque(),
         )
         var inst = lib.create_instance(desc_p)
         desc_p.free()
-        if inst == OpaquePointer[MutExternalOrigin](unsafe_from_address=0):
+        if inst == null_opaque():
             raise Error("wgpuCreateInstance returned null")
 
         var lib_arc = ArcPointer(lib^)
@@ -56,8 +57,8 @@ struct Instance(Movable):
     def request_adapter(self, index: Int = 0) raises -> Adapter:
         var count = self._owner[].lib()[].enumerate_adapters(
             self._owner[].handle(),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-            UnsafePointer[WGPUAdapterHandle, MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
+            null_ptr[WGPUAdapterHandle](),
         )
         if count == 0:
             raise Error(
@@ -75,7 +76,7 @@ struct Instance(Movable):
         var adapters = alloc[WGPUAdapterHandle](Int(count))
         _ = self._owner[].lib()[].enumerate_adapters(
             self._owner[].handle(),
-            OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+            null_opaque(),
             adapters,
         )
 

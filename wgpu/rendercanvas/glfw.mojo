@@ -19,6 +19,7 @@ Usage:
 """
 
 from std.ffi import OwnedDLHandle
+from wgpu._ffi.nulls import null_opaque
 
 
 # ---------------------------------------------------------------------------
@@ -189,21 +190,21 @@ struct GLFWLib(Movable):
         self,
         width: Int32,
         height: Int32,
-        title: OpaquePointer[MutExternalOrigin],
-        monitor: OpaquePointer[MutExternalOrigin] = OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        share: OpaquePointer[MutExternalOrigin] = OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-    ) -> OpaquePointer[MutExternalOrigin]:
+        title: OpaquePointer[MutUntrackedOrigin],
+        monitor: OpaquePointer[MutUntrackedOrigin] = null_opaque(),
+        share: OpaquePointer[MutUntrackedOrigin] = null_opaque(),
+    ) -> OpaquePointer[MutUntrackedOrigin]:
         """Create a GLFW window; returns GLFWwindow* (or NULL on failure)."""
-        return self._lib.call["glfwCreateWindow", OpaquePointer[MutExternalOrigin]](
+        return self._lib.call["glfwCreateWindow", OpaquePointer[MutUntrackedOrigin]](
             width, height, title, monitor, share
         )
 
-    def destroy_window(self, window: OpaquePointer[MutExternalOrigin]):
+    def destroy_window(self, window: OpaquePointer[MutUntrackedOrigin]):
         self._lib.call["glfwDestroyWindow"](window)
 
     # --- Event loop ---------------------------------------------------
 
-    def window_should_close(self, window: OpaquePointer[MutExternalOrigin]) -> Int32:
+    def window_should_close(self, window: OpaquePointer[MutUntrackedOrigin]) -> Int32:
         return self._lib.call["glfwWindowShouldClose", Int32](window)
 
     def poll_events(self):
@@ -213,85 +214,85 @@ struct GLFWLib(Movable):
 
     def get_framebuffer_size(
         self,
-        window: OpaquePointer[MutExternalOrigin],
-        out_w: UnsafePointer[Int32, MutExternalOrigin],
-        out_h: UnsafePointer[Int32, MutExternalOrigin],
+        window: OpaquePointer[MutUntrackedOrigin],
+        out_w: UnsafePointer[Int32, MutUntrackedOrigin],
+        out_h: UnsafePointer[Int32, MutUntrackedOrigin],
     ):
         """Write framebuffer width/height into the provided pointers."""
         self._lib.call["glfwGetFramebufferSize"](window, out_w, out_h)
 
     # --- Wayland native pointers (for wgpu surface creation) ----------
 
-    def get_wayland_display(self) -> OpaquePointer[MutExternalOrigin]:
+    def get_wayland_display(self) -> OpaquePointer[MutUntrackedOrigin]:
         """Returns wl_display* for the Wayland display connection.
 
         Returns NULL if GLFW is not running on Wayland.
         """
-        return self._lib.call["glfwGetWaylandDisplay", OpaquePointer[MutExternalOrigin]]()
+        return self._lib.call["glfwGetWaylandDisplay", OpaquePointer[MutUntrackedOrigin]]()
 
-    def get_wayland_window(self, window: OpaquePointer[MutExternalOrigin]) -> OpaquePointer[MutExternalOrigin]:
+    def get_wayland_window(self, window: OpaquePointer[MutUntrackedOrigin]) -> OpaquePointer[MutUntrackedOrigin]:
         """Returns wl_surface* for the given GLFW window on Wayland."""
-        return self._lib.call["glfwGetWaylandWindow", OpaquePointer[MutExternalOrigin]](window)
+        return self._lib.call["glfwGetWaylandWindow", OpaquePointer[MutUntrackedOrigin]](window)
 
     # --- X11 native pointers (XWayland / bare X11 fallback) ----------
 
-    def get_x11_display(self) -> OpaquePointer[MutExternalOrigin]:
+    def get_x11_display(self) -> OpaquePointer[MutUntrackedOrigin]:
         """Returns X11 Display* pointer."""
-        return self._lib.call["glfwGetX11Display", OpaquePointer[MutExternalOrigin]]()
+        return self._lib.call["glfwGetX11Display", OpaquePointer[MutUntrackedOrigin]]()
 
-    def get_x11_window(self, window: OpaquePointer[MutExternalOrigin]) -> UInt64:
+    def get_x11_window(self, window: OpaquePointer[MutUntrackedOrigin]) -> UInt64:
         """Returns X11 Window (unsigned long) for the given GLFW window."""
         return self._lib.call["glfwGetX11Window", UInt64](window)
 
     # --- Keyboard polling -----------------------------------------------
 
-    def get_key(self, window: OpaquePointer[MutExternalOrigin], key: Int32) -> Int32:
+    def get_key(self, window: OpaquePointer[MutUntrackedOrigin], key: Int32) -> Int32:
         """Query key state: returns GLFW_PRESS or GLFW_RELEASE."""
         return self._lib.call["glfwGetKey", Int32](window, key)
 
     # --- Mouse polling --------------------------------------------------
 
-    def get_mouse_button(self, window: OpaquePointer[MutExternalOrigin], button: Int32) -> Int32:
+    def get_mouse_button(self, window: OpaquePointer[MutUntrackedOrigin], button: Int32) -> Int32:
         """Query mouse button state: returns GLFW_PRESS or GLFW_RELEASE."""
         return self._lib.call["glfwGetMouseButton", Int32](window, button)
 
     def get_cursor_pos(
         self,
-        window: OpaquePointer[MutExternalOrigin],
-        out_x: UnsafePointer[Float64, MutExternalOrigin],
-        out_y: UnsafePointer[Float64, MutExternalOrigin],
+        window: OpaquePointer[MutUntrackedOrigin],
+        out_x: UnsafePointer[Float64, MutUntrackedOrigin],
+        out_y: UnsafePointer[Float64, MutUntrackedOrigin],
     ):
         """Write cursor position into the provided pointers."""
         self._lib.call["glfwGetCursorPos"](window, out_x, out_y)
 
-    def set_cursor_pos(self, window: OpaquePointer[MutExternalOrigin], xpos: Float64, ypos: Float64):
+    def set_cursor_pos(self, window: OpaquePointer[MutUntrackedOrigin], xpos: Float64, ypos: Float64):
         """Set cursor position in window coordinates."""
         self._lib.call["glfwSetCursorPos"](window, xpos, ypos)
 
     # --- Input mode -----------------------------------------------------
 
-    def set_input_mode(self, window: OpaquePointer[MutExternalOrigin], mode: Int32, value: Int32):
+    def set_input_mode(self, window: OpaquePointer[MutUntrackedOrigin], mode: Int32, value: Int32):
         """Set input mode (e.g. GLFW_CURSOR → GLFW_CURSOR_DISABLED)."""
         self._lib.call["glfwSetInputMode"](window, mode, value)
 
-    def get_input_mode(self, window: OpaquePointer[MutExternalOrigin], mode: Int32) -> Int32:
+    def get_input_mode(self, window: OpaquePointer[MutUntrackedOrigin], mode: Int32) -> Int32:
         """Get current input mode value."""
         return self._lib.call["glfwGetInputMode", Int32](window, mode)
 
     # --- C callback bridge (event queue) --------------------------------
 
-    def install_input_callbacks(self, window: OpaquePointer[MutExternalOrigin]):
+    def install_input_callbacks(self, window: OpaquePointer[MutUntrackedOrigin]):
         """Install all GLFW input callbacks (key, mouse button, cursor, scroll).
 
         Events are pushed to a ring buffer in C; drain with poll_input_event().
         """
         self._input_cb.call["mojo_glfw_install_input_callbacks"](window)
 
-    def remove_input_callbacks(self, window: OpaquePointer[MutExternalOrigin]):
+    def remove_input_callbacks(self, window: OpaquePointer[MutUntrackedOrigin]):
         """Remove all GLFW input callbacks (set to NULL)."""
         self._input_cb.call["mojo_glfw_remove_input_callbacks"](window)
 
-    def poll_input_event(self, out_ptr: UnsafePointer[MojoInputEvent, MutExternalOrigin]) -> Int32:
+    def poll_input_event(self, out_ptr: UnsafePointer[MojoInputEvent, MutUntrackedOrigin]) -> Int32:
         """Pop one event from the C-side ring buffer.
 
         Returns 1 if an event was written to out_ptr, 0 if queue empty.

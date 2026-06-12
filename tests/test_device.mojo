@@ -3,6 +3,7 @@ Tests/test_device.mojo — Integration tests for Device creation and queries.
 Requires GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_false, assert_equal
 from std.memory import OpaquePointer
 from wgpu.device import Device
@@ -48,7 +49,7 @@ def test_device_poll() raises:
 def test_queue_available() raises:
     """Queue should be non-null after device creation."""
     var device = create_test_device()
-    assert_true(device.queue().raw != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(device.queue().raw != null_opaque())
 
 
 def main() raises:

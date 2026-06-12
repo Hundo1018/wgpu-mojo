@@ -21,6 +21,7 @@ The title String must not be empty (GLFW requirement).
 """
 
 from wgpu._ffi.types import WGPUTextureHandle
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu.adapter import Adapter
 from wgpu.device import Device
 from wgpu.surface import Surface, SurfaceFrame
@@ -28,7 +29,7 @@ from wgpu.rendercanvas.glfw import GLFWLib, GLFW_CLIENT_API, GLFW_NO_API, GLFW_R
 from wgpu.rendercanvas.input import InputState
 
 
-comptime NULL_PTR = OpaquePointer[MutExternalOrigin](unsafe_from_address=0)
+comptime NULL_PTR = null_opaque()
 
 
 struct RenderCanvas(Movable):
@@ -39,7 +40,7 @@ struct RenderCanvas(Movable):
     """
 
     var _glfw:    GLFWLib
-    var _window:  OpaquePointer[MutExternalOrigin]
+    var _window:  OpaquePointer[MutUntrackedOrigin]
     var _surface: Surface
     var _width:   Int32
     var _height:  Int32
@@ -65,7 +66,7 @@ struct RenderCanvas(Movable):
         # Pass null-terminated title; String internal buffer is null-terminated.
         var title_bytes = title.as_bytes()
         var raw         = title_bytes.unsafe_ptr().bitcast[NoneType]()
-        var title_ptr   = rebind[OpaquePointer[MutExternalOrigin]](raw)
+        var title_ptr   = rebind[OpaquePointer[MutUntrackedOrigin]](raw)
         var window = glfw.create_window(width, height, title_ptr)
         _ = title_bytes  # keep alive past glfwCreateWindow
         if window == NULL_PTR:

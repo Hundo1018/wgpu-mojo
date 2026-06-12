@@ -1,8 +1,8 @@
 """Probe 04 (expected FAIL): assign def abi("C") to def function type variable."""
 
-comptime CallbackType = def(UInt32, OpaquePointer[MutExternalOrigin], OpaquePointer[MutExternalOrigin]) -> None
+comptime CallbackType = def(UInt32, OpaquePointer[MutUntrackedOrigin], OpaquePointer[MutUntrackedOrigin]) -> None
 
-def c_callback(status: UInt32, ud1: OpaquePointer[MutExternalOrigin], ud2: OpaquePointer[MutExternalOrigin]) abi("C"):
+def c_callback(status: UInt32, ud1: OpaquePointer[MutUntrackedOrigin], ud2: OpaquePointer[MutUntrackedOrigin]) abi("C"):
     _ = status
     _ = ud1
     _ = ud2

@@ -3,6 +3,7 @@ Tests/test_instance.mojo — Integration tests for Instance creation.
 Requires: libwgpu_native.so, libwgpu_mojo_cb.so, GPU hardware.
 """
 
+from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_false, assert_equal, assert_not_equal
 from wgpu.instance import Instance
 from wgpu._ffi.lib import WGPULib
@@ -32,14 +33,14 @@ def test_create_instance() raises:
     var lib = WGPULib()
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(),
         UInt(0),
         None,
         None,
     )
     var inst = lib.create_instance(desc_p)
     desc_p.free()
-    assert_true(inst != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    assert_true(inst != null_opaque())
     lib.instance_release(inst)
 
 
@@ -48,7 +49,7 @@ def test_enumerate_adapters() raises:
     var lib = WGPULib()
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0), UInt(0),
+        null_opaque(), UInt(0),
         None,
         None,
     )
@@ -56,14 +57,14 @@ def test_enumerate_adapters() raises:
     desc_p.free()
     var count = lib.enumerate_adapters(
         inst,
-        OpaquePointer[MutExternalOrigin](unsafe_from_address=0),
-        UnsafePointer[WGPUAdapterHandle, MutExternalOrigin](unsafe_from_address=0),
+        null_opaque(),
+        null_ptr[WGPUAdapterHandle](),
     )
     print("Adapter count:", count)
     assert_true(count > UInt(0))
     var adapters = alloc[WGPUAdapterHandle](Int(count))
-    _ = lib.enumerate_adapters(inst, OpaquePointer[MutExternalOrigin](unsafe_from_address=0), adapters)
-    assert_true(adapters[0] != OpaquePointer[MutExternalOrigin](unsafe_from_address=0))
+    _ = lib.enumerate_adapters(inst, null_opaque(), adapters)
+    assert_true(adapters[0] != null_opaque())
     for i in range(Int(count)):
         lib.adapter_release(adapters[i])
     adapters.free()
@@ -85,7 +86,7 @@ def test_adapter_info_fields() raises:
     var instance = Instance()
     var adapter = instance.request_adapter()
     var info = adapter.adapter_info()
-    assert_true(info.vendor.data != UnsafePointer[NoneType, MutAnyOrigin](unsafe_from_address=0))
+    assert_true(info.vendor.data != null_any_ptr())
 
 
 def test_get_version_via_instance() raises:
