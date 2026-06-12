@@ -2,6 +2,31 @@
 
 Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native), providing a lightweight WebGPU wrapper for Mojo applications with RAII-friendly GPU objects and GLFW-based examples.
 
+## GPU Fire Simulation Demo
+
+![GPU Fire Simulation](assets/fire_demo.gif)
+
+A real-time Doom-style fire simulation that runs entirely on the GPU — demonstrating wgpu-mojo's full **compute → render** pipeline in Mojo.
+
+```
+Mojo CPU (orchestration)
+  → WGSL compute shader  # cellular-automaton fire physics, ping-pong storage buffers
+  → WGSL render shader   # bilinear upscale + Mojo-brand orange-gold fire palette
+  → GLFW window          # 1024×768 live display
+```
+
+```bash
+pixi run example-fire-sim
+```
+
+**Key Mojo patterns shown:**
+- GPU compute pass writing to a storage buffer each frame
+- Ping-pong double-buffering to avoid read-write hazards
+- Single `CommandEncoder` submitting both a compute pass and a render pass atomically
+- Explicit RAII lifetime pins (`_ = buf^`) for resources referenced only through GPU handles
+
+**Ecosystem note:** This demo uses WebGPU compute shaders (WGSL). Mojo's native GPU programming (`std.gpu` / `DeviceContext`) targets CUDA/ROCm and is being integrated in `wgpu/_core/mojo_gpu/`. Once complete, Mojo-native GPU kernels will write directly into wgpu storage buffers — unifying HPC/AI compute with interactive GPU graphics.
+
 ## Installation
 
 To use wgpu-mojo as a dependency in another Pixi project:
@@ -270,6 +295,7 @@ See `examples/compute_add.mojo` for a full vector-addition pipeline with buffer 
 - `pixi run example-input` — run `examples/input_demo.mojo`
 - `pixi run example-texture-sample` — run `examples/texture_sample.mojo`
 - `pixi run example-native-extensions` — run `examples/native_extensions.mojo`
+- `pixi run example-fire-sim` — run `examples/fire_simulation.mojo` (GPU compute + render fire)
 - `pixi run test` — run non-GPU tests
 
 For the GLFW input integration test, run `pixi run test-glfw-input` from `rendercanvas-mojo/`.
@@ -277,7 +303,8 @@ For the GLFW input integration test, run `pixi run test-glfw-input` from `render
 ## Project Layout
 
 - `hello.mojo` — hello triangle quickstart (RGB vertices, GLFW window)
-- `examples/triangle_window.mojo` — identical standalone triangle demo
+- `examples/fire_simulation.mojo` — GPU compute + render fire demo (Doom-style cellular automaton)
+- `examples/triangle_window.mojo` — standalone triangle demo
 - `examples/texture_sample.mojo` — sampled texture rendering demo
 - `examples/native_extensions.mojo` — query native wgpu-native feature support
 - `examples/` — GPU compute, adapter enumeration, clear-screen, and input demos

@@ -89,10 +89,11 @@ example-triangle  = { cmd = "mojo run -I . examples/triangle_window.mojo", depen
 example-input     = { cmd = "mojo run -I . examples/input_demo.mojo", depends-on = ["build-callbacks"] }
 example-texture-sample = { cmd = "mojo run -I . examples/texture_sample.mojo", depends-on = ["build-callbacks"] }
 example-native-extensions = { cmd = "mojo run -I . examples/native_extensions.mojo", depends-on = ["build-callbacks"] }
+example-fire-sim  = { cmd = "mojo run -I . examples/fire_simulation.mojo", depends-on = ["build-callbacks"] }
+example-flame     = { cmd = "mojo run -I . examples/stylized_flame.mojo",  depends-on = ["build-callbacks"] }
 
 # New Layer 3 GPU facade examples
 example-compute-v2 = { cmd = "mojo run -I . examples/compute_add_v2.mojo", depends-on = ["build-callbacks"] }
-example-flame     = { cmd = "mojo run -I . hello-fire.mojo", depends-on = ["build-callbacks"] }
 examples-input    = { cmd = "pixi run example-input" }
 
 # Linked binary builds (Phase 3 groundwork)

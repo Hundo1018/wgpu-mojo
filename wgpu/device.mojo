@@ -420,7 +420,7 @@ struct Device(Movable, Boolable):
         fs_entry_point: String,
         color_format: UInt32,
         layout: PipelineLayout,
-        primitive_topology: UInt32 = 3,  # TriangleList
+        primitive_topology: UInt32 = 4,  # TriangleList (4); LineStrip=3, TriangleStrip=5
         label: String = "",
     ) raises -> RenderPipeline:
         """High-level render pipeline creation for the common case.
@@ -435,7 +435,7 @@ struct Device(Movable, Boolable):
             fs_entry_point: Fragment shader entry point name.
             color_format: WGPUTextureFormat for the single color target.
             layout: Pipeline layout.
-            primitive_topology: Primitive topology (default 3 = TriangleList).
+            primitive_topology: Primitive topology (default 4 = TriangleList).
             label: Optional label.
         """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
