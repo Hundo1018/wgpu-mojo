@@ -1,269 +1,59 @@
 # wgpu-mojo
 
-Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native), providing a lightweight WebGPU wrapper for Mojo applications with RAII-friendly GPU objects and GLFW-based examples.
+Mojo bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native), providing a lightweight WebGPU wrapper with RAII-friendly GPU objects.
 
 ## GPU Fire Simulation Demo
 
 ![GPU Fire Simulation](assets/fire_demo.gif)
 
-A real-time Doom-style fire simulation that runs entirely on the GPU — demonstrating wgpu-mojo's full **compute → render** pipeline in Mojo.
-
-```
-Mojo CPU (orchestration)
-  → WGSL compute shader  # cellular-automaton fire physics, ping-pong storage buffers
-  → WGSL render shader   # bilinear upscale + Mojo-brand orange-gold fire palette
-  → GLFW window          # 1024×768 live display
-```
+Real-time Doom-style fire running entirely on the GPU — compute shader → render shader → GLFW window.
 
 ```bash
-pixi run example-fire-sim
+# clone + run the demo
+pixi run build-callbacks && pixi run example-fire-sim
 ```
 
-**Key Mojo patterns shown:**
-- GPU compute pass writing to a storage buffer each frame
-- Ping-pong double-buffering to avoid read-write hazards
-- Single `CommandEncoder` submitting both a compute pass and a render pass atomically
-- Explicit RAII lifetime pins (`_ = buf^`) for resources referenced only through GPU handles
+---
 
-**Ecosystem note:** This demo uses WebGPU compute shaders (WGSL). Mojo's native GPU programming (`std.gpu` / `DeviceContext`) targets CUDA/ROCm and is being integrated in `wgpu/_core/mojo_gpu/`. Once complete, Mojo-native GPU kernels will write directly into wgpu storage buffers — unifying HPC/AI compute with interactive GPU graphics.
+## Using wgpu-mojo in your project
 
-## Installation
+### Step 1 — Add the package
 
-To use wgpu-mojo as a dependency in another Pixi project:
-
-First, ensure the consuming project's manifest enables the `pixi-build` preview and includes the same channels used by this package:
+Your `pixi.toml` needs the Modular and conda-forge channels and `pixi-build` preview:
 
 ```toml
 [workspace]
 channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
-preview = ["pixi-build"]
+preview  = ["pixi-build"]
 ```
 
-Then add the dependency from GitHub:
+Then add the dependency:
 
 ```bash
-pixi add -g https://github.com/Hundo1018/wgpu-mojo wgpu-mojo
+pixi add --git https://github.com/Hundo1018/wgpu-mojo wgpu-mojo
 ```
 
-Verified in a clean temporary Pixi project on 2026-05-11: this installs `wgpu.mojopkg`, and import smoke tests for `from wgpu import RenderCanvas` and `from wgpu.rendercanvas import RenderCanvas` compile successfully.
+This compiles `wgpu.mojopkg` and installs it into your environment.
+All `from wgpu import …` statements now resolve at compile time.
 
-This installs the Mojo package itself. Running examples or creating real surfaces still requires the target machine to provide the native runtime pieces described below, especially `wgpu-native`, GLFW, and platform GPU drivers.
+### Step 2 — Install the native GPU library (once per machine)
 
-## Requirements (Development)
-
-If you are cloning the repository to run examples or contribute:
-
-- Mojo `>= 1.0.0b2.dev2026051006`
-- [Pixi](https://prefix.dev/) package manager
-- `libwgpu_native.so` available at `ffi/lib/libwgpu_native.so`
-- GLFW installed and available through your Conda environment
-- Platform GPU drivers and runtime support for your system
-
-## Verified Nightly Smoke Checks
-
-Verified on 2026-05-11 against Mojo 1.0.0b2.dev2026051006:
+The Mojo package needs `libwgpu_native` and its callback bridge at runtime.
+Run this once inside your project's activated pixi environment:
 
 ```bash
-pixi run test
-pixi build
-
-cd rendercanvas-mojo
-pixi install
-pixi run test
-pixi build
+curl -fsSL https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main/scripts/setup-native.sh | bash
 ```
 
-These checks cover the root package's non-GPU test suite and package build, plus the rendercanvas subproject's environment solve, non-GPU tests, and package build.
+What it does:
+- Downloads `libwgpu_native` v29.0.0.0 from [wgpu-native releases](https://github.com/gfx-rs/wgpu-native/releases)
+- Compiles the Mojo callback bridge (`libwgpu_mojo_cb`) from source
+- Installs both to `$CONDA_PREFIX/lib/`
+- If GLFW is present, also compiles the windowed rendering bridge (`libglfw_input_cb`)
 
-## Platform Dependencies
+Requires: `curl`, `unzip`, `gcc` (standard in any conda environment).
 
-This repository provides the Mojo wrapper and Pixi tasks, but does not bundle GPU drivers or native runtime libraries.
-
-### Native library: `wgpu-native`
-
-Download the correct pre-built binary from the [wgpu-native releases page](https://github.com/gfx-rs/wgpu-native/releases) and place it in `ffi/lib/`:
-
-| Platform | Asset to download | File to copy |
-|---|---|---|
-| Linux x86-64 | `wgpu-linux-x86_64-release.zip` | `libwgpu_native.so` → `ffi/lib/` |
-| macOS arm64 | `wgpu-macos-aarch64-release.zip` | `libwgpu_native.dylib` → `ffi/lib/` |
-| macOS x86-64 | `wgpu-macos-x86_64-release.zip` | `libwgpu_native.dylib` → `ffi/lib/` |
-| Windows x64 | `wgpu-windows-x86_64-release.zip` | `wgpu_native.dll` + `.lib` → `ffi/lib/` |
-
-```bash
-mkdir -p ffi/lib
-# Linux example — replace the tag with the version matching wgpu-native-git-tag
-TAG=$(cat ffi/wgpu-native-meta/wgpu-native-git-tag)
-wget "https://github.com/gfx-rs/wgpu-native/releases/download/${TAG}/wgpu-linux-x86_64-release.zip"
-unzip wgpu-linux-x86_64-release.zip -d /tmp/wgpu-native
-cp /tmp/wgpu-native/libwgpu_native.so ffi/lib/
-```
-
-Verify: `ls -lh ffi/lib/libwgpu_native.so` before building callbacks.
-
-### GPU drivers
-
-| Platform | What you need |
-|---|---|
-| Linux | Vulkan drivers: `mesa-vulkan-drivers` + `libvulkan1` (Intel/AMD) or the NVIDIA proprietary stack |
-| macOS | Metal is built into macOS — no extra drivers needed |
-| Windows | D3D12 or Vulkan drivers — typically already installed with your GPU vendor's driver package |
-
-### GLFW
-
-GLFW is provided via Conda through Pixi on Linux. On macOS/Windows, install it via [brew](https://formulae.brew.sh/formula/glfw) or [vcpkg](https://vcpkg.io/) and ensure it is on your library path.
-
-> **Note:** The Pixi workspace is currently configured for `linux-64`. On macOS or Windows you can still build and run the code manually with `mojo run -I . hello.mojo` after placing the correct native library in `ffi/lib/`.
-
-## Minimal Verified Example
-
-The fastest way to confirm that wgpu-mojo is correctly installed and your GPU stack is working:
-
-```bash
-pixi run build-callbacks          # compile C callback bridge (once)
-pixi run example-clear            # open a cornflower-blue window, then close it
-```
-
-Expected result: a 800×600 window with a solid cornflower blue background appears. Close it to exit. If it appears, the complete runtime path is verified: `libwgpu_native.so` → FFI bridge → Mojo wrappers → GLFW surface → GPU frame present.
-
-Source: [`examples/clear_screen.mojo`](examples/clear_screen.mojo) (48 lines). Key pattern:
-
-```mojo
-from wgpu.instance import Instance
-from wgpu._ffi.structs import WGPUColor
-from wgpu.rendercanvas import RenderCanvas
-
-def main() raises:
-    var instance = Instance()
-    var adapter  = instance.request_adapter()
-    var device   = adapter.request_device()
-    var canvas   = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: clear screen")
-    while canvas.is_open():
-        canvas.poll()
-        var frame = canvas.next_frame()
-        if not frame.is_renderable():
-            continue
-        var enc   = device.create_command_encoder("frame")
-        var rpass = enc.begin_surface_clear_pass(
-            frame.texture,
-            WGPUColor(0.392, 0.584, 0.929, 1.0),  # cornflower blue
-            "clear_pass",
-        )
-        rpass^.end()
-        device.queue_submit(enc^.finish())
-        canvas.present()
-```
-
-**Prerequisites**
-- `pixi run build-callbacks` completed without errors (`ffi/lib/libwgpu_mojo_cb.so` and `ffi/lib/libglfw_input_cb.so` present)
-- GPU hardware with Vulkan drivers installed (Linux: `mesa-vulkan-drivers` or NVIDIA proprietary stack)
-- A display server (X11 or Wayland) — GLFW requires a display
-
-**Headless / CI environments**
-GLFW requires a display. In CI without GPU passthrough, skip windowed examples and use the headless compute path (`examples/compute_add.mojo`) instead.
-
-**Diagnosing load failures**
-Run the preflight check to see which libraries were found and which adapters are available:
-
-```mojo
-from wgpu.diagnostics import preflight
-print(preflight())
-```
-
-Or use the adapter enumeration example:
-
-```bash
-pixi run example-enumerate
-```
-
-## Setup
-
-1. Install Mojo and Pixi.
-2. Build the native callback libraries:
-
-```bash
-pixi run build-callbacks
-pixi run build-callback-probe
-```
-
-3. Run the hello triangle example:
-
-```bash
-pixi run hello
-```
-
-If the window appears, the core runtime path is working: `wgpu-native` → FFI bridge → Mojo wrappers → GLFW window.
-
-## Quick Start
-
-### Hello Triangle
-
-`hello.mojo` renders an RGB vertex-coloured triangle in a GLFW window. This is the exact pattern the file uses:
-
-```mojo
-from wgpu.instance import Instance
-from wgpu._ffi.structs import WGPUColor
-from wgpu.rendercanvas import RenderCanvas
-
-comptime WGSL = """
-struct VertexOut {
-    @builtin(position) pos: vec4<f32>,
-    @location(0)       col: vec3<f32>,
-}
-@vertex
-fn vs_main(@builtin(vertex_index) i: u32) -> VertexOut {
-    var pos = array<vec2<f32>, 3>(
-        vec2( 0.0,  0.5), vec2(-0.5, -0.5), vec2( 0.5, -0.5),
-    );
-    var col = array<vec3<f32>, 3>(
-        vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 0.0, 1.0),
-    );
-    var out: VertexOut;
-    out.pos = vec4<f32>(pos[i], 0.0, 1.0);
-    out.col = col[i];
-    return out;
-}
-@fragment
-fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    return vec4<f32>(in.col, 1.0);
-}
-"""
-
-def main() raises:
-    var instance = Instance()
-    var adapter  = instance.request_adapter()
-    var device   = adapter.request_device()
-    var canvas   = RenderCanvas(adapter, device, 800, 600, "wgpu-mojo: hello triangle")
-    var shader = device.create_shader_module_wgsl(WGSL, "hello")
-    var layout = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "layout")
-    var pipeline = device.create_render_pipeline(
-        shader, "vs_main", "fs_main",
-        canvas.surface_format(), layout,
-        primitive_topology=UInt32(4),  # TriangleStrip
-    )
-    while canvas.is_open():
-        canvas.poll()
-        var frame = canvas.next_frame()
-        if not frame.is_renderable():
-            continue
-        var enc   = device.create_command_encoder("frame")
-        var rpass = enc.begin_surface_clear_pass(
-            frame.texture,
-            WGPUColor(Float64(0), Float64(0), Float64(0), Float64(1)),
-            "pass",
-        )
-        rpass.set_pipeline(pipeline)
-        rpass.draw(UInt32(3), UInt32(1), UInt32(0), UInt32(0))
-        rpass^.end()
-        device.queue_submit(enc^.finish())
-        canvas.present()
-```
-
-Run it with `pixi run hello`. See `examples/triangle_window.mojo` for an identical standalone version.
-
-### GPU Compute (no window)
-
-For headless work (ML, simulation, data processing), skip `RenderCanvas` entirely:
+### Step 3 — Write GPU code
 
 ```mojo
 from wgpu import Instance, WGPUBufferUsage
@@ -273,119 +63,228 @@ def main() raises:
     var adapter  = instance.request_adapter()
     var device   = adapter.request_device()
 
+    # Allocate a GPU storage buffer
     var buf = device.create_buffer(
         UInt64(1024),
-        WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST,
-        label="my_buffer",
+        WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC,
+        label = "my_buffer",
     )
-    # GPU objects release automatically when they go out of scope (RAII).
+    # buf releases automatically (RAII) when it goes out of scope
 ```
 
-See `examples/compute_add.mojo` for a full vector-addition pipeline with buffer readback.
+---
 
-## Available Tasks
+## Examples
 
-- `pixi run build-callbacks` — build the C callback bridge
-- `pixi run build-callback-probe` — build the callback probe library
-- `pixi run hello` — run `hello.mojo`
-- `pixi run example-triangle` — run `examples/triangle_window.mojo`
-- `pixi run example-compute` — run `examples/compute_add.mojo`
-- `pixi run example-enumerate` — run `examples/enumerate_adapters.mojo`
-- `pixi run example-clear` — run `examples/clear_screen.mojo`
-- `pixi run example-input` — run `examples/input_demo.mojo`
-- `pixi run example-texture-sample` — run `examples/texture_sample.mojo`
-- `pixi run example-native-extensions` — run `examples/native_extensions.mojo`
-- `pixi run example-fire-sim` — run `examples/fire_simulation.mojo` (GPU compute + render fire)
-- `pixi run test` — run non-GPU tests
+### Headless GPU Compute (no window)
 
-For the GLFW input integration test, run `pixi run test-glfw-input` from `rendercanvas-mojo/`.
+Vector addition on the GPU, result read back to CPU:
 
-## Project Layout
+```mojo
+from wgpu import Instance, WGPUBufferUsage, WGPUMapMode
 
-- `hello.mojo` — hello triangle quickstart (RGB vertices, GLFW window)
-- `examples/fire_simulation.mojo` — GPU compute + render fire demo (Doom-style cellular automaton)
-- `examples/triangle_window.mojo` — standalone triangle demo
-- `examples/texture_sample.mojo` — sampled texture rendering demo
-- `examples/native_extensions.mojo` — query native wgpu-native feature support
-- `examples/` — GPU compute, adapter enumeration, clear-screen, and input demos
-- `tests/` — Mojo test files for wrapper behavior and API compatibility
-- `wgpu/` — high-level Mojo wrapper layer for WebGPU objects
-- `wgpu/_ffi/` — raw FFI bindings and type definitions
-- `ffi/` — native C callback bridge and headers
+comptime WGSL = """
+@group(0) @binding(0) var<storage, read>       a   : array<f32>;
+@group(0) @binding(1) var<storage, read>       b   : array<f32>;
+@group(0) @binding(2) var<storage, read_write> out : array<f32>;
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+    let i = id.x;
+    if i < arrayLength(&a) { out[i] = a[i] + b[i]; }
+}
+"""
 
-### Core wrapper modules
+def main() raises:
+    var instance = Instance()
+    var device   = instance.request_adapter().request_device()
+    var gpu      = GPU.wgpu(instance^)
 
-- `wgpu/instance.mojo` — instance creation, version query, and adapter selection
-- `wgpu/adapter.mojo` — adapter info, device creation, and surface creation
-- `wgpu/diagnostics.mojo` — logging control and preflight diagnostics
-- `wgpu/device.mojo` — device creation, queue submission, buffer/texture/pipeline helpers
-- `wgpu/buffer.mojo` — buffer creation, mapping, and data transfer helpers
-- `wgpu/texture.mojo` — texture and texture view handling
-- `wgpu/sampler.mojo` — sampler creation
-- `wgpu/shader.mojo` — shader module creation
-- `wgpu/bind_group.mojo` — bind group and layout helpers
-- `wgpu/pipeline_layout.mojo` — pipeline layout creation
-- `wgpu/pipeline.mojo` — compute and render pipeline helpers
-- `wgpu/command.mojo` — command encoder management
-- `wgpu/compute_pass.mojo` — compute pass encoder APIs
-- `wgpu/render_pass.mojo` — render pass encoder APIs
-- `wgpu/query_set.mojo` — query set support
+    var n: UInt64 = 1024
+    var a = gpu.buffer[Float32](n, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST)
+    var b = gpu.buffer[Float32](n, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST)
+    var c = gpu.buffer[Float32](n, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC)
+
+    gpu.write(a, List[Float32](1.0, 2.0, 3.0))   # fill first 3 elements
+    gpu.write(b, List[Float32](10.0, 20.0, 30.0))
+
+    var prog = gpu.compile_compute(WGSL, entry_point="main", n_storage_buffers=3)
+    gpu.dispatch(prog^, List[Buffer](a, b, c), wx=UInt32(n // 64))
+
+    var result = gpu.read[Float32](c, count=3)
+    print(result[0], result[1], result[2])  # 11.0  22.0  33.0
+```
+
+Full source: [`examples/compute_add_v2.mojo`](examples/compute_add_v2.mojo)
+
+### Render Triangle (GLFW window)
+
+```mojo
+from wgpu.instance import Instance
+from wgpu._ffi.structs import WGPUColor
+from wgpu.rendercanvas import RenderCanvas
+
+comptime WGSL = """
+struct V { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32> }
+@vertex fn vs(@builtin(vertex_index) i: u32) -> V {
+    var pos = array<vec2<f32>,3>(vec2(0.0,0.5), vec2(-0.5,-0.5), vec2(0.5,-0.5));
+    var col = array<vec3<f32>,3>(vec3(1,0,0), vec3(0,1,0), vec3(0,0,1));
+    return V(vec4(pos[i],0,1), col[i]);
+}
+@fragment fn fs(v: V) -> @location(0) vec4<f32> { return vec4(v.col,1); }
+"""
+
+def main() raises:
+    var instance = Instance()
+    var adapter  = instance.request_adapter()
+    var device   = adapter.request_device()
+    var canvas   = RenderCanvas(adapter, device, 800, 600, "hello triangle")
+    var shader   = device.create_shader_module_wgsl(WGSL, "tri")
+    var layout   = device.create_pipeline_layout(List[OpaquePointer[MutExternalOrigin]](), "layout")
+    var pipeline = device.create_render_pipeline(
+        shader, "vs", "fs", canvas.surface_format(), layout,
+        primitive_topology = UInt32(4),
+    )
+    while canvas.is_open():
+        canvas.poll()
+        var frame = canvas.next_frame()
+        if not frame.is_renderable(): continue
+        var enc   = device.create_command_encoder("frame")
+        var rpass = enc.begin_surface_clear_pass(frame.texture, WGPUColor(0,0,0,1), "pass")
+        rpass.set_pipeline(pipeline)
+        rpass.draw(UInt32(3), UInt32(1), UInt32(0), UInt32(0))
+        rpass^.end()
+        device.queue_submit(enc^.finish())
+        canvas.present()
+```
+
+Full source: [`examples/triangle_window.mojo`](examples/triangle_window.mojo)
+
+### Texture Sampling
+
+```mojo
+from wgpu import Instance, WGPUTextureUsage, WGPUTextureFormat, WGPUFilterMode
+```
+
+Full source: [`examples/texture_sample.mojo`](examples/texture_sample.mojo)
+
+### Enumerate GPU Adapters
+
+```bash
+pixi run example-enumerate
+```
+
+Output lists all available GPU backends (Vulkan, Metal, DX12) and adapter names.
+
+---
+
+## Available pixi tasks (development clone)
+
+| Task | Description |
+|------|-------------|
+| `build-callbacks` | Compile C callback bridge (required before GPU tasks) |
+| `hello` | Hello triangle quickstart |
+| `example-compute` | Headless vector addition |
+| `example-enumerate` | List available GPU adapters |
+| `example-clear` | Cornflower-blue window (smoke test) |
+| `example-triangle` | RGB triangle in a window |
+| `example-texture-sample` | Texture sampling demo |
+| `example-fire-sim` | GPU fire simulation (compute + render) |
+| `test` | Non-GPU unit tests |
+
+---
+
+## Core API
+
+| Module | What it provides |
+|--------|-----------------|
+| `wgpu.instance` | `Instance` — library entry point, adapter selection |
+| `wgpu.adapter` | `Adapter` — device creation |
+| `wgpu.device` | `Device` — create all GPU objects, submit work |
+| `wgpu.buffer` | `Buffer` — GPU memory allocation, mapping |
+| `wgpu.texture` | `Texture`, `TextureView` |
+| `wgpu.shader` | `ShaderModule` — WGSL compilation |
+| `wgpu.pipeline` | `ComputePipeline`, `RenderPipeline` |
+| `wgpu.command` | `CommandEncoder`, `CommandBuffer` |
+| `wgpu.compute_pass` | `ComputePassEncoder` |
+| `wgpu.render_pass` | `RenderPassEncoder` |
+| `wgpu.bind_group` | `BindGroup`, `BindGroupLayout` |
+| `wgpu.gpu` | `GPU` — high-level facade (compile + dispatch in ~5 lines) |
+| `wgpu.rendercanvas` | `RenderCanvas` — GLFW window + surface |
+| `wgpu.diagnostics` | `preflight()` — check library load, list adapters |
+
+All types are re-exported from `wgpu` so `from wgpu import Instance` always works.
+
+---
 
 ## Lifetime and Ownership
 
-The wrappers are built around RAII, but Mojo lifetime rules still matter when you extract raw handles or pointers.
+Wrappers are RAII: GPU objects release automatically when they go out of scope.
+Two patterns to keep in mind:
 
-- Keep owning wrappers alive after extracting raw handles or passing `unsafe_ptr()` references.
-- Prefer wrapper-first APIs instead of raw `WGPU*Handle` values.
-- Call `finish()`, `end()`, or `abandon()` on `CommandEncoder`, `RenderPassEncoder`, and `ComputePassEncoder` when required.
-- When you need to pin an object past a GPU call, use `_ = value^`.
-
-### When tail pins are needed
-
-| Object | Pin needed? | Reason |
-|---|---|---|
-| `instance` (`Instance`) | **No** | Instance lifetime is shared through internal owner objects. |
-| `device` | **Sometimes** | wgpu-native v29 may free the device on `Release` even while buffer map callbacks are in flight. Pin past `map_read`/`poll` calls. |
-| `buf`, `bgl`, `pipeline`, … | **When raw handle is in a descriptor** | Mojo's ASAP drop can free the wrapper before the FFI call if you embed `.handle().raw` directly in a descriptor struct. Pin until the FFI call returns. |
-
-Example — pinning a buffer past a map-read:
-
+**Encoder types must be explicitly finished:**
 ```mojo
-var instance = Instance()
-var adapter  = instance.request_adapter()
-var device   = adapter.request_device()
-var buf    = device.create_buffer(UInt64(256), WGPUBufferUsage.STORAGE)
-var raw_handle = buf.handle().raw
-
-# ... use raw_handle in descriptors or FFI calls ...
-
-_ = buf^     # keep buf alive until FFI call using raw_handle returns
-_ = device^  # keep device alive past map_read / poll
-# instance does NOT need a pin — internal shared ownership keeps it alive
+var enc   = device.create_command_encoder("enc")
+var cpass = enc.begin_compute_pass("pass")
+# ...
+cpass^.end()                  # consume the encoder
+var cmd = enc^.finish("cmd")  # consume and produce CommandBuffer
+device.queue_submit(cmd^)
 ```
 
-### Memory Safety (No Manual `alloc`/`free` Required)
+**Pin resources that must outlive the GPU call:**
+```mojo
+var pipeline = device.create_compute_pipeline(...)
+var bg = device.create_bind_group(...)
+device.queue_submit(cmd^)
+_ = pipeline^   # prevent ASAP drop before GPU finishes
+_ = bg^
+device.poll(True)
+```
 
-**User-facing APIs are designed to avoid manual memory allocation.**
+The `GPU` facade (`wgpu.gpu`) handles these pins automatically.
 
-High-level wrappers handle internal descriptor allocation, copying, and lifetime automatically:
+---
 
-- `device.create_buffer(size, usage, …)` — internal alloc for `WGPUBufferDescriptor`; you don't allocate
-- `device.create_bind_group(layout, entries_list)` — internal alloc and copy of entries; list API hides descriptor complexity
-- `encoder.copy_buffer_to_texture(src, dst, extent)` — high-level API; no manual `WGPUTexelCopyBufferLayout` needed
-- `encoder.begin_surface_clear_pass(texture, color, label)` — helper that owns render-pass descriptor internally
+## Development Setup (cloning the repo)
 
-**You should never need to call `alloc()` or `.free()` for GPU resource management.** Use RAII wrappers as they are; they automatically release GPU resources via `__del__` when they go out of scope.
+```bash
+git clone https://github.com/Hundo1018/wgpu-mojo
+cd wgpu-mojo
+pixi run build-callbacks   # download wgpu-native + compile C bridges
+pixi run test              # non-GPU unit tests
+pixi run hello             # GPU smoke test — RGB triangle window
+```
 
-*Note: `AllocGuard` is available for temporary scratch allocations in your own code, but GPU objects themselves manage their own memory.*
+`pixi run build-callbacks` performs the same steps as `setup-native.sh` but
+reads the native library version from [`ffi/wgpu-native-meta/wgpu-native-git-tag`](ffi/wgpu-native-meta/wgpu-native-git-tag)
+and uses sources already present in the repo.
 
-## Notes
+### GPU driver prerequisites
 
-- `pixi run test` is intended for non-GPU tests and does not require a GPU device.
-- GPU examples and GPU-specific tests require `pixi run build-callbacks` first.
-- `example-input` is the correct example task name for the input demo.
+| Platform | What to install |
+|----------|----------------|
+| Linux | Vulkan: `mesa-vulkan-drivers` + `libvulkan1`, or NVIDIA proprietary drivers |
+| macOS | Metal is built-in — no extra drivers needed |
+| Windows | D3D12 or Vulkan — usually already present with GPU vendor drivers |
+
+### Platform support
+
+`linux-64` and `osx-arm64` are fully supported via pixi.
+`osx-x86_64` and `win-x64` can be built manually; see `conda.recipe/recipe.yaml` for the build steps.
+
+---
+
+## Diagnostics
+
+```mojo
+from wgpu.diagnostics import preflight
+print(preflight())
+```
+
+Prints library search paths, load status, wgpu-native version, and available GPU adapters.
+
+---
 
 ## License
 
-[Apache-2.0](LICENSE).
-
+[Apache-2.0](LICENSE)
