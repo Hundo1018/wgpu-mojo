@@ -28,7 +28,6 @@ from wgpu.bind_group import BindGroup, BindGroupLayout
 from wgpu.pipeline import ComputePipeline
 from wgpu.pipeline_layout import PipelineLayout
 from wgpu.command import CommandBuffer, CommandEncoder
-from wgpu._core.session import Session
 from wgpu.descriptors import BGL
 from wgpu._ffi.types import WGPUBufferUsage, WGPU_WHOLE_SIZE
 from wgpu._ffi.structs import WGPUBindGroupEntry
@@ -185,14 +184,9 @@ struct GPU(Movable):
         Execute a compute program over a set of buffers.
 
         Assembles a BindGroup, records a compute pass, submits, and waits.
-        Resources are kept alive via Session — no `_ = resource^` needed.
+        `prog` and `bg` are kept in scope past poll() via tail pins.
         """
-        # Extract components before consuming prog
-        var pipeline = prog.pipeline^
-        var bgl      = prog.bgl^
-        var layout   = prog.layout^
-
-        # Build bind group entries (buffer bindings)
+        # Build bind group (borrows prog.bgl)
         var bg_entries = List[WGPUBindGroupEntry]()
         for i in range(len(buffers)):
             bg_entries.append(WGPUBindGroupEntry(
@@ -202,29 +196,22 @@ struct GPU(Movable):
                 SamplerHandle.null().raw,
                 TextureViewHandle.null().raw,
             ))
+        var bg = self._device.create_bind_group(prog.bgl, bg_entries, label + "_bg")
 
-        var bg = self._device.create_bind_group(bgl, bg_entries, label + "_bg")
-
-        # Record compute commands
+        # Record compute commands (borrows prog.pipeline)
         var enc   = self._device.create_command_encoder(label + "_enc")
         var cpass = enc.begin_compute_pass(label + "_pass")
-        cpass.set_pipeline(pipeline)
+        cpass.set_pipeline(prog.pipeline)
         cpass.set_bind_group(UInt32(0), bg)
         cpass.dispatch_workgroups(wx, wy, wz)
         cpass^.end()
         var cmd = enc^.finish(label + "_cmd")
 
-        # Submit via Session — keeps pipeline/bgl/bg alive until GPU finishes
-        var session = Session(
-            self._device.lib(),
-            self._device.handle().raw,
-            self._device.queue().raw,
-        )
-        session.pin(pipeline^)
-        session.pin(bgl^)
-        session.pin(layout^)
-        session.pin(bg^)
-        session.submit_and_flush(cmd^)
+        # Submit and wait; tail-pin prog and bg to survive past poll
+        self._device.queue_submit(cmd^)
+        _ = self._device.poll(True)
+        _ = bg^
+        _ = prog^
 
     # ------------------------------------------------------------------
     # Synchronization

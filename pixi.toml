@@ -22,8 +22,8 @@ backend = { name = "pixi-build-mojo",version = "0.1.*" }
 
 [package.build.config.pkg]
 name = "wgpu"
-path = "$RECIPE_DIR/wgpu"
-extra-args = ["-I", "$RECIPE_DIR"]
+path = "wgpu"
+extra-args = ["-I", "."]
 
 [package.build.config]
 compilers = ["c","cxx","gcc"]

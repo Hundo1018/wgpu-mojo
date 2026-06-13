@@ -25,7 +25,7 @@ def _sizeof[T: AnyType]() -> Int:
     return Int(p + 1) - Int(p)
 
 
-struct MappedBuffer[T: AnyType](Movable):
+struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):
     """
     RAII typed view into a mapped GPU buffer.
 
@@ -144,7 +144,7 @@ struct Buffer(Movable, Boolable):
     # Typed mapping (no raw pointers in public API)
     # ------------------------------------------------------------------
 
-    def map_read[T: AnyType](
+    def map_read[T: ImplicitlyCopyable & Movable](
         self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE
     ) raises -> MappedBuffer[T]:
         """Map buffer for reading. Returns a RAII MappedBuffer[T] that auto-unmaps."""
@@ -164,7 +164,7 @@ struct Buffer(Movable, Boolable):
         )
         return MappedBuffer[T](self._lib, self._handle, raw, Int(byte_size) // _sizeof[T]())
 
-    def map_write[T: AnyType](
+    def map_write[T: ImplicitlyCopyable & Movable](
         self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE
     ) raises -> MappedBuffer[T]:
         """Map buffer for writing. Returns a RAII MappedBuffer[T] that auto-unmaps."""
