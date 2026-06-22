@@ -30,7 +30,7 @@ def test_finish_empty_encoder() raises:
     var device = create_test_device()
     var enc    = device.create_command_encoder()
     var cmd    = enc^.finish()
-    assert_true(cmd.raw != null_opaque())
+    assert_true(cmd.raw() != null_opaque())
 
 
 def test_submit_empty_command_buffer() raises:

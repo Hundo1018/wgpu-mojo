@@ -7,7 +7,6 @@ from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.alloc_guard import AllocGuard
 from wgpu._ffi.types import (
     WGPUBufferUsage, WGPUShaderStage,
 )
@@ -94,15 +93,15 @@ def test_vec_add_compute() raises:
     var buf_c = device.create_buffer(BUF_SIZE, WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC, False, "buf_c")
     var buf_r = device.create_buffer(BUF_SIZE, WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST, False, "buf_r")
 
-    with AllocGuard[Float32](4) as a_data:
-        a_data[0] = Float32(1.0); a_data[1] = Float32(2.0)
-        a_data[2] = Float32(3.0); a_data[3] = Float32(4.0)
-        device.queue_write_buffer(buf_a, UInt64(0), a_data, UInt(16))
+    var a_data = List[Float32](capacity=4)
+    a_data.append(Float32(1.0)); a_data.append(Float32(2.0))
+    a_data.append(Float32(3.0)); a_data.append(Float32(4.0))
+    device.queue_write_data(buf_a, UInt64(0), a_data)
 
-    with AllocGuard[Float32](4) as b_data:
-        b_data[0] = Float32(10.0); b_data[1] = Float32(20.0)
-        b_data[2] = Float32(30.0); b_data[3] = Float32(40.0)
-        device.queue_write_buffer(buf_b, UInt64(0), b_data, UInt(16))
+    var b_data = List[Float32](capacity=4)
+    b_data.append(Float32(10.0)); b_data.append(Float32(20.0))
+    b_data.append(Float32(30.0)); b_data.append(Float32(40.0))
+    device.queue_write_data(buf_b, UInt64(0), b_data)
 
     var bg_entries = List[WGPUBindGroupEntry]()
     bg_entries.append(WGPUBindGroupEntry(null_opaque(), UInt32(0), buf_a.handle().raw, UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque()))

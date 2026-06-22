@@ -13,7 +13,7 @@ Usage (wgpu backend):
     gpu.write(buf_a, my_data)
     gpu.write(buf_b, my_data2)
     var prog = gpu.compile_compute(ADD_WGSL, entry_point="main", n_storage_buffers=3)
-    gpu.dispatch(prog, [buf_a, buf_b, buf_c], 16, 1, 1)
+    gpu.dispatch(prog^, [buf_a.handle(), buf_b.handle(), buf_c.handle()], 16, 1, 1)
     gpu.sync()
     var result = gpu.read[Float32](buf_c)
 """
@@ -32,7 +32,7 @@ from wgpu.descriptors import BGL
 from wgpu._ffi.types import WGPUBufferUsage, WGPU_WHOLE_SIZE
 from wgpu._ffi.structs import WGPUBindGroupEntry
 from wgpu._ffi.nulls import null_opaque, null_ptr
-from wgpu._ffi.handles import SamplerHandle, TextureViewHandle
+from wgpu._ffi.handles import BufferHandle, SamplerHandle, TextureViewHandle
 
 
 def _elem_size[T: AnyType]() -> Int:
@@ -174,24 +174,26 @@ struct GPU(Movable):
     def dispatch(
         mut self,
         var prog: WgpuComputeProgram,
-        buffers: List[Buffer],
+        buffers: List[BufferHandle],
         wx: UInt32,
         wy: UInt32 = 1,
         wz: UInt32 = 1,
         label: String = "",
     ) raises:
         """
-        Execute a compute program over a set of buffers.
+        Execute a compute program over a set of buffer handles.
 
         Assembles a BindGroup, records a compute pass, submits, and waits.
         `prog` and `bg` are kept in scope past poll() via tail pins.
+        `buffers` takes `BufferHandle` (TrivialRegisterPassable) so the caller
+        keeps ownership of the Buffer wrappers and can read them back afterwards.
         """
         # Build bind group (borrows prog.bgl)
         var bg_entries = List[WGPUBindGroupEntry]()
         for i in range(len(buffers)):
             bg_entries.append(WGPUBindGroupEntry(
                 null_opaque(), UInt32(i),
-                buffers[i].handle().raw,
+                buffers[i].raw,
                 UInt64(0), WGPU_WHOLE_SIZE,
                 SamplerHandle.null().raw,
                 TextureViewHandle.null().raw,

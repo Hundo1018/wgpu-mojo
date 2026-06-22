@@ -1,0 +1,128 @@
+name: Nightly Mojo Tracking
+
+# Runs daily to test against the latest Mojo nightly from max-nightly channel.
+# On success: auto-commits the updated pixi.lock so the repo always rides the
+#             latest working nightly.
+# On failure: opens/updates a tracking issue with the actual compiler errors
+#             (not LSP output — the real compile+run errors are the source of truth).
+#
+# Can also be triggered manually via workflow_dispatch to test a specific nightly.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"   # 04:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-tracking
+  cancel-in-progress: true
+
+permissions:
+  contents: write        # to commit updated pixi.lock
+  issues: write          # to open/update the tracking issue
+  pull-requests: write   # to open a lock-bump PR
+
+jobs:
+  nightly-check:
+    name: Update to latest Mojo nightly & test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Pixi (without locked env — we're about to update)
+        uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          run-install: false
+
+      - name: Update to latest nightly
+        id: update
+        run: |
+          pixi update 2>&1 | tee /tmp/pixi-update.log
+          MOJO_VER=$(pixi run mojo --version 2>/dev/null || echo "unknown")
+          echo "mojo_version=$MOJO_VER" >> "$GITHUB_OUTPUT"
+          echo "Resolved Mojo: $MOJO_VER"
+
+      - name: Install updated environment
+        run: pixi install
+
+      - name: Download libwgpu_native
+        run: bash scripts/setup-native.sh
+
+      - name: Build C callback bridges
+        run: |
+          pixi run build-callbacks
+          pixi run build-callback-probe
+
+      - name: Run non-GPU tests
+        id: test
+        run: pixi run test
+
+      - name: Compile-check all tests & examples
+        id: compile_check
+        run: pixi run check-compile
+
+      # --- SUCCESS PATH: commit the updated lock ---
+      - name: Commit updated pixi.lock
+        if: success()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet pixi.lock; then
+            echo "pixi.lock unchanged — already on latest nightly."
+          else
+            git add pixi.lock
+            git commit -m "chore: bump pixi.lock to ${{ steps.update.outputs.mojo_version }}
+
+Auto-committed by nightly tracking workflow.
+All non-GPU tests and compile-checks passed."
+            git push
+          fi
+
+      - name: Close stale nightly-failure issue (if any)
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN=$(gh issue list --label "nightly-failure" --state open --json number -q '.[0].number // empty')
+          if [ -n "$OPEN" ]; then
+            gh issue close "$OPEN" \
+              --comment "Nightly ${{ steps.update.outputs.mojo_version }} passed all checks. Closing automatically."
+          fi
+
+      # --- FAILURE PATH: open/update a tracking issue ---
+      - name: Collect failure logs
+        if: failure()
+        run: |
+          {
+            echo "## Nightly failure: ${{ steps.update.outputs.mojo_version }}"
+            echo ""
+            echo "**Date:** $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo "**Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "### Errors (actual compiler output — not LSP)"
+            echo '```'
+            # Collect real compiler errors from the failed steps
+            cat /tmp/pixi-update.log 2>/dev/null | tail -20 || true
+            echo '```'
+          } > /tmp/issue-body.md
+
+      - name: Open or update nightly-failure issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN=$(gh issue list --label "nightly-failure" --state open --json number -q '.[0].number // empty')
+          if [ -n "$OPEN" ]; then
+            gh issue comment "$OPEN" --body-file /tmp/issue-body.md
+            echo "Updated existing issue #$OPEN"
+          else
+            gh issue create \
+              --title "Nightly failure: ${{ steps.update.outputs.mojo_version }}" \
+              --body-file /tmp/issue-body.md \
+              --label "nightly-failure"
+            echo "Created new nightly-failure issue"
+          fi

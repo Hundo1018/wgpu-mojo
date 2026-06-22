@@ -101,7 +101,7 @@ def test_sampled_texture_pipeline_creation() raises:
     var tex = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
+        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
         UInt32(2), UInt32(1), UInt32(1),
         "test_sample_texture",
     )
@@ -153,7 +153,7 @@ def test_offscreen_render_texture_readback() raises:
     var target_texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.RENDER_ATTACHMENT.value | WGPUTextureUsage.COPY_SRC.value,
+        WGPUTextureUsage.RENDER_ATTACHMENT | WGPUTextureUsage.COPY_SRC,
         UInt32(2), UInt32(1), UInt32(1),
         "test_offscreen_readback_target",
     )
@@ -161,7 +161,7 @@ def test_offscreen_render_texture_readback() raises:
 
     var readback = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value,
+        WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ,
         False,
         "test_offscreen_readback_buffer",
     )
@@ -226,7 +226,7 @@ def test_example_texture_sample_upload_readback() raises:
     var texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
+        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
         UInt32(2), UInt32(1), UInt32(1),
         "example_texture_sample_tex",
     )
@@ -240,7 +240,7 @@ def test_example_texture_sample_upload_readback() raises:
 
     var staging = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_SRC.value | WGPUBufferUsage.COPY_DST.value,
+        WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST,
         False,
         "example_texture_sample_staging",
     )
@@ -263,7 +263,7 @@ def test_example_texture_sample_upload_readback() raises:
 
     var readback = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value,
+        WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ,
         False,
         "example_texture_sample_readback",
     )
@@ -317,7 +317,7 @@ def test_texture_upload_copy_buffer_to_texture() raises:
     var texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
+        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
         UInt32(2), UInt32(1), UInt32(1),
         "test_texture_upload",
     )
@@ -331,7 +331,7 @@ def test_texture_upload_copy_buffer_to_texture() raises:
 
     var staging = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_SRC.value | WGPUBufferUsage.COPY_DST.value,
+        WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST,
         False,
         "test_texture_upload_staging",
     )
@@ -362,7 +362,7 @@ def test_texture_upload_readback() raises:
     var texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value | WGPUTextureUsage.COPY_SRC.value,
+        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST | WGPUTextureUsage.COPY_SRC,
         UInt32(2), UInt32(1), UInt32(1),
         "test_texture_readback",
     )
@@ -376,7 +376,7 @@ def test_texture_upload_readback() raises:
 
     var staging = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_SRC.value | WGPUBufferUsage.COPY_DST.value,
+        WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST,
         False,
         "test_texture_readback_staging",
     )
@@ -398,14 +398,14 @@ def test_texture_upload_readback() raises:
 
     var storage_buffer = device.create_buffer(
         UInt64(64),
-        WGPUBufferUsage.STORAGE.value | WGPUBufferUsage.COPY_SRC.value,
+        WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_SRC,
         False,
         "test_texture_readback_storage",
     )
 
     var readback = device.create_buffer(
         UInt64(64),
-        WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value,
+        WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ,
         False,
         "test_texture_readback_buffer",
     )

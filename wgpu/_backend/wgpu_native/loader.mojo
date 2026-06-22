@@ -85,6 +85,24 @@ struct _PopErrorResult(TrivialRegisterPassable):
     var message_len: UInt
 
 
+@fieldwise_init
+struct _CompilationResult(TrivialRegisterPassable):
+    var status: UInt32
+    var info: OpaquePointer[MutUntrackedOrigin]  # const WGPUCompilationInfo*; valid while ShaderModule alive
+
+
+@fieldwise_init
+struct _ComputePipelineAsyncResult(TrivialRegisterPassable):
+    var status: UInt32
+    var pipeline: OpaquePointer[MutUntrackedOrigin]  # WGPUComputePipelineHandle
+
+
+@fieldwise_init
+struct _RenderPipelineAsyncResult(TrivialRegisterPassable):
+    var status: UInt32
+    var pipeline: OpaquePointer[MutUntrackedOrigin]  # WGPURenderPipelineHandle
+
+
 # ---------------------------------------------------------------------------
 # Platform-aware library names and dev-tree fallback paths
 # ---------------------------------------------------------------------------
@@ -233,6 +251,9 @@ struct WGPULib(Movable):
     var _map_cb_ptr: OpaquePointer[MutUntrackedOrigin]
     var _done_cb_ptr: OpaquePointer[MutUntrackedOrigin]
     var _pop_error_cb_ptr: OpaquePointer[MutUntrackedOrigin]
+    var _compilation_info_cb_ptr: OpaquePointer[MutUntrackedOrigin]
+    var _compute_pipeline_async_cb_ptr: OpaquePointer[MutUntrackedOrigin]
+    var _render_pipeline_async_cb_ptr: OpaquePointer[MutUntrackedOrigin]
 
     def __init__(out self) raises:
         # Three-stage fallback for each library:
@@ -247,6 +268,9 @@ struct WGPULib(Movable):
         self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePointer[MutUntrackedOrigin]]()
         self._done_cb_ptr    = self._cb.call["wgpu_mojo_get_queue_done_callback", OpaquePointer[MutUntrackedOrigin]]()
         self._pop_error_cb_ptr = self._cb.call["wgpu_mojo_get_pop_error_callback", OpaquePointer[MutUntrackedOrigin]]()
+        self._compilation_info_cb_ptr = self._cb.call["wgpu_mojo_get_compilation_info_callback", OpaquePointer[MutUntrackedOrigin]]()
+        self._compute_pipeline_async_cb_ptr = self._cb.call["wgpu_mojo_get_compute_pipeline_async_callback", OpaquePointer[MutUntrackedOrigin]]()
+        self._render_pipeline_async_cb_ptr  = self._cb.call["wgpu_mojo_get_render_pipeline_async_callback",  OpaquePointer[MutUntrackedOrigin]]()
 
     def __init__(out self, *, deinit take: Self):
         self._wgpu = take._wgpu^
@@ -256,6 +280,9 @@ struct WGPULib(Movable):
         self._map_cb_ptr     = take._map_cb_ptr
         self._done_cb_ptr    = take._done_cb_ptr
         self._pop_error_cb_ptr = take._pop_error_cb_ptr
+        self._compilation_info_cb_ptr = take._compilation_info_cb_ptr
+        self._compute_pipeline_async_cb_ptr = take._compute_pipeline_async_cb_ptr
+        self._render_pipeline_async_cb_ptr  = take._render_pipeline_async_cb_ptr
 
     # ------------------------------------------------------------------
     # Global functions
@@ -432,6 +459,26 @@ struct WGPULib(Movable):
     ) -> WGPURenderPipelineHandle:
         return self._wgpu.call["wgpuDeviceCreateRenderPipeline", WGPURenderPipelineHandle](
             device, desc
+        )
+
+    def device_create_compute_pipeline_async(
+        self,
+        device: WGPUDeviceHandle,
+        desc: UnsafePointer[WGPUComputePipelineDescriptor, MutUntrackedOrigin],
+        callback_info_ptr: UnsafePointer[WGPUCreateComputePipelineAsyncCallbackInfo, MutUntrackedOrigin],
+    ):
+        self._cb.call["wgpu_mojo_device_create_compute_pipeline_async"](
+            device, desc, callback_info_ptr
+        )
+
+    def device_create_render_pipeline_async(
+        self,
+        device: WGPUDeviceHandle,
+        desc: UnsafePointer[WGPURenderPipelineDescriptor, MutUntrackedOrigin],
+        callback_info_ptr: UnsafePointer[WGPUCreateRenderPipelineAsyncCallbackInfo, MutUntrackedOrigin],
+    ):
+        self._cb.call["wgpu_mojo_device_create_render_pipeline_async"](
+            device, desc, callback_info_ptr
         )
 
     def device_create_shader_module(
@@ -1475,6 +1522,51 @@ struct WGPULib(Movable):
 
     def render_bundle_release(self, bundle: WGPURenderBundleHandle):
         self._wgpu.call["wgpuRenderBundleRelease"](bundle)
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: timestamp period
+    # ------------------------------------------------------------------
+
+    def queue_get_timestamp_period(self, queue: WGPUQueueHandle) -> Float32:
+        """Returns nanoseconds per GPU timestamp tick (TimestampQuery feature required)."""
+        return self._wgpu.call["wgpuQueueGetTimestampPeriod", Float32](queue)
+
+    # ------------------------------------------------------------------
+    # wgpu-native extension: set immediates (push constants, v29 name)
+    # ------------------------------------------------------------------
+
+    def render_pass_set_immediates(
+        self,
+        pass_enc: WGPURenderPassEncoderHandle,
+        offset: UInt32,
+        size_bytes: UInt32,
+        data: OpaquePointer[MutUntrackedOrigin],
+    ):
+        self._wgpu.call["wgpuRenderPassEncoderSetImmediates"](
+            pass_enc, offset, size_bytes, data
+        )
+
+    def compute_pass_set_immediates(
+        self,
+        pass_enc: WGPUComputePassEncoderHandle,
+        offset: UInt32,
+        size_bytes: UInt32,
+        data: OpaquePointer[MutUntrackedOrigin],
+    ):
+        self._wgpu.call["wgpuComputePassEncoderSetImmediates"](
+            pass_enc, offset, size_bytes, data
+        )
+
+    def render_bundle_encoder_set_immediates(
+        self,
+        encoder: WGPURenderBundleEncoderHandle,
+        offset: UInt32,
+        size_bytes: UInt32,
+        data: OpaquePointer[MutUntrackedOrigin],
+    ):
+        self._wgpu.call["wgpuRenderBundleEncoderSetImmediates"](
+            encoder, offset, size_bytes, data
+        )
 
     # ------------------------------------------------------------------
     # wgpu-native extension: generate report

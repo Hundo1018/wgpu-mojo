@@ -166,30 +166,29 @@ struct WGPUBufferMapCallbackInfo:
 
 
 @fieldwise_init
-struct WGPUCompilationInfoCallbackInfo:
-    var next_in_chain: Optional[OpaquePointer[MutUntrackedOrigin]]
-    var mode: UInt32
-    var callback: OpaquePointer[MutUntrackedOrigin]   # WGPUCompilationInfoCallback fn ptr
-    var userdata1: OpaquePointer[MutUntrackedOrigin]
-    var userdata2: Optional[OpaquePointer[MutUntrackedOrigin]]
-
-
-@fieldwise_init
-struct WGPUCreateComputePipelineAsyncCallbackInfo:
-    var next_in_chain: Optional[OpaquePointer[MutUntrackedOrigin]]
+struct WGPUCompilationInfoCallbackInfo(TrivialRegisterPassable):
+    var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var mode: UInt32
     var callback: OpaquePointer[MutUntrackedOrigin]
     var userdata1: OpaquePointer[MutUntrackedOrigin]
-    var userdata2: Optional[OpaquePointer[MutUntrackedOrigin]]
+    var userdata2: OpaquePointer[MutUntrackedOrigin]
 
 
 @fieldwise_init
-struct WGPUCreateRenderPipelineAsyncCallbackInfo:
-    var next_in_chain: Optional[OpaquePointer[MutUntrackedOrigin]]
+struct WGPUCreateComputePipelineAsyncCallbackInfo(TrivialRegisterPassable):
+    var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var mode: UInt32
     var callback: OpaquePointer[MutUntrackedOrigin]
     var userdata1: OpaquePointer[MutUntrackedOrigin]
-    var userdata2: Optional[OpaquePointer[MutUntrackedOrigin]]
+    var userdata2: OpaquePointer[MutUntrackedOrigin]
+
+
+struct WGPUCreateRenderPipelineAsyncCallbackInfo(TrivialRegisterPassable):
+    var next_in_chain: OpaquePointer[MutUntrackedOrigin]
+    var mode: UInt32
+    var callback: OpaquePointer[MutUntrackedOrigin]
+    var userdata1: OpaquePointer[MutUntrackedOrigin]
+    var userdata2: OpaquePointer[MutUntrackedOrigin]
 
 
 @fieldwise_init

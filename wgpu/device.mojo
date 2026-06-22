@@ -12,6 +12,7 @@ from wgpu._ffi.types import (
     WGPUShaderModuleHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
     WGPUPipelineLayoutHandle, WGPUComputePipelineHandle, WGPURenderPipelineHandle,
     WGPUCommandEncoderHandle, WGPUCommandBufferHandle, WGPUQuerySetHandle,
+    WGPURenderBundleEncoderHandle,
     WGPUBufferUsage, WGPUTextureUsage, WGPUShaderStage,
 )
 from wgpu._ffi.handles import DeviceHandle, QueueHandle, InstanceHandle as InstanceHandleNewtype
@@ -24,6 +25,7 @@ from wgpu._ffi.structs import (
     WGPUSamplerDescriptor,
     WGPUShaderModuleDescriptor, WGPUShaderSourceWGSL, WGPUShaderSourceSPIRV,
     WGPUBindGroupDescriptor, WGPUBindGroupLayoutDescriptor,
+    WGPUBindGroupLayoutEntry, WGPUBindGroupEntry,
     WGPUPipelineLayoutDescriptor,
     WGPUComputePipelineDescriptor, WGPURenderPipelineDescriptor,
     WGPUComputeState, WGPUConstantEntry,
@@ -36,7 +38,15 @@ from wgpu._ffi.structs import (
     WGPUExtent3D, WGPUTexelCopyBufferLayout, WGPUTexelCopyTextureInfo,
     WGPUOrigin3D,
     WGPUChainedStruct,
+    WGPUPopErrorScopeCallbackInfo,
+    WGPUCreateComputePipelineAsyncCallbackInfo,
+    WGPUCreateRenderPipelineAsyncCallbackInfo,
     str_to_sv,
+)
+from wgpu._ffi.types import WGPUCallbackMode, WGPUErrorFilter, WGPUErrorType
+from wgpu._ffi.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.loader import (
+    _PopErrorResult, _ComputePipelineAsyncResult, _RenderPipelineAsyncResult,
 )
 from wgpu._ffi.types import WGPUSType
 from wgpu.buffer import Buffer, _sizeof
@@ -49,6 +59,8 @@ from wgpu.pipeline_layout import PipelineLayout
 from wgpu.pipeline import ComputePipeline, RenderPipeline
 from wgpu.command import CommandEncoder, CommandBuffer
 from wgpu.query_set import QuerySet
+from wgpu.render_bundle import RenderBundle, RenderBundleEncoder
+from wgpu._ffi.structs import WGPURenderBundleEncoderDescriptor
 
 
 struct Device(Movable, Boolable):
@@ -229,7 +241,7 @@ struct Device(Movable, Boolable):
         var result = self._lib[].device_create_shader_module(self._handle, desc_p)
         source_p.free()
         desc_p.free()
-        return ShaderModule(self._lib, result)
+        return ShaderModule(self._lib, result, self._instance)
 
     def create_shader_module_spirv(
         self,
@@ -253,7 +265,7 @@ struct Device(Movable, Boolable):
         var result = self._lib[].device_create_shader_module(self._handle, desc_p)
         source_p.free()
         desc_p.free()
-        return ShaderModule(self._lib, result)
+        return ShaderModule(self._lib, result, self._instance)
 
     def create_bind_group_layout(
         self,
@@ -476,6 +488,74 @@ struct Device(Movable, Boolable):
         fragment_p.free()
         return result^
 
+    def create_compute_pipeline_async(
+        self,
+        desc: WGPUComputePipelineDescriptor,
+    ) raises -> ComputePipeline:
+        """Create a compute pipeline asynchronously (internally polls until done)."""
+        with AllocGuard[_ComputePipelineAsyncResult](1) as res_p:
+            res_p[] = _ComputePipelineAsyncResult(UInt32(0), null_opaque())
+            with AllocGuard[WGPUCreateComputePipelineAsyncCallbackInfo](1) as cb_p:
+                cb_p[] = WGPUCreateComputePipelineAsyncCallbackInfo(
+                    null_opaque(), WGPUCallbackMode.AllowSpontaneous,
+                    self._lib[]._compute_pipeline_async_cb_ptr,
+                    res_p.bitcast[NoneType](), null_opaque(),
+                )
+                with AllocGuard[WGPUComputePipelineDescriptor](1) as desc_p:
+                    desc_p[] = desc
+                    self._lib[].device_create_compute_pipeline_async(
+                        self._handle, desc_p, cb_p
+                    )
+            self._lib[].instance_process_events(self._instance)
+            var status = res_p[].status
+            if status != UInt32(1):
+                raise Error("create_compute_pipeline_async failed, status=" + String(status))
+            return ComputePipeline(self._lib, res_p[].pipeline)
+
+    def create_compute_pipeline_async(
+        self,
+        shader: ShaderModule,
+        entry_point: String,
+        layout: PipelineLayout,
+        label: String = "",
+    ) raises -> ComputePipeline:
+        var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
+        var entry_sv = str_to_sv(entry_point)
+        var cs = WGPUComputeState(
+            null_opaque(),
+            shader.handle().raw,
+            entry_sv,
+            UInt(0), null_ptr[WGPUConstantEntry](),
+        )
+        var desc = WGPUComputePipelineDescriptor(
+            null_opaque(), label_sv, layout.handle().raw, cs,
+        )
+        return self.create_compute_pipeline_async(desc)
+
+    def create_render_pipeline_async(
+        self,
+        var desc: WGPURenderPipelineDescriptor,
+    ) raises -> RenderPipeline:
+        """Create a render pipeline asynchronously (internally polls until done)."""
+        with AllocGuard[_RenderPipelineAsyncResult](1) as res_p:
+            res_p[] = _RenderPipelineAsyncResult(UInt32(0), null_opaque())
+            with AllocGuard[WGPUCreateRenderPipelineAsyncCallbackInfo](1) as cb_p:
+                cb_p[] = WGPUCreateRenderPipelineAsyncCallbackInfo(
+                    null_opaque(), WGPUCallbackMode.AllowSpontaneous,
+                    self._lib[]._render_pipeline_async_cb_ptr,
+                    res_p.bitcast[NoneType](), null_opaque(),
+                )
+                with AllocGuard[WGPURenderPipelineDescriptor](1) as desc_p:
+                    desc_p[] = desc^
+                    self._lib[].device_create_render_pipeline_async(
+                        self._handle, desc_p, cb_p
+                    )
+            self._lib[].instance_process_events(self._instance)
+            var status = res_p[].status
+            if status != UInt32(1):
+                raise Error("create_render_pipeline_async failed, status=" + String(status))
+            return RenderPipeline(self._lib, res_p[].pipeline)
+
     def create_command_encoder(self, label: String = "") raises -> CommandEncoder:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUCommandEncoderDescriptor](1)
@@ -499,6 +579,37 @@ struct Device(Movable, Boolable):
         desc_p.free()
         return QuerySet(self._lib, result)
 
+    def create_render_bundle_encoder(
+        self,
+        color_formats: List[UInt32],
+        label: String = "",
+        depth_stencil_format: UInt32 = 0,
+        sample_count: UInt32 = 1,
+        depth_read_only: Bool = False,
+        stencil_read_only: Bool = False,
+    ) raises -> RenderBundleEncoder:
+        """Create a RenderBundleEncoder that records commands for later replay.
+
+        color_formats: list of WGPUTextureFormat values for each color attachment.
+        depth_stencil_format: WGPUTextureFormat for depth/stencil (0 = none).
+        """
+        var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
+        var fmt_ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](color_formats.unsafe_ptr())
+        var desc_p = alloc[WGPURenderBundleEncoderDescriptor](1)
+        desc_p[] = WGPURenderBundleEncoderDescriptor(
+            null_opaque(),
+            label_sv,
+            UInt(len(color_formats)),
+            fmt_ptr,
+            depth_stencil_format,
+            sample_count,
+            UInt32(1) if depth_read_only else UInt32(0),
+            UInt32(1) if stencil_read_only else UInt32(0),
+        )
+        var result = self._lib[].device_create_render_bundle_encoder(self._handle, desc_p)
+        desc_p.free()
+        return RenderBundleEncoder(self._lib, result)
+
     # ------------------------------------------------------------------
     # Queue write helpers
     # ------------------------------------------------------------------
@@ -519,6 +630,10 @@ struct Device(Movable, Boolable):
         var arr = rebind[UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
         self._lib[].queue_submit(self._queue, UInt(1), arr)
         handle_p.free()
+
+    def queue_timestamp_period(self) -> Float32:
+        """Return nanoseconds per GPU timestamp tick (requires TimestampQuery feature)."""
+        return self._lib[].queue_get_timestamp_period(self._queue)
 
     def queue_write_data[
         T: Copyable & Movable
@@ -590,6 +705,53 @@ struct Device(Movable, Boolable):
         layout_p.free()
         dst_p.free()
         size_p.free()
+
+    # ------------------------------------------------------------------
+    # Error scope
+    # ------------------------------------------------------------------
+
+    def push_error_scope(self, filter: UInt32 = WGPUErrorFilter.Validation):
+        """Push an error scope onto the device's error scope stack.
+
+        Errors matching `filter` that occur between push and pop are captured.
+        Pop with pop_error_scope() to retrieve the first captured error.
+        Common filters: WGPUErrorFilter.Validation, OutOfMemory, Internal.
+        """
+        self._lib[].device_push_error_scope(self._handle, filter)
+
+    def pop_error_scope(self) raises -> String:
+        """Pop the top error scope and return the error message (if any).
+
+        Returns an empty string when no error was captured since the last push.
+        Raises if the pop fails (e.g. scope stack is empty or device is lost).
+        """
+        with AllocGuard[_PopErrorResult](1) as result:
+            result[] = _PopErrorResult(UInt32(0), UInt32(0), null_opaque(), UInt(0))
+            with AllocGuard[WGPUPopErrorScopeCallbackInfo](1) as cb_info_p:
+                cb_info_p[] = WGPUPopErrorScopeCallbackInfo(
+                    null_opaque(),
+                    WGPUCallbackMode.AllowSpontaneous,
+                    self._lib[]._pop_error_cb_ptr,
+                    result.bitcast[NoneType](),
+                    null_opaque(),
+                )
+                self._lib[].device_pop_error_scope(self._handle, cb_info_p)
+            self._lib[].instance_process_events(self._instance)
+
+            var status = result[].status
+            var err_type = result[].type
+            if status != UInt32(1):  # WGPUPopErrorScopeStatus.Success == 1
+                raise Error("pop_error_scope failed, status=" + String(status))
+            if err_type == WGPUErrorType.NoError:
+                return String("")
+            var p = result[].message_data.bitcast[UInt8]()
+            var n = result[].message_len
+            var out = String()
+            var i = UInt(0)
+            while i < n and p[Int(i)] != 0:
+                out += chr(Int(p[Int(i)]))
+                i += 1
+            return out
 
     # ------------------------------------------------------------------
     # Labels

@@ -29,6 +29,10 @@ from wgpu._backend.wgpu_native.structs import (
     WGPUColorTargetState, WGPUFragmentState, WGPURenderPipelineDescriptor,
     WGPUCompilationMessage, WGPUCompilationInfo,
     WGPUQueueWorkDoneCallbackInfo,
+    WGPUPopErrorScopeCallbackInfo,
+    WGPUCompilationInfoCallbackInfo,
+    WGPUCreateComputePipelineAsyncCallbackInfo,
+    WGPUCreateRenderPipelineAsyncCallbackInfo,
     WGPUBorrowedStringView,
     str_to_borrowed_sv, str_to_sv, wgpu_limits_default,
 )

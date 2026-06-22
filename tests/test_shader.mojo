@@ -3,7 +3,7 @@ Tests/test_shader.mojo — Tests for shader module creation (WGSL).
 Requires GPU hardware.
 """
 
-from std.testing import assert_true
+from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
 
@@ -55,8 +55,35 @@ def test_shader_module_handle_nonnull() raises:
     assert_true(shader)
 
 
+comptime BAD_WGSL = """
+@compute @workgroup_size(1)
+fn main() {
+    let x: f32 = "not a float";
+}
+"""
+
+
+def test_compilation_info_clean_shader() raises:
+    """A valid shader should return zero compilation messages."""
+    var device = create_test_device()
+    var shader = device.create_shader_module_wgsl(NOOP_WGSL, "noop_info")
+    var msgs   = shader.get_compilation_info()
+    assert_equal(len(msgs), 0)
+
+
+def test_compilation_info_bad_shader() raises:
+    """An invalid shader should return at least one Error message."""
+    var device = create_test_device()
+    var shader = device.create_shader_module_wgsl(BAD_WGSL, "bad_shader")
+    var msgs   = shader.get_compilation_info()
+    assert_true(len(msgs) > 0)
+    assert_true(msgs[0].startswith("Error"))
+
+
 def main() raises:
     test_create_shader_module_wgsl_noop()
     test_create_shader_module_wgsl_add()
     test_shader_module_handle_nonnull()
+    test_compilation_info_clean_shader()
+    test_compilation_info_bad_shader()
     print("test_shader: ALL PASSED")

@@ -17,6 +17,7 @@ from wgpu.bind_group import BindGroup
 from wgpu.buffer import Buffer
 from wgpu.query_set import QuerySet
 from wgpu.texture import TextureView
+from wgpu.render_bundle import RenderBundle
 
 
 @explicit_destroy("Must call end() or abandon()")
@@ -234,6 +235,15 @@ struct RenderPassEncoder(Movable):
         var ptr = rebind[UnsafePointer[WGPURenderBundleHandle, MutUntrackedOrigin]](bundles.unsafe_ptr())
         self._lib[].render_pass_execute_bundles(self._handle, UInt(len(bundles)), ptr)
 
+    def execute_bundles(self, bundles: List[RenderBundle]):
+        """Wrapper-first overload — accepts RAII RenderBundle list directly."""
+        var handles = List[WGPURenderBundleHandle](capacity=len(bundles))
+        for i in range(len(bundles)):
+            handles.append(bundles[i].handle().raw)
+        var ptr = rebind[UnsafePointer[WGPURenderBundleHandle, MutUntrackedOrigin]](handles.unsafe_ptr())
+        self._lib[].render_pass_execute_bundles(self._handle, UInt(len(handles)), ptr)
+        _ = handles^
+
     # ------------------------------------------------------------------
     # Debug groups
     # ------------------------------------------------------------------
@@ -279,6 +289,12 @@ struct RenderPassEncoder(Movable):
         self._lib[].render_pass_set_push_constants(
             self._handle, stages, offset, size_bytes, data
         )
+
+    def set_immediates(
+        self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]
+    ):
+        """Write push-constant data via wgpu-native SetImmediates API (v29 name for push constants)."""
+        self._lib[].render_pass_set_immediates(self._handle, offset, size_bytes, data)
 
     def multi_draw_indirect(
         self, buffer: WGPUBufferHandle, offset: UInt64, count: UInt32

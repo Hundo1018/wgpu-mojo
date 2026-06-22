@@ -139,6 +139,10 @@ struct ComputePassEncoder(Movable):
     def set_push_constants(self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]):
         self._lib[].compute_pass_set_push_constants(self._handle, offset, size_bytes, data)
 
+    def set_immediates(self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]):
+        """Write push-constant data via wgpu-native SetImmediates API (v29 name for push constants)."""
+        self._lib[].compute_pass_set_immediates(self._handle, offset, size_bytes, data)
+
     def begin_pipeline_statistics_query(self, query_set: WGPUQuerySetHandle, query_index: UInt32):
         self._lib[].compute_pass_begin_pipeline_statistics_query(self._handle, query_set, query_index)
 

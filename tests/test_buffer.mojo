@@ -22,7 +22,7 @@ def test_create_storage_buffer() raises:
     var device = create_test_device()
     var buf = device.create_buffer(
         UInt64(256),
-        WGPUBufferUsage.STORAGE.value | WGPUBufferUsage.COPY_DST.value,
+        WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST,
         False,
         "test_storage_buf",
     )
@@ -32,7 +32,7 @@ def test_create_storage_buffer() raises:
 def test_create_staging_buffer_mapped() raises:
     """Create a mappable staging buffer with mapped_at_creation=True."""
     var device = create_test_device()
-    var usage  = WGPUBufferUsage.MAP_WRITE.value | WGPUBufferUsage.COPY_SRC.value
+    var usage  = WGPUBufferUsage.MAP_WRITE | WGPUBufferUsage.COPY_SRC
     var buf = device.create_buffer(UInt64(64), usage, True, "staging")
     assert_true(buf)
     var ptr = device._lib[].buffer_get_mapped_range(buf.handle().raw, UInt(0), UInt(64))
@@ -48,11 +48,11 @@ def test_queue_write_and_map_read_buffer() raises:
 
     # GPU storage buffer (CopyDst | CopySrc)
     var gpu_buf = device.create_buffer(
-        n, WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.COPY_SRC.value, False, "gpu"
+        n, WGPUBufferUsage.COPY_DST | WGPUBufferUsage.COPY_SRC, False, "gpu"
     )
     # CPU readback buffer (MapRead | CopyDst)
     var read_buf = device.create_buffer(
-        n, WGPUBufferUsage.MAP_READ.value | WGPUBufferUsage.COPY_DST.value, False, "readback"
+        n, WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST, False, "readback"
     )
 
     # Upload data

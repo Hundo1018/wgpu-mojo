@@ -68,7 +68,7 @@ def test_headless_render_pass() raises:
     # Create offscreen render target
     var tex = device.create_texture(
         TEX_WIDTH, TEX_HEIGHT, UInt32(1), TEX_FMT,
-        WGPUTextureUsage.RENDER_ATTACHMENT.value | WGPUTextureUsage.COPY_SRC.value,
+        WGPUTextureUsage.RENDER_ATTACHMENT | WGPUTextureUsage.COPY_SRC,
         label="render_target",
     )
     var view = tex.create_view_default()
@@ -76,7 +76,7 @@ def test_headless_render_pass() raises:
     # Create readback buffer (4 bytes per pixel RGBA8)
     var buf_size = UInt64(TEX_WIDTH) * UInt64(TEX_HEIGHT) * UInt64(4)
     var readback = device.create_buffer(
-        buf_size, WGPUBufferUsage.COPY_DST.value | WGPUBufferUsage.MAP_READ.value, False, "readback"
+        buf_size, WGPUBufferUsage.COPY_DST | WGPUBufferUsage.MAP_READ, False, "readback"
     )
 
     # Encode render pass

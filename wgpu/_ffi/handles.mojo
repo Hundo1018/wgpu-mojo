@@ -8,4 +8,5 @@ from wgpu._backend.wgpu_native.handles import (
     CommandEncoderHandle, CommandBufferHandle,
     QuerySetHandle, SurfaceHandle,
     InstanceHandle, ComputePassEncoderHandle, RenderPassEncoderHandle,
+    RenderBundleHandle, RenderBundleEncoderHandle,
 )

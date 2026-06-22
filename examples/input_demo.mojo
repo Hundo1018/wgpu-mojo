@@ -9,12 +9,14 @@ Run:
 """
 
 from wgpu.instance import Instance
+from wgpu.device import Device
 from wgpu.rendercanvas import RenderCanvas
 from wgpu.rendercanvas.glfw import (
     GLFW_KEY_ESCAPE, GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D,
     GLFW_KEY_SPACE,
     GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT,
 )
+from wgpu._ffi.structs import WGPUColor
 
 
 def main() raises:
@@ -79,7 +81,16 @@ def main() raises:
             print("ESC — bye!")
             break
 
-        # Acquire & present a frame so the window doesn't go blank
+        # Acquire, clear, and present so the window stays valid each frame.
+        # wgpu-native requires at least one queue submission against the
+        # acquired texture before calling present().
         var frame = canvas.next_frame()
-        if frame.is_renderable():
-            canvas.present()
+        if not frame.is_renderable():
+            continue
+        var enc   = device.create_command_encoder("input_clear")
+        var rpass = enc.begin_surface_clear_pass(
+            frame.texture, WGPUColor(0.1, 0.1, 0.1, 1.0), "clear"
+        )
+        rpass^.end()
+        device.queue_submit(enc^.finish())
+        canvas.present()

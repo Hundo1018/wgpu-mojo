@@ -77,7 +77,7 @@ def main() raises:
     print("Shader compiled")
 
     # Dispatch — no `_ = resource^` needed, Session handles lifetimes
-    gpu.dispatch(prog, [buf_a, buf_b, buf_c], N // WORKGROUP_SIZE, 1, 1, "vec_add_dispatch")
+    gpu.dispatch(prog^, [buf_a.handle(), buf_b.handle(), buf_c.handle()], N // WORKGROUP_SIZE, 1, 1, "vec_add_dispatch")
     print("Dispatch complete")
 
     # Read back (gpu.read() calls poll() internally)

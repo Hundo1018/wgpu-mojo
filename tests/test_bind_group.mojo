@@ -58,7 +58,7 @@ def test_create_bind_group_with_buffer() raises:
     var device = create_test_device()
 
     var buf = device.create_buffer(
-        UInt64(256), WGPUBufferUsage.STORAGE.value | WGPUBufferUsage.COPY_DST.value, False
+        UInt64(256), WGPUBufferUsage.STORAGE | WGPUBufferUsage.COPY_DST, False
     )
 
     var bgl_entries: List[WGPUBindGroupLayoutEntry] = [make_storage_bgl_entry(UInt32(0))]

@@ -78,7 +78,7 @@ def main() raises:
     var texture = device.create_texture(
         UInt32(2), UInt32(2), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.TEXTURE_BINDING.value | WGPUTextureUsage.COPY_DST.value,
+        WGPUTextureUsage.TEXTURE_BINDING | WGPUTextureUsage.COPY_DST,
         UInt32(2), UInt32(1), UInt32(1),
         "texture_sample_tex"
     )
@@ -92,7 +92,7 @@ def main() raises:
 
     var staging = device.create_buffer(
         UInt64(512),
-        WGPUBufferUsage.COPY_SRC.value | WGPUBufferUsage.COPY_DST.value,
+        WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST,
         False,
         "texture_sample_staging",
     )

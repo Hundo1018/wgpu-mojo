@@ -55,7 +55,7 @@ def test_render_pass_debug_groups() raises:
     var tex = device.create_texture(
         UInt32(4), UInt32(4), UInt32(1),
         WGPUTextureFormat.RGBA8Unorm,
-        WGPUTextureUsage.RENDER_ATTACHMENT.value,
+        WGPUTextureUsage.RENDER_ATTACHMENT,
         label="debug_rt",
     )
     var view = tex.create_view_default()

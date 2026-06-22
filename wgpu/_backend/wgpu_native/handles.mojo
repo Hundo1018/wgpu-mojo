@@ -181,3 +181,21 @@ struct RenderPassEncoderHandle(TrivialRegisterPassable, Copyable):
     @staticmethod
     def null() -> RenderPassEncoderHandle:
         return RenderPassEncoderHandle(null_opaque())
+
+
+@fieldwise_init
+struct RenderBundleHandle(TrivialRegisterPassable, Copyable):
+    var raw: OpaquePointer[MutUntrackedOrigin]
+
+    @staticmethod
+    def null() -> RenderBundleHandle:
+        return RenderBundleHandle(null_opaque())
+
+
+@fieldwise_init
+struct RenderBundleEncoderHandle(TrivialRegisterPassable, Copyable):
+    var raw: OpaquePointer[MutUntrackedOrigin]
+
+    @staticmethod
+    def null() -> RenderBundleEncoderHandle:
+        return RenderBundleEncoderHandle(null_opaque())

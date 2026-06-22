@@ -17,6 +17,9 @@ typedef struct { void* device;  uint32_t status; } MojoDeviceResult;
 typedef struct { uint32_t status; }               MojoMapResult;
 typedef struct { uint32_t status; }               MojoWorkDoneResult;
 typedef struct { uint32_t status; uint32_t type; void* message_data; size_t message_len; } MojoPopErrorResult;
+typedef struct { uint32_t status; const WGPUCompilationInfo* info; } MojoCompilationResult;
+typedef struct { uint32_t status; void* pipeline; } MojoComputePipelineAsyncResult;
+typedef struct { uint32_t status; void* pipeline; } MojoRenderPipelineAsyncResult;
 
 static void _wgpu_mojo_adapter_cb(
     WGPURequestAdapterStatus status,
@@ -71,12 +74,47 @@ static void _wgpu_mojo_pop_error_cb(
     }
 }
 
+static void _wgpu_mojo_compilation_info_cb(
+    WGPUCompilationInfoRequestStatus status,
+    WGPUCompilationInfo const* info,
+    void* ud1, void* ud2
+) {
+    MojoCompilationResult* r = (MojoCompilationResult*)ud1;
+    if (r) {
+        r->status = (uint32_t)status;
+        r->info   = info;
+    }
+}
+
+static void _wgpu_mojo_compute_pipeline_async_cb(
+    WGPUCreatePipelineAsyncStatus status,
+    WGPUComputePipeline pipeline,
+    WGPUStringView message,
+    void* ud1, void* ud2
+) {
+    MojoComputePipelineAsyncResult* r = (MojoComputePipelineAsyncResult*)ud1;
+    if (r) { r->status = (uint32_t)status; r->pipeline = (void*)pipeline; }
+}
+
+static void _wgpu_mojo_render_pipeline_async_cb(
+    WGPUCreatePipelineAsyncStatus status,
+    WGPURenderPipeline pipeline,
+    WGPUStringView message,
+    void* ud1, void* ud2
+) {
+    MojoRenderPipelineAsyncResult* r = (MojoRenderPipelineAsyncResult*)ud1;
+    if (r) { r->status = (uint32_t)status; r->pipeline = (void*)pipeline; }
+}
+
 /* Public getter functions — Mojo calls these to obtain function pointers */
-void* wgpu_mojo_get_adapter_callback(void)   { return (void*)_wgpu_mojo_adapter_cb; }
-void* wgpu_mojo_get_device_callback(void)    { return (void*)_wgpu_mojo_device_cb; }
-void* wgpu_mojo_get_buffer_map_callback(void){ return (void*)_wgpu_mojo_buffer_map_cb; }
-void* wgpu_mojo_get_queue_done_callback(void){ return (void*)_wgpu_mojo_queue_done_cb; }
-void* wgpu_mojo_get_pop_error_callback(void) { return (void*)_wgpu_mojo_pop_error_cb; }
+void* wgpu_mojo_get_adapter_callback(void)          { return (void*)_wgpu_mojo_adapter_cb; }
+void* wgpu_mojo_get_device_callback(void)           { return (void*)_wgpu_mojo_device_cb; }
+void* wgpu_mojo_get_buffer_map_callback(void)       { return (void*)_wgpu_mojo_buffer_map_cb; }
+void* wgpu_mojo_get_queue_done_callback(void)       { return (void*)_wgpu_mojo_queue_done_cb; }
+void* wgpu_mojo_get_pop_error_callback(void)        { return (void*)_wgpu_mojo_pop_error_cb; }
+void* wgpu_mojo_get_compilation_info_callback(void)         { return (void*)_wgpu_mojo_compilation_info_cb; }
+void* wgpu_mojo_get_compute_pipeline_async_callback(void)   { return (void*)_wgpu_mojo_compute_pipeline_async_cb; }
+void* wgpu_mojo_get_render_pipeline_async_callback(void)    { return (void*)_wgpu_mojo_render_pipeline_async_cb; }
 
 
 WGPUFuture wgpu_mojo_instance_request_adapter(
