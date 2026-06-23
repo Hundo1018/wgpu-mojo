@@ -35,3 +35,8 @@
 /test_pipeline_layout
 /test_debug_groups
 /output/*
+
+# Local-only docs (kept on disk, intentionally untracked / purged from history)
+/CLAUDE.md
+/BINDING_STATUS.md
+/MOJO_ROUGH_EDGES.md
