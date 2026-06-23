@@ -24,6 +24,7 @@ def test_create_render_bundle_encoder() raises:
     var valid = Int(enc.handle().raw) != 0
     enc^.abandon()
     assert_true(valid)
+    _ = device^  # keep device alive through encoder lifetime (ASAP-drop guard)
 
 
 def test_render_bundle_encoder_finish_abandon() raises:
@@ -34,12 +35,14 @@ def test_render_bundle_encoder_finish_abandon() raises:
     var enc = device.create_render_bundle_encoder(formats, "finish_test")
     var bundle = enc^.finish("my_bundle")
     assert_true(bundle)
+    _ = device^  # keep device alive through finish() (ASAP-drop guard)
 
     var device2 = create_test_device()
     var formats2 = List[UInt32]()
     formats2.append(WGPUTextureFormat.BGRA8Unorm)
     var enc2 = device2.create_render_bundle_encoder(formats2, "abandon_test")
     enc2^.abandon()
+    _ = device2^  # keep device alive through encoder lifetime (ASAP-drop guard)
 
 
 def main() raises:

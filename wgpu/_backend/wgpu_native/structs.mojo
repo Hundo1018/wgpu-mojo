@@ -28,7 +28,7 @@ from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 
 @fieldwise_init
 struct WGPUStringView(TrivialRegisterPassable):
-    var data: UnsafePointer[NoneType, MutAnyOrigin]  # void* equivalent; bitcast to read chars
+    var data: UnsafePointer[NoneType, MutUntrackedOrigin]  # void* equivalent; bitcast to read chars
     var length: UInt  # size_t
 
     @staticmethod
@@ -52,7 +52,7 @@ struct WGPUBorrowedStringView[
     var length: UInt
 
     def to_ffi(self) -> WGPUStringView:
-        var erased = rebind[UnsafePointer[NoneType, MutAnyOrigin]](self.data)
+        var erased = rebind[UnsafePointer[NoneType, MutUntrackedOrigin]](self.data)
         return WGPUStringView(erased, self.length)
 
 
