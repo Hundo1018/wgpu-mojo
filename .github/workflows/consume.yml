@@ -1,0 +1,148 @@
+name: Package Consume
+
+# Proves wgpu-mojo is usable *as a package* from a separate, isolated pixi
+# project (built fresh in a scratch dir — never the repo's own environment),
+# exactly like a downstream user. Two paths:
+#
+#   consume-path : adds THIS commit via `pixi add --path` → tests the code under
+#                  review. Runs on every push/PR, on Linux + macOS.
+#   consume-git  : runs the exact documented README flow (`pixi add --git` +
+#                  setup-native.sh) → catches install-doc bit-rot. Pulls `main`,
+#                  so it does not run on PRs.
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    - cron: "0 5 * * 1"   # Mondays 05:00 UTC — re-validate the public install path
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Consume the current checkout as a source package via `pixi add --path`.
+  # ---------------------------------------------------------------------------
+  consume-path:
+    name: Consume path (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout wgpu-mojo
+        uses: actions/checkout@v4
+
+      - name: Setup Pixi (CLI only — the consumer env is built in a scratch dir)
+        uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          run-install: false
+
+      - name: Create isolated consumer project
+        run: cp -r tests/integration/consumer "$RUNNER_TEMP/consumer"
+
+      - name: Add wgpu-mojo (this checkout) as a path source dependency
+        working-directory: ${{ runner.temp }}/consumer
+        # pixi <0.71 has no `pixi add --path`; declare the source dep in the
+        # manifest (pixi-build preview) — pixi build resolves & builds it on install.
+        run: printf '\n[dependencies.wgpu-mojo]\npath = "%s"\n' "$GITHUB_WORKSPACE" >> pixi.toml
+
+      - name: Compile assertion — `from wgpu import …` resolves
+        working-directory: ${{ runner.temp }}/consumer
+        run: pixi run check
+
+      # --- Linux only: prove the consumed runtime stack actually runs ---
+      - name: Install Mesa lavapipe (software Vulkan)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers vulkan-tools libvulkan1
+          LVP_ICD=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1)
+          echo "VK_ICD_FILENAMES=$LVP_ICD" >> "$GITHUB_ENV"
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
+
+      - name: Install native runtime libs into the consumer env
+        if: runner.os == 'Linux'
+        working-directory: ${{ runner.temp }}/consumer
+        run: pixi run bash "$GITHUB_WORKSPACE/scripts/setup-native.sh"
+
+      - name: Runtime assertion — construct GPU objects from the package
+        if: runner.os == 'Linux'
+        working-directory: ${{ runner.temp }}/consumer
+        continue-on-error: true   # lavapipe coverage; mirror ci.yml gpu-software
+        run: pixi run app
+
+  # ---------------------------------------------------------------------------
+  # Consume via the public, documented flow (`pixi add --git` from main).
+  # Does not run on PRs because it pulls `main`, not the PR branch.
+  # ---------------------------------------------------------------------------
+  consume-git:
+    name: Consume git (documented flow)
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Setup Pixi (CLI only)
+        uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          run-install: false
+
+      - name: Scaffold a fresh consumer project (README Step 1)
+        run: |
+          mkdir -p "$RUNNER_TEMP/consumer"
+          cat > "$RUNNER_TEMP/consumer/pixi.toml" <<'TOML'
+          [workspace]
+          name = "wgpu-consumer-git"
+          channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+          platforms = ["linux-64", "osx-arm64"]
+          version = "0.1.0"
+          preview = ["pixi-build"]
+
+          [dependencies]
+          mojo = ">=1.0.0b,<2"
+          TOML
+          cat > "$RUNNER_TEMP/consumer/app.mojo" <<'MOJO'
+          from wgpu import Instance
+          def main() raises:
+              var instance = Instance()
+              var adapter = instance.request_adapter()
+              print("wgpu-mojo consumed via --git OK")
+              _ = adapter^
+              _ = instance^
+          MOJO
+
+      - name: pixi add --git (README Step 1)
+        working-directory: ${{ runner.temp }}/consumer
+        run: pixi add --git https://github.com/Hundo1018/wgpu-mojo wgpu-mojo
+
+      - name: Compile assertion — package resolves
+        working-directory: ${{ runner.temp }}/consumer
+        run: pixi run mojo build app.mojo -o /dev/null
+
+      - name: Install Mesa lavapipe (software Vulkan)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers vulkan-tools libvulkan1
+          LVP_ICD=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1)
+          echo "VK_ICD_FILENAMES=$LVP_ICD" >> "$GITHUB_ENV"
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
+
+      - name: Install native runtime libs (README Step 2 — the documented one-liner)
+        working-directory: ${{ runner.temp }}/consumer
+        run: pixi run bash -c "curl -fsSL https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main/scripts/setup-native.sh | bash"
+
+      - name: Runtime assertion — construct GPU objects from the package
+        working-directory: ${{ runner.temp }}/consumer
+        continue-on-error: true
+        run: pixi run mojo run app.mojo

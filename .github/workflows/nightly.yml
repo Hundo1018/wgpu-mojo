@@ -49,8 +49,8 @@ jobs:
       - name: Install updated environment
         run: pixi install
 
-      - name: Download libwgpu_native
-        run: bash scripts/setup-native.sh
+      - name: Download libwgpu_native + build C bridges
+        run: pixi run bash scripts/setup-native.sh
 
       - name: Build C callback bridges
         run: |
@@ -65,6 +65,19 @@ jobs:
         id: compile_check
         run: pixi run check-compile
 
+      # Extra signal: exercise a real GPU codepath against the new nightly via
+      # software Vulkan. continue-on-error keeps this off the lock-bump gate.
+      - name: Headless GPU smoke (lavapipe)
+        id: gpu_smoke
+        continue-on-error: true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers vulkan-tools libvulkan1
+          LVP_ICD=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1)
+          export VK_ICD_FILENAMES="$LVP_ICD"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          pixi run test-compute
+
       # --- SUCCESS PATH: commit the updated lock ---
       - name: Commit updated pixi.lock
         if: success()
@@ -75,10 +88,9 @@ jobs:
             echo "pixi.lock unchanged — already on latest nightly."
           else
             git add pixi.lock
-            git commit -m "chore: bump pixi.lock to ${{ steps.update.outputs.mojo_version }}
-
-Auto-committed by nightly tracking workflow.
-All non-GPU tests and compile-checks passed."
+            git commit \
+              -m "chore: bump pixi.lock to ${{ steps.update.outputs.mojo_version }}" \
+              -m "Auto-committed by nightly tracking workflow. All non-GPU tests and compile-checks passed."
             git push
           fi
 

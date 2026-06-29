@@ -1,0 +1,85 @@
+name: Release
+
+# Tag a version (vX.Y.Z) → build a self-contained .conda for each platform with
+# rattler-build (downloads wgpu-native, compiles the C bridges, bundles the
+# mojopkg) and attach the artifacts to a GitHub Release. No external secrets:
+# the built-in GITHUB_TOKEN is enough to publish the Release.
+#
+# Release a version:
+#   1. bump `version` in pixi.toml and conda.recipe/recipe.yaml
+#   2. git tag vX.Y.Z && git push --tags
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:   # dry-run: builds artifacts, skips the Release publish
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build .conda (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-64
+          - os: macos-14
+            target: osx-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches recipe version
+        if: github.ref_type == 'tag'
+        run: |
+          RECIPE_VER=$(grep -E '^\s*version:' conda.recipe/recipe.yaml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          echo "recipe version: $RECIPE_VER | tag version: $TAG_VER"
+          if [ "$RECIPE_VER" != "$TAG_VER" ]; then
+            echo "::error::Tag v$TAG_VER does not match conda.recipe version $RECIPE_VER. Bump the recipe (and pixi.toml) before tagging."
+            exit 1
+          fi
+
+      - name: Setup Pixi (CLI only — rattler-build runs via pixi exec)
+        uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          run-install: false
+
+      - name: Build conda package
+        run: |
+          pixi exec rattler-build build \
+            --recipe conda.recipe/recipe.yaml \
+            -c https://conda.modular.com/max-nightly \
+            -c conda-forge \
+            --output-dir output
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-${{ matrix.target }}
+          path: output/**/*.conda
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Attach .conda files to the Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*.conda
+          generate_release_notes: true
+          fail_on_unmatched_files: true

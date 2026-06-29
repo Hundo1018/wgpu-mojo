@@ -1,0 +1,29 @@
+# Isolated consumer project for the `pixi add` integration test.
+#
+# This is NOT part of the wgpu-mojo workspace — it is a standalone pixi project
+# that depends on wgpu-mojo *as a package*, exactly like a downstream user would.
+# CI copies this directory to a scratch dir and runs one of:
+#
+#   pixi add wgpu-mojo --path <wgpu-mojo-checkout>     # consume-path: this PR's code
+#   pixi add --git https://github.com/Hundo1018/wgpu-mojo wgpu-mojo   # consume-git: documented flow
+#
+# then `pixi run check` (compile-only) and, with native libs installed, `pixi run app`.
+[workspace]
+name = "wgpu-consumer-test"
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+version = "0.1.0"
+preview = ["pixi-build"]
+
+[dependencies]
+mojo = ">=1.0.0b,<2"
+# wgpu-mojo is added by CI via `pixi add` (path or git) so the same fixture
+# exercises both consumption paths without committing a fixed source location.
+
+[tasks]
+# Compile-only assertion: proves `from wgpu import …` resolves against the
+# installed wgpu.mojopkg. Needs no native .so files, so it runs on every OS.
+check = "mojo build app.mojo -o /dev/null"
+# Runtime assertion: actually constructs GPU objects. Requires the native
+# runtime libs (run setup-native.sh first) and a Vulkan/Metal adapter.
+app = "mojo run app.mojo"

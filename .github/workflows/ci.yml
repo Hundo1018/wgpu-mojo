@@ -15,65 +15,87 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Callback Bridge
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pixi
-        uses: prefix-dev/setup-pixi@v0.8.0
-
-      - name: Download libwgpu_native
-        run: bash scripts/setup-native.sh
-
-      - name: Build C callback bridges
-        run: |
-          pixi run build-callbacks
-          pixi run build-callback-probe
-
+  # ---------------------------------------------------------------------------
+  # Non-GPU correctness on every supported platform.
+  # Each job self-contains the native setup, so there is no shared "build" job
+  # whose output has to be threaded through (the previous layout rebuilt the
+  # bridge in every job anyway).
+  # ---------------------------------------------------------------------------
   test:
-    name: Non-GPU Test Suite
-    runs-on: ubuntu-latest
-    needs: build
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]   # linux-64 and osx-arm64 — the declared platforms
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Pixi
         uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          cache: true
+          activate-environment: true   # exports CONDA_PREFIX/PATH so setup-native.sh works
 
-      - name: Download libwgpu_native
+      - name: Install wgpu-native + build C bridges
         run: bash scripts/setup-native.sh
 
       - name: Run non-GPU tests
         run: pixi run test
 
-  compile-check:
-    name: Compile-check All Tests & Examples
+      - name: Compile-check all tests & examples (catches API drift)
+        run: pixi run check-compile
+
+  # ---------------------------------------------------------------------------
+  # Headless GPU tests on a free runner via Mesa lavapipe (software Vulkan).
+  # No physical GPU and no display server are needed — only the compute/headless
+  # paths run here. Windowed tests (triangle/fire/glfw) live in the self-hosted
+  # GPU guide (docs/CI_CD.md).
+  #
+  # continue-on-error while we confirm lavapipe covers every feature these tests
+  # use; flip to required once the job is consistently green.
+  # ---------------------------------------------------------------------------
+  gpu-software:
+    name: Headless GPU (lavapipe)
     runs-on: ubuntu-latest
-    needs: build
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Mesa lavapipe (software Vulkan)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-vulkan-drivers vulkan-tools libvulkan1
+
+      - name: Select lavapipe ICD
+        run: |
+          LVP_ICD=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -1)
+          if [ -z "$LVP_ICD" ]; then
+            echo "lavapipe ICD not found" >&2
+            exit 1
+          fi
+          echo "Using lavapipe ICD: $LVP_ICD"
+          echo "VK_ICD_FILENAMES=$LVP_ICD" >> "$GITHUB_ENV"
+          echo "LIBGL_ALWAYS_SOFTWARE=1" >> "$GITHUB_ENV"
+          echo "WGPU_BACKEND=vulkan" >> "$GITHUB_ENV"
+
+      - name: Show Vulkan adapter
+        run: vulkaninfo --summary || true
+
       - name: Setup Pixi
         uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          cache: true
+          activate-environment: true
 
-      - name: Download libwgpu_native
+      - name: Install wgpu-native + build C bridges
         run: bash scripts/setup-native.sh
 
-      - name: Compile-check (GPU-free, catches API drift)
-        run: pixi run check-compile
-
-  test-gpu:
-    name: GPU Tests (run locally with pixi run test-*)
-    runs-on: ubuntu-latest
-    if: false
-    steps:
-      - name: Note
+      - name: Run headless GPU tests
         run: |
-          echo "GPU tests require hardware and are run locally."
-          echo "Use: pixi run test-buffer, pixi run test-compute, etc."
-          echo "Or set up a self-hosted runner with GPU access."
+          pixi run test-instance
+          pixi run test-device
+          pixi run test-buffer
+          pixi run test-compute
