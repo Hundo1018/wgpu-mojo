@@ -36,6 +36,7 @@ FILES=(
   examples/clear_screen.mojo
   examples/triangle_window.mojo
   examples/fire_simulation.mojo
+  examples/shadertoy.mojo
   examples/texture_sample.mojo
   examples/input_demo.mojo
   examples/native_extensions.mojo
