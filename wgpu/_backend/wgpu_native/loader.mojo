@@ -45,6 +45,8 @@ from wgpu._backend.wgpu_native.structs import (
     WGPULimits, WGPUSupportedFeatures,
     WGPUSupportedWGSLLanguageFeatures,
     WGPUCompilationInfoCallbackInfo,
+    WGPUCreateComputePipelineAsyncCallbackInfo,
+    WGPUCreateRenderPipelineAsyncCallbackInfo,
     WGPUPopErrorScopeCallbackInfo,
     WGPUQueueWorkDoneCallbackInfo,
     WGPUExtent3D,

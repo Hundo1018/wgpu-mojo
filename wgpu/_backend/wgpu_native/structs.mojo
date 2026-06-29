@@ -183,6 +183,7 @@ struct WGPUCreateComputePipelineAsyncCallbackInfo(TrivialRegisterPassable):
     var userdata2: OpaquePointer[MutUntrackedOrigin]
 
 
+@fieldwise_init
 struct WGPUCreateRenderPipelineAsyncCallbackInfo(TrivialRegisterPassable):
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var mode: UInt32

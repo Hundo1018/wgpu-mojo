@@ -48,7 +48,7 @@ glfw = ">=3.4,<4"
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
-build-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -lwgpu_native -Wl,-rpath,'$ORIGIN' && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"
+build-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -L$CONDA_PREFIX/lib -lwgpu_native -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"
 build-callback-probe = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.so ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'"
 
 # Compile-check all tests (except abi_probes — intentional negative probes)
