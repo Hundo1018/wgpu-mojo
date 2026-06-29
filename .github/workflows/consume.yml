@@ -45,6 +45,10 @@ jobs:
       - name: Setup Pixi (CLI only — the consumer env is built in a scratch dir)
         uses: prefix-dev/setup-pixi@v0.8.0
         with:
+          # pixi-build-mojo needs a `pixi-build-api-version` that only newer pixi
+          # binaries provide; the action's default pixi is too old, so the build
+          # backend fails to initialize. Pin a version known to ship it.
+          pixi-version: v0.70.2
           run-install: false
 
       - name: Create isolated consumer project
@@ -96,6 +100,8 @@ jobs:
       - name: Setup Pixi (CLI only)
         uses: prefix-dev/setup-pixi@v0.8.0
         with:
+          # See consume-path: pin a pixi new enough for the pixi-build-mojo backend.
+          pixi-version: v0.70.2
           run-install: false
 
       - name: Scaffold a fresh consumer project (README Step 1)
