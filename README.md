@@ -16,14 +16,14 @@ Compute *and* graphics on every backend Vulkan / Metal / DX12 supports — from 
 
 <table>
 <tr>
-<td width="34%"><img src="assets/fire_demo.gif" alt="GPU fire simulation" width="100%"></td>
 <td width="33%"><img src="assets/plasma.gif" alt="animated plasma" width="100%"></td>
 <td width="33%"><img src="assets/metaballs.gif" alt="2D SDF metaballs" width="100%"></td>
+<td width="33%"><img src="assets/raymarch.gif" alt="raymarched 3D SDF" width="100%"></td>
 </tr>
 <tr>
-<td align="center"><code>example-fire-sim</code><br/>compute → render</td>
 <td align="center"><code>example-plasma</code><br/>fullscreen fragment shader</td>
 <td align="center"><code>example-metaballs</code><br/>2D signed distance fields</td>
+<td align="center"><code>example-raymarch</code><br/>raymarched 3D SDF</td>
 </tr>
 </table>
 
@@ -145,6 +145,7 @@ Full source: [`examples/compute_add_v2.mojo`](examples/compute_add_v2.mojo) · r
 | `pixi run hello` · `example-triangle` | ✓ | The classic RGB "hello triangle" |
 | `pixi run example-plasma` | ✓ | **Fragment-shader host** — edit one WGSL `shade` function to make art |
 | `pixi run example-metaballs` | ✓ | 2D signed-distance fields (metaballs) |
+| `pixi run example-raymarch` | ✓ | Raymarched 3D SDF scene (camera orbit + lighting) |
 | `pixi run example-texture-sample` | ✓ | Texture + sampler on a fullscreen quad |
 | `pixi run example-fire-sim` | ✓ | Doom-style fire: compute + render ping-pong |
 | `pixi run example-input` | ✓ | GLFW keyboard / mouse polling |
@@ -154,7 +155,11 @@ Full source: [`examples/compute_add_v2.mojo`](examples/compute_add_v2.mojo) · r
 [`examples/plasma.mojo`](examples/plasma.mojo) is a fullscreen fragment-shader host that
 hands your WGSL a small set of uniforms — `resolution`, `time`, `mouse`, `frame`. Copy it,
 edit only the `shade` function, and climb the ladder:
-**plasma → [2D SDF](examples/metaballs.mojo) → raymarching**.
+**plasma → [2D SDF](examples/metaballs.mojo) → [raymarching](examples/raymarch.mojo)**.
+
+> The three GIFs above are rendered headlessly on the GPU and read back frame by
+> frame (`pixi run render-gifs`) — not screen-recorded, because the wgpu surface
+> presents via a GPU flip that screen grabbers can't capture.
 
 ```wgsl
 fn shade(frag_coord: vec2<f32>) -> vec3<f32> {

@@ -99,6 +99,9 @@ example-native-extensions = { cmd = "mojo run -I . examples/native_extensions.mo
 example-fire-sim  = { cmd = "mojo run -I . examples/fire_simulation.mojo", depends-on = ["build-callbacks"] }
 example-plasma    = { cmd = "mojo run -I . examples/plasma.mojo", depends-on = ["build-callbacks"] }
 example-metaballs = { cmd = "mojo run -I . examples/metaballs.mojo", depends-on = ["build-callbacks"] }
+example-raymarch  = { cmd = "mojo run -I . examples/raymarch.mojo", depends-on = ["build-callbacks"] }
+# Headless: render showcase frames on the GPU + assemble README GIFs (needs a GPU).
+render-gifs = { cmd = "mojo run -I . tools/render_shader_gif.mojo && bash scripts/make-gifs.sh", depends-on = ["build-callbacks"] }
 
 # New Layer 3 GPU facade examples
 example-compute-v2 = { cmd = "mojo run -I . examples/compute_add_v2.mojo", depends-on = ["build-callbacks"] }

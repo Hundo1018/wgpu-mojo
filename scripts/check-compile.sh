@@ -38,6 +38,8 @@ FILES=(
   examples/fire_simulation.mojo
   examples/plasma.mojo
   examples/metaballs.mojo
+  examples/raymarch.mojo
+  tools/render_shader_gif.mojo
   examples/texture_sample.mojo
   examples/input_demo.mojo
   examples/native_extensions.mojo
