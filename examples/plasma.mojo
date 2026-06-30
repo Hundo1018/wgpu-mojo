@@ -1,26 +1,22 @@
 """
-examples/shadertoy.mojo — a ShaderToy-style fullscreen fragment-shader host.
+examples/plasma.mojo — an animated fullscreen fragment-shader example.
 
-This is the lowest-friction way to play with GPU fragment shaders in wgpu-mojo:
-the Mojo side just opens a window, owns a tiny uniform buffer, and draws one
-fullscreen triangle pair every frame.  ALL the visuals live in the WGSL string
-below — to make your own effect you only edit `mainImage`, exactly like on
-https://www.shadertoy.com/ .
+The lowest-friction way to play with GPU fragment shaders in wgpu-mojo: the Mojo
+side just opens a window, owns a tiny uniform buffer, and draws one fullscreen
+triangle pair every frame. ALL the visuals live in the WGSL string below — to
+make your own effect you only edit the `shade` function.
 
-ShaderToy conventions provided as uniforms (see the `Uniforms` struct in WGSL):
-    iResolution : vec3<f32>   viewport size in pixels (z = 1.0)
-    iTime       : f32         seconds since start
-    iMouse      : vec4<f32>   mouse (xy = current, zw = click) — 0 here (no input wired)
-    iFrame      : f32         frame counter
+Uniforms handed to the shader (see the `Uniforms` struct in WGSL):
+    resolution : vec3<f32>   viewport size in pixels (z = 1.0)
+    time       : f32         seconds since start
+    mouse      : vec4<f32>   mouse (xy = current, zw = click) — 0 here (no input wired)
+    frame      : f32         frame counter
 
-Difficulty ladder (this file is tier 1 — a classic plasma):
-    1. plasma / gradient   ← you are here
-    2. 2D SDF shapes / noise
-    3. raymarching
-Copy this file, keep the host, swap `mainImage`, and climb the ladder.
+This file is the simplest of the fragment-shader examples (a classic plasma);
+see examples/metaballs.mojo for a 2D signed-distance-field scene.
 
 Run:
-    pixi run example-shadertoy
+    pixi run example-plasma
 """
 
 from wgpu import (
@@ -39,16 +35,16 @@ comptime WIN_H = 540
 # ---------------------------------------------------------------------------
 # WGSL — the only part you edit to make a new effect.
 #
-# `mainImage` mirrors ShaderToy's `void mainImage(out vec4 fragColor,
-# in vec2 fragCoord)`.  The host fragment entry flips Y so fragCoord uses
-# ShaderToy's bottom-left origin, then calls mainImage for every pixel.
+# `shade` returns the colour for one pixel. `frag_coord` is in pixels with the
+# origin at the bottom-left; the host fragment entry flips Y and calls it once
+# per pixel.
 # ---------------------------------------------------------------------------
-comptime SHADERTOY_WGSL = """
+comptime PLASMA_WGSL = """
 struct Uniforms {
-    iResolution: vec3<f32>,
-    iTime: f32,
-    iMouse: vec4<f32>,
-    iFrame: f32,
+    resolution: vec3<f32>,
+    time: f32,
+    mouse: vec4<f32>,
+    frame: f32,
     _pad0: f32,
     _pad1: f32,
     _pad2: f32,
@@ -66,11 +62,11 @@ fn vs_main(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4<f32> {
 }
 
 // ===========================================================================
-// EDIT BELOW — this is your ShaderToy `mainImage`.
+// EDIT BELOW — return the colour for one pixel.
 // ===========================================================================
-fn mainImage(fragColor: ptr<function, vec4<f32>>, fragCoord: vec2<f32>) {
-    let uv = fragCoord / U.iResolution.xy;
-    let t = U.iTime;
+fn shade(frag_coord: vec2<f32>) -> vec3<f32> {
+    let uv = frag_coord / U.resolution.xy;
+    let t = U.time;
 
     // Classic summed-sine plasma.
     var v = 0.0;
@@ -82,51 +78,46 @@ fn mainImage(fragColor: ptr<function, vec4<f32>>, fragCoord: vec2<f32>) {
     v += sin(sqrt(cx * cx + cy * cy) * 20.0 + t);
     v = v * 0.5;
 
-    let col = vec3<f32>(
+    return vec3<f32>(
         sin(v * 3.14159),
         sin(v * 3.14159 + 2.09440),
         sin(v * 3.14159 + 4.18879),
     ) * 0.5 + vec3<f32>(0.5);
-    *fragColor = vec4<f32>(col, 1.0);
 }
 // ===========================================================================
 
 @fragment
 fn fs_main(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
-    // ShaderToy origin is bottom-left; @builtin(position) is top-left.
-    let fragCoord = vec2<f32>(frag.x, U.iResolution.y - frag.y);
-    var col = vec4<f32>(0.0, 0.0, 0.0, 1.0);
-    mainImage(&col, fragCoord);
-    return col;
+    // @builtin(position) is top-left origin; flip Y to bottom-left.
+    let frag_coord = vec2<f32>(frag.x, U.resolution.y - frag.y);
+    return vec4<f32>(shade(frag_coord), 1.0);
 }
 """
 
 
 def main() raises:
-    print("=== wgpu-mojo: ShaderToy host (plasma) ===")
+    print("=== wgpu-mojo: plasma (fullscreen fragment shader) ===")
     var instance = Instance()
     var adapter = instance.request_adapter()
     var device = adapter.request_device()
-    var canvas = RenderCanvas(
-        adapter, device, WIN_W, WIN_H, "wgpu-mojo · ShaderToy host"
-    )
+    var canvas = RenderCanvas(adapter, device, WIN_W, WIN_H, "wgpu-mojo · plasma")
 
-    # Uniform buffer: 12 × f32 = 48 bytes (std140-safe ShaderToy layout).
+    # Uniform buffer: 12 × f32 = 48 bytes (std140-safe layout).
     var uniforms = device.create_buffer(
         UInt64(48),
         WGPUBufferUsage.UNIFORM | WGPUBufferUsage.COPY_DST,
-        label="shadertoy_uniforms",
+        label="plasma_uniforms",
     )
 
     var bgl = device.create_bind_group_layout(
         [BGL.buffer_uniform(UInt32(0), WGPUShaderStage.FRAGMENT.value)],
-        "shadertoy_bgl",
+        "plasma_bgl",
     )
-    var pl = device.create_pipeline_layout(bgl, "shadertoy_pl")
-    var shader = device.create_shader_module_wgsl(SHADERTOY_WGSL, "shadertoy")
+    var pl = device.create_pipeline_layout(bgl, "plasma_pl")
+    var shader = device.create_shader_module_wgsl(PLASMA_WGSL, "plasma")
     var pipeline = device.create_render_pipeline(
         shader, "vs_main", "fs_main", canvas.surface_format(), pl,
-        label="shadertoy_pipeline",
+        label="plasma_pipeline",
     )
     _ = shader^
     _ = pl^
@@ -139,7 +130,7 @@ def main() raises:
                 UInt64(0), WGPU_WHOLE_SIZE, null_opaque(), null_opaque(),
             )
         ],
-        "shadertoy_bg",
+        "plasma_bg",
     )
     _ = bgl^
 
@@ -155,27 +146,27 @@ def main() raises:
         if not frame.is_renderable():
             continue
 
-        # iResolution, iTime, iMouse(0), iFrame, padding → 48 bytes.
+        # resolution, time, mouse(0), frame, padding → 48 bytes.
         var u = List[Float32](capacity=12)
-        u.append(Float32(WIN_W))   # iResolution.x
-        u.append(Float32(WIN_H))   # iResolution.y
-        u.append(Float32(1.0))     # iResolution.z
-        u.append(elapsed)          # iTime
-        u.append(Float32(0.0))     # iMouse.x
-        u.append(Float32(0.0))     # iMouse.y
-        u.append(Float32(0.0))     # iMouse.z
-        u.append(Float32(0.0))     # iMouse.w
-        u.append(Float32(frame_idx))  # iFrame
+        u.append(Float32(WIN_W))   # resolution.x
+        u.append(Float32(WIN_H))   # resolution.y
+        u.append(Float32(1.0))     # resolution.z
+        u.append(elapsed)          # time
+        u.append(Float32(0.0))     # mouse.x
+        u.append(Float32(0.0))     # mouse.y
+        u.append(Float32(0.0))     # mouse.z
+        u.append(Float32(0.0))     # mouse.w
+        u.append(Float32(frame_idx))  # frame
         u.append(Float32(0.0))
         u.append(Float32(0.0))
         u.append(Float32(0.0))
         device.queue_write_data(uniforms, UInt64(0), u)
 
-        var enc = device.create_command_encoder("shadertoy_frame")
+        var enc = device.create_command_encoder("plasma_frame")
         var rpass = enc.begin_surface_clear_pass(
             frame.texture,
             WGPUColor(Float64(0), Float64(0), Float64(0), Float64(1)),
-            "shadertoy_pass",
+            "plasma_pass",
         )
         rpass.set_pipeline(pipeline)
         rpass.set_bind_group(UInt32(0), bind_group)

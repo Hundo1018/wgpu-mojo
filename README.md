@@ -17,13 +17,13 @@ Compute *and* graphics on every backend Vulkan / Metal / DX12 supports — from 
 <table>
 <tr>
 <td width="34%"><img src="assets/fire_demo.gif" alt="GPU fire simulation" width="100%"></td>
-<td width="33%"><img src="assets/shadertoy_plasma.png" alt="ShaderToy plasma" width="100%"></td>
-<td width="33%"><img src="assets/shadertoy_sdf.png" alt="2D SDF metaballs" width="100%"></td>
+<td width="33%"><img src="assets/plasma.gif" alt="animated plasma" width="100%"></td>
+<td width="33%"><img src="assets/metaballs.gif" alt="2D SDF metaballs" width="100%"></td>
 </tr>
 <tr>
 <td align="center"><code>example-fire-sim</code><br/>compute → render</td>
-<td align="center"><code>example-shadertoy</code><br/>fragment shader host</td>
-<td align="center"><code>example-shadertoy-sdf</code><br/>2D signed distance fields</td>
+<td align="center"><code>example-plasma</code><br/>fullscreen fragment shader</td>
+<td align="center"><code>example-metaballs</code><br/>2D signed distance fields</td>
 </tr>
 </table>
 
@@ -143,23 +143,23 @@ Full source: [`examples/compute_add_v2.mojo`](examples/compute_add_v2.mojo) · r
 | `pixi run example-enumerate` | – | List every GPU adapter / backend |
 | `pixi run example-clear` | ✓ | Cornflower-blue window — minimal GPU smoke test |
 | `pixi run hello` · `example-triangle` | ✓ | The classic RGB "hello triangle" |
-| `pixi run example-shadertoy` | ✓ | **ShaderToy host** — edit one WGSL `mainImage` to make art |
-| `pixi run example-shadertoy-sdf` | ✓ | 2D signed-distance fields (metaballs) |
+| `pixi run example-plasma` | ✓ | **Fragment-shader host** — edit one WGSL `shade` function to make art |
+| `pixi run example-metaballs` | ✓ | 2D signed-distance fields (metaballs) |
 | `pixi run example-texture-sample` | ✓ | Texture + sampler on a fullscreen quad |
 | `pixi run example-fire-sim` | ✓ | Doom-style fire: compute + render ping-pong |
 | `pixi run example-input` | ✓ | GLFW keyboard / mouse polling |
 
 ### Make your own shader in 60 seconds
 
-[`examples/shadertoy.mojo`](examples/shadertoy.mojo) is a fullscreen fragment-shader host
-that hands your WGSL the usual ShaderToy uniforms — `iResolution`, `iTime`, `iMouse`,
-`iFrame`. Copy it, edit only `mainImage`, and climb the ladder:
-**plasma → [2D SDF](examples/shadertoy_sdf.mojo) → raymarching**.
+[`examples/plasma.mojo`](examples/plasma.mojo) is a fullscreen fragment-shader host that
+hands your WGSL a small set of uniforms — `resolution`, `time`, `mouse`, `frame`. Copy it,
+edit only the `shade` function, and climb the ladder:
+**plasma → [2D SDF](examples/metaballs.mojo) → raymarching**.
 
 ```wgsl
-fn mainImage(fragColor: ptr<function, vec4<f32>>, fragCoord: vec2<f32>) {
-    let uv = fragCoord / U.iResolution.xy;
-    *fragColor = vec4<f32>(uv, 0.5 + 0.5 * sin(U.iTime), 1.0);
+fn shade(frag_coord: vec2<f32>) -> vec3<f32> {
+    let uv = frag_coord / U.resolution.xy;
+    return vec3<f32>(uv, 0.5 + 0.5 * sin(U.time));
 }
 ```
 
