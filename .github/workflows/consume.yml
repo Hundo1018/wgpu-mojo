@@ -22,6 +22,11 @@ on:
   schedule:
     - cron: "0 5 * * 1"   # Mondays 05:00 UTC — re-validate the public install path
   workflow_dispatch:
+  # Nightly's GITHUB_TOKEN auto-commit can't trigger `push` (anti-recursion), so
+  # chain off Nightly's completion to keep the auto-bumped lock covered here too.
+  workflow_run:
+    workflows: ["Nightly Mojo Tracking"]
+    types: [completed]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -33,6 +38,10 @@ jobs:
   # ---------------------------------------------------------------------------
   consume-path:
     name: Consume path (${{ matrix.os }})
+    # Only chain off a *successful* nightly; unaffected for push/PR.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     strategy:
       fail-fast: false
       matrix:
@@ -41,6 +50,10 @@ jobs:
     steps:
       - name: Checkout wgpu-mojo
         uses: actions/checkout@v4
+        with:
+          # Branch tip = the freshly pushed auto-commit (the run's head_sha is the
+          # pre-bump commit). Empty for push/PR → checkout's default ref. See ci.yml.
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Setup Pixi (CLI only — the consumer env is built in a scratch dir)
         uses: prefix-dev/setup-pixi@v0.8.0
@@ -95,7 +108,8 @@ jobs:
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
       - name: Setup Pixi (CLI only)
         uses: prefix-dev/setup-pixi@v0.8.0

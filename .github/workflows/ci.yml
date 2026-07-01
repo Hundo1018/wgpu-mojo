@@ -9,6 +9,13 @@ on:
     branches:
       - develop
       - main
+  # Nightly auto-commits its pixi.lock bump with the default GITHUB_TOKEN, and
+  # GitHub's anti-recursion rule means that push does NOT trigger this workflow.
+  # Chain off Nightly's completion instead so the auto-bumped lock still gets the
+  # full macOS matrix + lavapipe coverage. See the `if:`/`ref:` notes below.
+  workflow_run:
+    workflows: ["Nightly Mojo Tracking"]
+    types: [completed]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,6 +30,11 @@ jobs:
   # ---------------------------------------------------------------------------
   test:
     name: Test (${{ matrix.os }})
+    # On a workflow_run chain, only proceed if Nightly actually succeeded — a
+    # failed/cancelled nightly must not gate-open CI. (Always runs for push/PR.)
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +43,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # For workflow_run, checkout defaults to the workflow file's ref, NOT the
+          # triggering run's commit — and the run's head_sha is the PRE-bump commit
+          # anyway (Nightly commits *after* it starts). Check out the branch tip,
+          # which is the freshly pushed auto-commit. Empty for push/PR → github.ref.
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Setup Pixi
         uses: prefix-dev/setup-pixi@v0.8.0
@@ -58,11 +76,16 @@ jobs:
   # ---------------------------------------------------------------------------
   gpu-software:
     name: Headless GPU (lavapipe)
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}   # branch tip = auto-commit; see `test` job
 
       - name: Install Mesa lavapipe (software Vulkan)
         run: |
