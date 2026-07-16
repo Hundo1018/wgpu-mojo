@@ -67,7 +67,7 @@ struct RenderBundle(Movable, Boolable):
 
 
 @explicit_destroy("Must call finish() or abandon()")
-struct RenderBundleEncoder(Movable):
+struct RenderBundleEncoder(Movable, ImplicitlyDeletable where False):
     """Records draw commands into a RenderBundle.
 
     Linear type: the compiler enforces that finish() or abandon() is called

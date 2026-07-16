@@ -21,7 +21,7 @@ from wgpu.render_bundle import RenderBundle
 
 
 @explicit_destroy("Must call end() or abandon()")
-struct FrameRenderPass(Movable):
+struct FrameRenderPass(Movable, ImplicitlyDeletable where False):
     """High-level linear render pass that retains the frame TextureView.
 
     This wrapper keeps the underlying TextureView alive for the full pass
@@ -83,7 +83,7 @@ struct FrameRenderPass(Movable):
 
 
 @explicit_destroy("Must call end() or abandon()")
-struct RenderPassEncoder(Movable):
+struct RenderPassEncoder(Movable, ImplicitlyDeletable where False):
     """RAII wrapper around a WGPURenderPassEncoder.
 
     Linear type: the compiler enforces that `end()` or `abandon()` is

@@ -18,7 +18,7 @@ from wgpu.query_set import QuerySet
 
 
 @explicit_destroy("Must call end() or abandon()")
-struct ComputePassEncoder(Movable):
+struct ComputePassEncoder(Movable, ImplicitlyDeletable where False):
     """RAII wrapper around a WGPUComputePassEncoder.
 
     Linear type: the compiler enforces that `end()` or `abandon()` is

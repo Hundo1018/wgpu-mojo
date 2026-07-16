@@ -68,7 +68,7 @@ struct CommandBuffer(Movable, Boolable):
 
 
 @explicit_destroy("Must call finish() or abandon()")
-struct CommandEncoder(Movable):
+struct CommandEncoder(Movable, ImplicitlyDeletable where False):
     """RAII wrapper around a WGPUCommandEncoder.
 
     This is a linear type: the compiler enforces that you call `finish()`
