@@ -81,8 +81,18 @@ curl -fsSL https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main/scripts/se
 
 ### Check it works
 
+`mojo` has no `-c` flag, so write a one-file smoke test and run it:
+
 ```bash
-pixi run mojo -c 'from wgpu import Instance; _ = Instance(); print("wgpu-mojo OK")'
+cat > wgpu_check.mojo <<'EOF'
+from wgpu import Instance
+
+
+def main() raises:
+    _ = Instance()
+    print("wgpu-mojo OK")
+EOF
+pixi run mojo run wgpu_check.mojo
 ```
 
 ---

@@ -140,5 +140,16 @@ ls -lh "${INSTALL_DIR}/${WGPU_LIB}" \
        "${INSTALL_DIR}/${GLFW_CB_OUT}" 2>/dev/null || true
 
 echo ""
-echo "==> Done. Test with:"
-echo "    mojo -c 'from wgpu import Instance; var i = Instance(); print(\"wgpu OK\")'"
+cat <<'EOF'
+==> Done. Test with (mojo has no -c flag, so use a file):
+
+cat > wgpu_check.mojo <<'MOJO'
+from wgpu import Instance
+
+
+def main() raises:
+    _ = Instance()
+    print("wgpu OK")
+MOJO
+mojo run wgpu_check.mojo
+EOF
