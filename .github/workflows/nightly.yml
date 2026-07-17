@@ -33,6 +33,18 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Self-healing: the failure-tracking steps below depend on this label
+      # existing. If it's ever deleted, `gh issue create --label` hard-fails
+      # and the failure silently produces no tracking issue at all — recreate
+      # it unconditionally every run (no-op once it exists).
+      - name: Ensure nightly-failure label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "nightly-failure" \
+            --description "Auto-filed by nightly.yml when the Mojo nightly tracking build breaks" \
+            --color "b60205" 2>/dev/null || true
+
       - name: Setup Pixi (without locked env — we're about to update)
         uses: prefix-dev/setup-pixi@v0.8.0
         with:
