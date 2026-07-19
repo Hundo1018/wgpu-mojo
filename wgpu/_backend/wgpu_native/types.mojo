@@ -362,19 +362,10 @@ struct WGPUSType:
     comptime ExternalTextureBindingEntry: UInt32 = 0x0000000E
     comptime CompatibilityModeLimits: UInt32 = 0x0000000F
     comptime TextureBindingViewDimension: UInt32 = 0x00000010
-    # wgpu-native extension STypes (from wgpu.h, start at 0x00030001)
-    comptime InstanceExtras: UInt32 = 0x00030001
-    comptime DeviceExtras: UInt32 = 0x00030002
-    comptime NativeLimits: UInt32 = 0x00030003
-    comptime PipelineLayoutExtras: UInt32 = 0x00030004
-    comptime ShaderModuleGLSLDescriptor: UInt32 = 0x00030005
-    comptime SupportedLimitsExtras: UInt32 = 0x00030003
-    comptime PushConstantRange: UInt32 = 0x00030006
-    comptime InstanceEnumerateAdapterOptions: UInt32 = 0x00030007
-    comptime BindGroupEntryExtras: UInt32 = 0x00030008
-    comptime BindGroupLayoutEntryExtras: UInt32 = 0x00030009
-    comptime QuerySetDescriptorExtras: UInt32 = 0x0003000A
-    comptime SurfaceConfigurationExtras: UInt32 = 0x0003000B
+    # NOTE: wgpu-native extension STypes (the 0x0003xxxx range from wgpu.h) are
+    # NOT defined here — they live in `WGPUNativeSType` (native_ext.mojo), which
+    # is checked against the pinned header by tests/test_native_ext.mojo.
+    # This struct covers only the core webgpu.h STypes above.
 
 struct WGPUSurfaceGetCurrentTextureStatus:
     comptime SuccessOptimal: UInt32 = 1
