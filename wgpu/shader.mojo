@@ -71,7 +71,7 @@ struct ShaderModule(Movable, Boolable):
             if status != UInt32(1):  # WGPUCompilationInfoRequestStatus.Success == 1
                 raise Error("get_compilation_info failed, status=" + String(status))
 
-            var info_ptr = result[].info.bitcast[WGPUCompilationInfo]()
+            var info_ptr = UnsafePointer(result[].info).bitcast[WGPUCompilationInfo]()
             var msg_count = info_ptr[].message_count
             var messages = List[String]()
             for i in range(Int(msg_count)):
