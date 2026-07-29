@@ -11,9 +11,9 @@ struct AllocGuard[T: AnyType](Movable):
         self._ptr = alloc[Self.T](count)
         self._is_live = True
 
-    def __init__(out self, *, deinit take: Self):
-        self._ptr = take._ptr
-        self._is_live = take._is_live
+    def __init__(out self, *, deinit move: Self):
+        self._ptr = move._ptr
+        self._is_live = move._is_live
 
     def __del__(deinit self):
         if self._is_live:

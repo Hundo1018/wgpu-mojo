@@ -17,9 +17,9 @@ struct InstanceOwner(Movable):
         self._lib = lib
         self._inst = inst
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib = take._lib^
-        self._inst = take._inst
+    def __init__(out self, *, deinit move: Self):
+        self._lib = move._lib^
+        self._inst = move._inst
 
     def __del__(deinit self):
         self._lib[].instance_release(self._inst)

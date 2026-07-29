@@ -42,8 +42,8 @@ struct Instance(Movable):
         var lib_arc = ArcPointer(lib^)
         self._owner = ArcPointer(InstanceOwner(lib_arc, inst))
 
-    def __init__(out self, *, deinit take: Self):
-        self._owner = take._owner^
+    def __init__(out self, *, deinit move: Self):
+        self._owner = move._owner^
 
     def lib(self) -> ArcPointer[WGPULib]:
         return self._owner[].lib()

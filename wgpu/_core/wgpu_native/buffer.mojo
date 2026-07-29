@@ -53,14 +53,14 @@ struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):
     ):
         self._lib    = lib
         self._handle = handle
-        self._data   = raw.bitcast[Self.T]()
+        self._data   = UnsafePointer(raw).bitcast[Self.T]()
         self._count  = count
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib    = take._lib^
-        self._handle = take._handle
-        self._data   = take._data
-        self._count  = take._count
+    def __init__(out self, *, deinit move: Self):
+        self._lib    = move._lib^
+        self._handle = move._handle
+        self._data   = move._data
+        self._count  = move._count
 
     def __del__(deinit self):
         self._lib[].buffer_unmap(self._handle)
@@ -110,13 +110,13 @@ struct Buffer(Movable, Boolable):
         self._size     = size
         self._usage    = usage
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib      = take._lib^
-        self._instance = take._instance
-        self._device   = take._device
-        self._handle   = take._handle
-        self._size     = take._size
-        self._usage    = take._usage
+    def __init__(out self, *, deinit move: Self):
+        self._lib      = move._lib^
+        self._instance = move._instance
+        self._device   = move._device
+        self._handle   = move._handle
+        self._size     = move._size
+        self._usage    = move._usage
 
     def __del__(deinit self):
         self._lib[].buffer_release(self._handle)

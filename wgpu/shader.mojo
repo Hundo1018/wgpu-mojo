@@ -29,10 +29,10 @@ struct ShaderModule(Movable, Boolable):
         self._handle   = handle
         self._instance = instance
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib      = take._lib^
-        self._handle   = take._handle
-        self._instance = take._instance
+    def __init__(out self, *, deinit move: Self):
+        self._lib      = move._lib^
+        self._handle   = move._handle
+        self._instance = move._instance
 
     def __del__(deinit self):
         self._lib[].shader_module_release(self._handle)

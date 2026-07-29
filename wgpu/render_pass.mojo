@@ -42,10 +42,10 @@ struct FrameRenderPass(Movable, ImplicitlyDeletable where False):
         self._handle = handle
         self._view   = view^
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib    = take._lib^
-        self._handle = take._handle
-        self._view   = take._view^
+    def __init__(out self, *, deinit move: Self):
+        self._lib    = move._lib^
+        self._handle = move._handle
+        self._view   = move._view^
 
     def set_pipeline(self, pipeline: WGPURenderPipelineHandle):
         self._lib[].render_pass_set_pipeline(self._handle, pipeline)
@@ -97,9 +97,9 @@ struct RenderPassEncoder(Movable, ImplicitlyDeletable where False):
         self._lib    = lib
         self._handle = handle
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib    = take._lib^
-        self._handle = take._handle
+    def __init__(out self, *, deinit move: Self):
+        self._lib    = move._lib^
+        self._handle = move._handle
 
     def set_pipeline(self, pipeline: WGPURenderPipelineHandle):
         self._lib[].render_pass_set_pipeline(self._handle, pipeline)

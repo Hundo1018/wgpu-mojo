@@ -165,9 +165,9 @@ struct GLFWLib(Movable):
         self._lib = OwnedDLHandle(_GLFW_LIB)
         self._input_cb = OwnedDLHandle(_GLFW_INPUT_CB_LIB)
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib = take._lib^
-        self._input_cb = take._input_cb^
+    def __init__(out self, *, deinit move: Self):
+        self._lib = move._lib^
+        self._input_cb = move._input_cb^
 
     def __del__(deinit self):
         pass  # OwnedDLHandle handles dlclose

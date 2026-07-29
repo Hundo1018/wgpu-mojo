@@ -67,10 +67,10 @@ struct WgpuComputeProgram(Movable):
         self.bgl      = bgl^
         self.layout   = layout^
 
-    def __init__(out self, *, deinit take: Self):
-        self.pipeline = take.pipeline^
-        self.bgl      = take.bgl^
-        self.layout   = take.layout^
+    def __init__(out self, *, deinit move: Self):
+        self.pipeline = move.pipeline^
+        self.bgl      = move.bgl^
+        self.layout   = move.layout^
 
 
 # ---------------------------------------------------------------------------
@@ -100,9 +100,9 @@ struct GPU(Movable):
         self._instance = instance^
         self._device   = device^
 
-    def __init__(out self, *, deinit take: Self):
-        self._instance = take._instance^
-        self._device   = take._device^
+    def __init__(out self, *, deinit move: Self):
+        self._instance = move._instance^
+        self._device   = move._device^
 
     # ------------------------------------------------------------------
     # Buffer allocation

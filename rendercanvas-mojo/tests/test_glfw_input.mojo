@@ -34,7 +34,7 @@ def test_glfw_input_integration() raises:
     # ── Part 1: Polling APIs ────────────────────────────────────────────
     var title = String("test_input")
     var title_bytes = title.as_bytes()
-    var raw = title_bytes.unsafe_ptr().bitcast[NoneType]()
+    var raw = UnsafePointer(title_bytes.unsafe_ptr()).bitcast[NoneType]()
     var title_ptr = rebind[OpaquePointer[MutExternalOrigin]](raw)
     var window = glfw.create_window(Int32(1), Int32(1), title_ptr)
     _ = title_bytes

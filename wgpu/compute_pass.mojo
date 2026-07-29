@@ -32,9 +32,9 @@ struct ComputePassEncoder(Movable, ImplicitlyDeletable where False):
         self._lib    = lib
         self._handle = handle
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib    = take._lib^
-        self._handle = take._handle
+    def __init__(out self, *, deinit move: Self):
+        self._lib    = move._lib^
+        self._handle = move._handle
 
     def set_pipeline(self, pipeline: WGPUComputePipelineHandle):
         self._lib[].compute_pass_set_pipeline(self._handle, pipeline)

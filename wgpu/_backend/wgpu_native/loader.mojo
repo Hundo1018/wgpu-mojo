@@ -167,12 +167,12 @@ def _read_env_var(name: String) raises -> String:
     var libc = OwnedDLHandle("libc.so.6")
     var name_bytes = name.as_bytes()
     var raw = libc.call["getenv", OpaquePointer[MutUntrackedOrigin]](
-        name_bytes.unsafe_ptr()
+        UnsafePointer(name_bytes.unsafe_ptr())
     )
     var null_ptr = null_opaque()
     if raw == null_ptr:
         return String("")
-    var p = raw.bitcast[UInt8]()
+    var p = UnsafePointer(raw).bitcast[UInt8]()
     var out = String()
     var i = 0
     while p[i] != 0:
@@ -274,17 +274,17 @@ struct WGPULib(Movable):
         self._compute_pipeline_async_cb_ptr = self._cb.call["wgpu_mojo_get_compute_pipeline_async_callback", OpaquePointer[MutUntrackedOrigin]]()
         self._render_pipeline_async_cb_ptr  = self._cb.call["wgpu_mojo_get_render_pipeline_async_callback",  OpaquePointer[MutUntrackedOrigin]]()
 
-    def __init__(out self, *, deinit take: Self):
-        self._wgpu = take._wgpu^
-        self._cb   = take._cb^
-        self._adapter_cb_ptr = take._adapter_cb_ptr
-        self._device_cb_ptr  = take._device_cb_ptr
-        self._map_cb_ptr     = take._map_cb_ptr
-        self._done_cb_ptr    = take._done_cb_ptr
-        self._pop_error_cb_ptr = take._pop_error_cb_ptr
-        self._compilation_info_cb_ptr = take._compilation_info_cb_ptr
-        self._compute_pipeline_async_cb_ptr = take._compute_pipeline_async_cb_ptr
-        self._render_pipeline_async_cb_ptr  = take._render_pipeline_async_cb_ptr
+    def __init__(out self, *, deinit move: Self):
+        self._wgpu = move._wgpu^
+        self._cb   = move._cb^
+        self._adapter_cb_ptr = move._adapter_cb_ptr
+        self._device_cb_ptr  = move._device_cb_ptr
+        self._map_cb_ptr     = move._map_cb_ptr
+        self._done_cb_ptr    = move._done_cb_ptr
+        self._pop_error_cb_ptr = move._pop_error_cb_ptr
+        self._compilation_info_cb_ptr = move._compilation_info_cb_ptr
+        self._compute_pipeline_async_cb_ptr = move._compute_pipeline_async_cb_ptr
+        self._render_pipeline_async_cb_ptr  = move._render_pipeline_async_cb_ptr
 
     # ------------------------------------------------------------------
     # Global functions

@@ -89,12 +89,12 @@ struct Device(Movable, Boolable):
         self._handle = handle
         self._queue = queue
 
-    def __init__(out self, *, deinit take: Self):
-        self._owner = take._owner^
-        self._lib = take._lib^
-        self._instance = take._instance
-        self._handle = take._handle
-        self._queue = take._queue
+    def __init__(out self, *, deinit move: Self):
+        self._owner = move._owner^
+        self._lib = move._lib^
+        self._instance = move._instance
+        self._handle = move._handle
+        self._queue = move._queue
 
     def __del__(deinit self):
         self._lib[].queue_release(self._queue)
@@ -744,7 +744,7 @@ struct Device(Movable, Boolable):
                 raise Error("pop_error_scope failed, status=" + String(status))
             if err_type == WGPUErrorType.NoError:
                 return String("")
-            var p = result[].message_data.bitcast[UInt8]()
+            var p = UnsafePointer(result[].message_data).bitcast[UInt8]()
             var n = result[].message_len
             var out = String()
             var i = UInt(0)

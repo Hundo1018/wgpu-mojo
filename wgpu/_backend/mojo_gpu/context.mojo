@@ -31,8 +31,8 @@ struct MojoGPUContext(Movable):
         # TODO: Replace with DeviceContext() when gpu.host is importable here
         self._device_index = device_index
 
-    def __init__(out self, *, deinit take: Self):
-        self._device_index = take._device_index
+    def __init__(out self, *, deinit move: Self):
+        self._device_index = move._device_index
 
     def synchronize(mut self) raises:
         """Wait for all enqueued GPU operations to complete."""

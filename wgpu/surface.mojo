@@ -76,12 +76,12 @@ struct Surface(Movable):
         self._width  = 0
         self._height = 0
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib    = take._lib^
-        self._handle = take._handle
-        self._format = take._format
-        self._width  = take._width
-        self._height = take._height
+    def __init__(out self, *, deinit move: Self):
+        self._lib    = move._lib^
+        self._handle = move._handle
+        self._format = move._format
+        self._width  = move._width
+        self._height = move._height
 
     def __del__(deinit self):
         if Int(self._handle) != 0:

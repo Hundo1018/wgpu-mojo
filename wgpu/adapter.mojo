@@ -56,12 +56,12 @@ struct Adapter(Movable):
         self._info = info_p[]
         info_p.free()
 
-    def __init__(out self, *, deinit take: Self):
-        self._owner = take._owner^
-        self._lib = take._lib^
-        self._inst = take._inst
-        self._handle = take._handle
-        self._info = take._info
+    def __init__(out self, *, deinit move: Self):
+        self._owner = move._owner^
+        self._lib = move._lib^
+        self._inst = move._inst
+        self._handle = move._handle
+        self._info = move._info
 
     def __del__(deinit self):
         self._lib[].adapter_release(self._handle)

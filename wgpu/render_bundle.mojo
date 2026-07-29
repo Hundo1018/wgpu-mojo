@@ -48,9 +48,9 @@ struct RenderBundle(Movable, Boolable):
         self._lib    = lib
         self._handle = handle
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib    = take._lib^
-        self._handle = take._handle
+    def __init__(out self, *, deinit move: Self):
+        self._lib    = move._lib^
+        self._handle = move._handle
 
     def __del__(deinit self):
         self._lib[].render_bundle_release(self._handle)
@@ -85,9 +85,9 @@ struct RenderBundleEncoder(Movable, ImplicitlyDeletable where False):
         self._lib    = lib
         self._handle = handle
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib    = take._lib^
-        self._handle = take._handle
+    def __init__(out self, *, deinit move: Self):
+        self._lib    = move._lib^
+        self._handle = move._handle
 
     # ------------------------------------------------------------------
     # Linear-type disposal

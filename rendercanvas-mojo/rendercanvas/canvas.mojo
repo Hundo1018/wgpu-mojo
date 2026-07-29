@@ -65,7 +65,7 @@ struct RenderCanvas(Movable):
 
         # Pass null-terminated title; String internal buffer is null-terminated.
         var title_bytes = title.as_bytes()
-        var raw         = title_bytes.unsafe_ptr().bitcast[NoneType]()
+        var raw         = UnsafePointer(title_bytes.unsafe_ptr()).bitcast[NoneType]()
         var title_ptr   = rebind[OpaquePointer[MutExternalOrigin]](raw)
         var window = glfw.create_window(width, height, title_ptr)
         _ = title_bytes  # keep alive past glfwCreateWindow
@@ -111,13 +111,13 @@ struct RenderCanvas(Movable):
         self._height  = height
         self.input    = InputState()
 
-    def __init__(out self, *, deinit take: Self):
-        self._glfw    = take._glfw^
-        self._window  = take._window
-        self._surface = take._surface^
-        self._width   = take._width
-        self._height  = take._height
-        self.input    = take.input^
+    def __init__(out self, *, deinit move: Self):
+        self._glfw    = move._glfw^
+        self._window  = move._window
+        self._surface = move._surface^
+        self._width   = move._width
+        self._height  = move._height
+        self.input    = move.input^
 
     def __del__(deinit self):
         self._glfw.destroy_window(self._window)

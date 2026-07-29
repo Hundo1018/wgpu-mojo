@@ -79,19 +79,19 @@ struct InputState(Movable):
         self.scroll_x = 0.0
         self.scroll_y = 0.0
 
-    def __init__(out self, *, deinit take: Self):
-        self._keys_pressed       = take._keys_pressed
-        self._keys_just_pressed  = take._keys_just_pressed
-        self._keys_just_released = take._keys_just_released
-        self._mouse_pressed       = take._mouse_pressed
-        self._mouse_just_pressed  = take._mouse_just_pressed
-        self._mouse_just_released = take._mouse_just_released
-        self.mouse_x  = take.mouse_x
-        self.mouse_y  = take.mouse_y
-        self.mouse_dx = take.mouse_dx
-        self.mouse_dy = take.mouse_dy
-        self.scroll_x = take.scroll_x
-        self.scroll_y = take.scroll_y
+    def __init__(out self, *, deinit move: Self):
+        self._keys_pressed       = move._keys_pressed
+        self._keys_just_pressed  = move._keys_just_pressed
+        self._keys_just_released = move._keys_just_released
+        self._mouse_pressed       = move._mouse_pressed
+        self._mouse_just_pressed  = move._mouse_just_pressed
+        self._mouse_just_released = move._mouse_just_released
+        self.mouse_x  = move.mouse_x
+        self.mouse_y  = move.mouse_y
+        self.mouse_dx = move.mouse_dx
+        self.mouse_dy = move.mouse_dy
+        self.scroll_x = move.scroll_x
+        self.scroll_y = move.scroll_y
 
     def __del__(deinit self):
         self._keys_pressed.free()

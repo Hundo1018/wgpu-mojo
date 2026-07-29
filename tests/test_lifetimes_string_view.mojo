@@ -14,7 +14,7 @@ def test_borrowed_view_roundtrip() raises:
 
 def test_borrowed_view_alignment() raises:
     # Alignment is encoded on type so stack/heap allocations are consistent.
-    assert_true(align_of[WGPUBorrowedStringView[ImmutUntrackedOrigin]]() >= 16)
+    assert_true(align_of[WGPUBorrowedStringView[ImmUntrackedOrigin]]() >= 16)
 
 
 def main() raises:

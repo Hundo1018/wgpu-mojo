@@ -31,8 +31,8 @@ struct MojoComputeProgram[kernel_name: StaticString](Movable):
     def __init__(out self, ctx: ArcPointer[MojoGPUContext]):
         self._ctx = ctx
 
-    def __init__(out self, *, deinit take: Self):
-        self._ctx = take._ctx^
+    def __init__(out self, *, deinit move: Self):
+        self._ctx = move._ctx^
 
     def context(self) -> ArcPointer[MojoGPUContext]:
         return self._ctx

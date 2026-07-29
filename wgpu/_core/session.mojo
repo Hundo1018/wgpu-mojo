@@ -82,20 +82,20 @@ struct Session(Movable):
         self._texture_views      = List[TextureView]()
         self._samplers           = List[Sampler]()
 
-    def __init__(out self, *, deinit take: Self):
-        self._lib            = take._lib^
-        self._device_handle  = take._device_handle
-        self._queue_handle   = take._queue_handle
-        self._buffers            = take._buffers^
-        self._bind_groups        = take._bind_groups^
-        self._bind_group_layouts = take._bind_group_layouts^
-        self._compute_pipelines  = take._compute_pipelines^
-        self._render_pipelines   = take._render_pipelines^
-        self._pipeline_layouts   = take._pipeline_layouts^
-        self._shaders            = take._shaders^
-        self._textures           = take._textures^
-        self._texture_views      = take._texture_views^
-        self._samplers           = take._samplers^
+    def __init__(out self, *, deinit move: Self):
+        self._lib            = move._lib^
+        self._device_handle  = move._device_handle
+        self._queue_handle   = move._queue_handle
+        self._buffers            = move._buffers^
+        self._bind_groups        = move._bind_groups^
+        self._bind_group_layouts = move._bind_group_layouts^
+        self._compute_pipelines  = move._compute_pipelines^
+        self._render_pipelines   = move._render_pipelines^
+        self._pipeline_layouts   = move._pipeline_layouts^
+        self._shaders            = move._shaders^
+        self._textures           = move._textures^
+        self._texture_views      = move._texture_views^
+        self._samplers           = move._samplers^
 
     # ------------------------------------------------------------------
     # pin() overloads — one per resource type
