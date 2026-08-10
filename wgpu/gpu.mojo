@@ -30,7 +30,7 @@ from wgpu.pipeline_layout import PipelineLayout
 from wgpu.command import CommandBuffer, CommandEncoder
 from wgpu.descriptors import BGL
 from wgpu._ffi.types import WGPUBufferUsage, WGPU_WHOLE_SIZE
-from wgpu._ffi.structs import WGPUBindGroupEntry
+from wgpu._ffi.structs import WGPUBindGroupEntry, WGPUBindGroupLayoutEntry
 from wgpu._ffi.nulls import null_opaque, null_ptr
 from wgpu._ffi.handles import BufferHandle, SamplerHandle, TextureViewHandle
 
