@@ -10,13 +10,13 @@
 # then `pixi run check` (compile-only) and, with native libs installed, `pixi run app`.
 [workspace]
 name = "wgpu-consumer-test"
-channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+channels = ["https://conda.modular.com/max", "conda-forge"]
 platforms = ["linux-64", "osx-arm64"]
 version = "0.1.0"
 preview = ["pixi-build"]
 
 [dependencies]
-mojo = ">=1.0.0b,<2"
+mojo = ">=1.0.0,<2"
 # wgpu-mojo is added by CI via `pixi add` (path or git) so the same fixture
 # exercises both consumption paths without committing a fixed source location.
 

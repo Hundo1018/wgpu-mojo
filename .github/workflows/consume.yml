@@ -22,10 +22,10 @@ on:
   schedule:
     - cron: "0 5 * * 1"   # Mondays 05:00 UTC — re-validate the public install path
   workflow_dispatch:
-  # Nightly's GITHUB_TOKEN auto-commit can't trigger `push` (anti-recursion), so
-  # chain off Nightly's completion to keep the auto-bumped lock covered here too.
+  # Stable-tracking's GITHUB_TOKEN auto-commit can't trigger `push` (anti-recursion), so
+  # chain off stable-tracking's completion to keep the auto-bumped lock covered here too.
   workflow_run:
-    workflows: ["Nightly Mojo Tracking"]
+    workflows: ["Stable Mojo Tracking"]
     types: [completed]
 
 concurrency:
@@ -38,7 +38,7 @@ jobs:
   # ---------------------------------------------------------------------------
   consume-path:
     name: Consume path (${{ matrix.os }})
-    # Only chain off a *successful* nightly; unaffected for push/PR.
+    # Only chain off a *successful* stable-tracking run; unaffected for push/PR.
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
@@ -124,13 +124,13 @@ jobs:
           cat > "$RUNNER_TEMP/consumer/pixi.toml" <<'TOML'
           [workspace]
           name = "wgpu-consumer-git"
-          channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+          channels = ["https://conda.modular.com/max", "conda-forge"]
           platforms = ["linux-64", "osx-arm64"]
           version = "0.1.0"
           preview = ["pixi-build"]
 
           [dependencies]
-          mojo = ">=1.0.0b,<2"
+          mojo = ">=1.0.0,<2"
           TOML
           cat > "$RUNNER_TEMP/consumer/app.mojo" <<'MOJO'
           from wgpu import Instance

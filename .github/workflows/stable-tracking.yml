@@ -1,20 +1,22 @@
-name: Nightly Mojo Tracking
+name: Stable Mojo Tracking
 
-# Runs daily to test against the latest Mojo nightly from max-nightly channel.
+# Runs weekly to test against the latest Mojo release from the stable `max`
+# channel (switched from nightly tracking — see git history on this file for
+# the prior nightly-tracking version).
 # On success: auto-commits the updated pixi.lock so the repo always rides the
-#             latest working nightly.
+#             latest working stable Mojo release.
 # On failure: opens/updates a tracking issue with the actual compiler errors
 #             (not LSP output — the real compile+run errors are the source of truth).
 #
-# Can also be triggered manually via workflow_dispatch to test a specific nightly.
+# Can also be triggered manually via workflow_dispatch to test a specific release.
 
 on:
   schedule:
-    - cron: "0 4 * * *"   # 04:00 UTC daily
+    - cron: "17 6 * * 1"   # 06:17 UTC every Monday — stable releases ship far less often than nightlies
   workflow_dispatch:
 
 concurrency:
-  group: nightly-tracking
+  group: stable-tracking
   cancel-in-progress: true
 
 permissions:
@@ -23,8 +25,8 @@ permissions:
   pull-requests: write   # to open a lock-bump PR
 
 jobs:
-  nightly-check:
-    name: Update to latest Mojo nightly & test
+  stable-check:
+    name: Update to latest stable Mojo & test
     runs-on: ubuntu-latest
 
     steps:
@@ -37,12 +39,12 @@ jobs:
       # existing. If it's ever deleted, `gh issue create --label` hard-fails
       # and the failure silently produces no tracking issue at all — recreate
       # it unconditionally every run (no-op once it exists).
-      - name: Ensure nightly-failure label exists
+      - name: Ensure stable-failure label exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh label create "nightly-failure" \
-            --description "Auto-filed by nightly.yml when the Mojo nightly tracking build breaks" \
+          gh label create "stable-failure" \
+            --description "Auto-filed by stable-tracking.yml when the stable Mojo tracking build breaks" \
             --color "b60205" 2>/dev/null || true
 
       - name: Setup Pixi (without locked env — we're about to update)
@@ -50,7 +52,7 @@ jobs:
         with:
           run-install: false
 
-      - name: Update to latest nightly
+      - name: Update to latest stable Mojo
         id: update
         run: |
           pixi update 2>&1 | tee /tmp/pixi-update.log
@@ -77,7 +79,7 @@ jobs:
         id: compile_check
         run: pixi run check-compile
 
-      # Extra signal: exercise a real GPU codepath against the new nightly via
+      # Extra signal: exercise a real GPU codepath against the new release via
       # software Vulkan. continue-on-error keeps this off the lock-bump gate.
       - name: Headless GPU smoke (lavapipe)
         id: gpu_smoke
@@ -97,24 +99,24 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet pixi.lock; then
-            echo "pixi.lock unchanged — already on latest nightly."
+            echo "pixi.lock unchanged — already on latest stable Mojo."
           else
             git add pixi.lock
             git commit \
               -m "chore: bump pixi.lock to ${{ steps.update.outputs.mojo_version }}" \
-              -m "Auto-committed by nightly tracking workflow. All non-GPU tests and compile-checks passed."
+              -m "Auto-committed by stable Mojo tracking workflow. All non-GPU tests and compile-checks passed."
             git push
           fi
 
-      - name: Close stale nightly-failure issue (if any)
+      - name: Close stale stable-failure issue (if any)
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          OPEN=$(gh issue list --label "nightly-failure" --state open --json number -q '.[0].number // empty')
+          OPEN=$(gh issue list --label "stable-failure" --state open --json number -q '.[0].number // empty')
           if [ -n "$OPEN" ]; then
             gh issue close "$OPEN" \
-              --comment "Nightly ${{ steps.update.outputs.mojo_version }} passed all checks. Closing automatically."
+              --comment "Stable Mojo ${{ steps.update.outputs.mojo_version }} passed all checks. Closing automatically."
           fi
 
       # --- FAILURE PATH: open/update a tracking issue ---
@@ -122,7 +124,7 @@ jobs:
         if: failure()
         run: |
           {
-            echo "## Nightly failure: ${{ steps.update.outputs.mojo_version }}"
+            echo "## Stable Mojo tracking failure: ${{ steps.update.outputs.mojo_version }}"
             echo ""
             echo "**Date:** $(date -u '+%Y-%m-%d %H:%M UTC')"
             echo "**Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -134,19 +136,19 @@ jobs:
             echo '```'
           } > /tmp/issue-body.md
 
-      - name: Open or update nightly-failure issue
+      - name: Open or update stable-failure issue
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          OPEN=$(gh issue list --label "nightly-failure" --state open --json number -q '.[0].number // empty')
+          OPEN=$(gh issue list --label "stable-failure" --state open --json number -q '.[0].number // empty')
           if [ -n "$OPEN" ]; then
             gh issue comment "$OPEN" --body-file /tmp/issue-body.md
             echo "Updated existing issue #$OPEN"
           else
             gh issue create \
-              --title "Nightly failure: ${{ steps.update.outputs.mojo_version }}" \
+              --title "Stable Mojo tracking failure: ${{ steps.update.outputs.mojo_version }}" \
               --body-file /tmp/issue-body.md \
-              --label "nightly-failure"
-            echo "Created new nightly-failure issue"
+              --label "stable-failure"
+            echo "Created new stable-failure issue"
           fi

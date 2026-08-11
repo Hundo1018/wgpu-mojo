@@ -9,12 +9,12 @@ on:
     branches:
       - develop
       - main
-  # Nightly auto-commits its pixi.lock bump with the default GITHUB_TOKEN, and
+  # Stable-tracking auto-commits its pixi.lock bump with the default GITHUB_TOKEN, and
   # GitHub's anti-recursion rule means that push does NOT trigger this workflow.
-  # Chain off Nightly's completion instead so the auto-bumped lock still gets the
+  # Chain off Stable-tracking's completion instead so the auto-bumped lock still gets the
   # full macOS matrix + lavapipe coverage. See the `if:`/`ref:` notes below.
   workflow_run:
-    workflows: ["Nightly Mojo Tracking"]
+    workflows: ["Stable Mojo Tracking"]
     types: [completed]
 
 concurrency:
@@ -30,8 +30,8 @@ jobs:
   # ---------------------------------------------------------------------------
   test:
     name: Test (${{ matrix.os }})
-    # On a workflow_run chain, only proceed if Nightly actually succeeded — a
-    # failed/cancelled nightly must not gate-open CI. (Always runs for push/PR.)
+    # On a workflow_run chain, only proceed if Stable-tracking actually succeeded —
+    # a failed/cancelled stable-tracking run must not gate-open CI. (Always runs for push/PR.)
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
@@ -46,7 +46,7 @@ jobs:
         with:
           # For workflow_run, checkout defaults to the workflow file's ref, NOT the
           # triggering run's commit — and the run's head_sha is the PRE-bump commit
-          # anyway (Nightly commits *after* it starts). Check out the branch tip,
+          # anyway (stable-tracking commits *after* it starts). Check out the branch tip,
           # which is the freshly pushed auto-commit. Empty for push/PR → github.ref.
           ref: ${{ github.event.workflow_run.head_branch }}
 

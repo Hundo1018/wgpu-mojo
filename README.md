@@ -48,7 +48,7 @@ Use wgpu-mojo as a package in your own [pixi](https://pixi.sh) project — three
 ```toml
 # pixi.toml
 [workspace]
-channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+channels = ["https://conda.modular.com/max", "conda-forge"]
 preview  = ["pixi-build"]
 ```
 

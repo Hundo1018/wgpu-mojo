@@ -54,7 +54,7 @@ jobs:
         run: |
           pixi exec rattler-build build \
             --recipe conda.recipe/recipe.yaml \
-            -c https://conda.modular.com/max-nightly \
+            -c https://conda.modular.com/max \
             -c conda-forge \
             --output-dir output
 

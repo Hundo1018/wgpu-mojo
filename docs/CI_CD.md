@@ -10,7 +10,7 @@ runners**, and how to set up the missing pieces yourself.
 | **CI** | [.github/workflows/ci.yml](../.github/workflows/ci.yml) | push/PR to `main`/`develop` | Non-GPU tests + compile-check on Linux & macOS arm64; headless GPU tests via lavapipe |
 | **Package Consume** | [.github/workflows/consume.yml](../.github/workflows/consume.yml) | push/PR + weekly + manual | Installs wgpu-mojo as a package into an isolated project and runs it |
 | **Release** | [.github/workflows/release.yml](../.github/workflows/release.yml) | tag `v*` + manual | Builds a `.conda` per platform and attaches it to a GitHub Release |
-| **Nightly Mojo Tracking** | [.github/workflows/nightly.yml](../.github/workflows/nightly.yml) | daily 04:00 UTC + manual | Updates to the latest Mojo nightly, tests, auto-commits `pixi.lock` or files an issue |
+| **Stable Mojo Tracking** | [.github/workflows/stable-tracking.yml](../.github/workflows/stable-tracking.yml) | weekly Mon 06:17 UTC + manual | Updates to the latest stable Mojo release (`max` channel), tests, auto-commits `pixi.lock` or files an issue |
 
 ```
                 ┌─ ci.yml ──────── test (linux, macos) + gpu-software (lavapipe)
@@ -20,7 +20,7 @@ runners**, and how to set up the missing pieces yourself.
 
  tag v* ───────── release.yml ──── build .conda (linux-64, osx-arm64) → GitHub Release
 
- cron  ────────── nightly.yml ──── bump pixi.lock to latest Mojo nightly
+ cron  ────────── stable-tracking.yml ─ bump pixi.lock to latest stable Mojo
 ```
 
 ## What runs on GitHub vs. what does not
@@ -156,7 +156,7 @@ Dry-run a build locally:
 ```bash
 pixi exec rattler-build build \
   --recipe conda.recipe/recipe.yaml \
-  -c https://conda.modular.com/max-nightly -c conda-forge \
+  -c https://conda.modular.com/max -c conda-forge \
   --output-dir /tmp/out
 ```
 
@@ -180,6 +180,7 @@ pixi exec rattler-build build \
    - `Consume path (macos-14)`
 
    Add `Headless GPU (lavapipe)` once it is consistently green.
-3. **Nightly workflow permissions:** `nightly.yml` already declares `contents: write`
-   and `issues: write`; ensure Settings → Actions → General → Workflow permissions is
-   set to "Read and write permissions" so it can commit the lock bump and file issues.
+3. **Stable-tracking workflow permissions:** `stable-tracking.yml` already declares
+   `contents: write` and `issues: write`; ensure Settings → Actions → General →
+   Workflow permissions is set to "Read and write permissions" so it can commit the
+   lock bump and file issues.
