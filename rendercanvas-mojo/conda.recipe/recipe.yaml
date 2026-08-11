@@ -77,14 +77,14 @@ build:
 
 requirements:
   build:
-    - mojo-compiler >=1.0.0b
+    - mojo-compiler >=1.0.0,<2
     - gcc  # [unix]
     - libgcc  # [linux]
     - curl  # [unix]
     - glfw  # [unix]
 
   host:
-    - mojo-compiler >=1.0.0b
+    - mojo-compiler >=1.0.0,<2
     - libgcc  # [linux]
     - glfw  # [unix]
     # wgpu-mojo is required at compile time (canvas.mojo imports wgpu types).
