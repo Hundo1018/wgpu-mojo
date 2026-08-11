@@ -8,7 +8,9 @@ name: Package Consume
 #                  review. Runs on every push/PR, on Linux + macOS.
 #   consume-git  : runs the exact documented README flow (`pixi add --git` +
 #                  setup-native.sh) → catches install-doc bit-rot. Pulls `main`,
-#                  so it does not run on PRs.
+#                  so it does not run on PRs. Matrixed over an old and a current
+#                  pixi, because the usable pixi range is a property of the
+#                  published package (see the backend note in pixi.toml).
 
 on:
   push:
@@ -58,9 +60,11 @@ jobs:
       - name: Setup Pixi (CLI only — the consumer env is built in a scratch dir)
         uses: prefix-dev/setup-pixi@v0.8.0
         with:
-          # pixi-build-mojo needs a `pixi-build-api-version` that only newer pixi
-          # binaries provide; the action's default pixi is too old, so the build
-          # backend fails to initialize. Pin a version known to ship it.
+          # pixi-build-mojo needs a `pixi-build-api-version` virtual package that
+          # the action's default pixi does not provide at all, so the build
+          # backend fails to initialize. Pin one that does. This job deliberately
+          # holds the OLD end of the supported range (api 4 -> backend 0.1.x);
+          # consume-git covers the current end. See pixi.toml's backend note.
           pixi-version: v0.70.2
           run-install: false
 
@@ -103,19 +107,28 @@ jobs:
   # Does not run on PRs because it pulls `main`, not the PR branch.
   # ---------------------------------------------------------------------------
   consume-git:
-    name: Consume git (documented flow)
+    name: Consume git (documented flow, pixi ${{ matrix.pixi-version }})
     runs-on: ubuntu-latest
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both ends of the `pixi-build-mojo` range declared in pixi.toml. A pixi
+        # release provides exactly one `pixi-build-api-version`, and each backend
+        # minor requires a different one: v0.70.2 -> api 4 -> backend 0.1.x,
+        # v0.73.0 -> api 6 -> backend 0.2.x. Testing only one end is how the
+        # "0.1.*" pin shipped while being uninstallable on every current pixi —
+        # CI was green the whole time because both jobs pinned v0.70.2.
+        pixi-version: [v0.70.2, v0.73.0]
     steps:
       - name: Setup Pixi (CLI only)
         uses: prefix-dev/setup-pixi@v0.8.0
         with:
-          # See consume-path: pin a pixi new enough for the pixi-build-mojo backend.
-          pixi-version: v0.70.2
+          pixi-version: ${{ matrix.pixi-version }}
           run-install: false
 
       - name: Scaffold a fresh consumer project (README Step 1)

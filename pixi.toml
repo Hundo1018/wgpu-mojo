@@ -17,7 +17,15 @@ repository = "https://github.com/Hundo1018/wgpu-mojo"
 
 
 [package.build]
-backend = { name = "pixi-build-mojo",version = "0.1.*" }
+# Keep this range OPEN across backend minor lines. Each pixi-build-mojo release
+# requires a specific `pixi-build-api-version` virtual package, and each pixi
+# release provides exactly one: the 0.1.x line needs api-version >=4,<5 (pixi
+# ~0.70), the 0.2.x line needs >=6,<7 (pixi >=0.72). Pinning a single minor
+# ("0.1.*") therefore pins the *consumer's* pixi version too — with 0.1.* every
+# `pixi add wgpu-mojo` on pixi >=0.72 failed with "could not initialize the
+# build-backend ... no candidates were found". A range lets the solver pick the
+# backend matching whichever pixi the consumer actually has.
+backend = { name = "pixi-build-mojo",version = ">=0.1,<0.3" }
 
 
 [package.build.config.pkg]

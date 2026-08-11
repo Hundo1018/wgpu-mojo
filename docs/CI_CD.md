@@ -166,6 +166,16 @@ pixi exec rattler-build build \
   `pixi add --git`/`--path` triggers. It packages **only `wgpu.mojopkg`** — it does
   **not** bundle native `.so` files, so consumers still run `setup-native.sh`. This is
   the path `consume.yml` exercises and the README documents.
+
+  Its version constraint must stay a **range** (`>=0.1,<0.3`), never a single minor.
+  Every pixi release provides exactly one `pixi-build-api-version` virtual package
+  and every backend minor demands a specific one — 0.1.x needs api `>=4,<5`
+  (pixi ~0.70), 0.2.x needs `>=6,<7` (pixi >=0.72). So pinning one backend minor
+  silently pins the *consumer's* pixi version: while `pixi.toml` said `0.1.*`,
+  `pixi add wgpu-mojo` failed on every current pixi with
+  *"could not initialize the build-backend … no candidates were found"*, and CI
+  stayed green only because both consume jobs pinned pixi v0.70.2. `consume-git`
+  is now matrixed over both ends of the range to keep that honest.
 - **rattler-build** (`conda.recipe/recipe.yaml`) builds a **self-contained `.conda`**
   with the native libs bundled. This is the path `release.yml` uses.
 

@@ -17,7 +17,10 @@ repository = "https://github.com/Hundo1018/rendercanvas-mojo"
 
 
 [package.build]
-backend = { name = "pixi-build-mojo", version = "0.1.*" }
+# Range, not a single minor line — see the note in ../pixi.toml: each backend
+# minor requires a different `pixi-build-api-version`, so pinning one minor
+# also pins the consumer's pixi version.
+backend = { name = "pixi-build-mojo", version = ">=0.1,<0.3" }
 
 
 [package.build.config.pkg]
