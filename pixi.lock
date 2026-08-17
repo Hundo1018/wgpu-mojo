@@ -220,6 +220,7 @@ packages:
   - libstdcxx >=15
   - openssl >=3.5.7,<4.0a0
   license: MIT
+  license_family: MIT
   run_exports:
     weak:
     - krb5 >=1.22.2,<1.23.0a0
@@ -338,6 +339,7 @@ packages:
   - __glibc >=2.17,<3.0.a0
   - libgcc >=14
   license: BSD-2-Clause
+  license_family: BSD
   run_exports: {}
   size: 92759
   timestamp: 1786650399772
@@ -936,6 +938,7 @@ packages:
   - python >=3.10
   - python
   license: MIT
+  license_family: MIT
   run_exports: {}
   size: 26956
   timestamp: 1786708411066
@@ -1068,6 +1071,7 @@ packages:
   - libedit >=3.1.20250104,<4.0a0
   - openssl >=3.5.7,<4.0a0
   license: MIT
+  license_family: MIT
   run_exports:
     weak:
     - krb5 >=1.22.2,<1.23.0a0
@@ -1140,6 +1144,7 @@ packages:
   depends:
   - __osx >=11.0
   license: BSD-2-Clause
+  license_family: BSD
   run_exports: {}
   size: 73289
   timestamp: 1786651074391
