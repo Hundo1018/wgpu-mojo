@@ -13,6 +13,51 @@ WGPU_TAG="v29.0.0.0"
 REPO_RAW="https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main"
 
 # ---------------------------------------------------------------------------
+# ABI pin consistency guard
+# ---------------------------------------------------------------------------
+# WGPU_TAG above decides which prebuilt .so a user downloads. The same ABI
+# version is pinned in the repo too, and the two MUST agree:
+#
+#   ffi/wgpu-native-meta/wgpu-native-git-tag   canonical record of the pinned ABI
+#   wgpu/_backend/wgpu_native/loader.mojo      _WGPU_NATIVE_VERSION
+#
+# Drift here fails silently rather than loudly: wgpu-native renumbered the
+# entire 0x0003xxxx SType enum in the v29.0.0.0 -> v29.0.1.1 *patch* release,
+# so a .so whose tag disagrees with our hardcoded SType constants still loads
+# and still runs -- it just misreads every extras chain. Catch that before the
+# download instead of debugging corrupted descriptors afterwards.
+#
+# Only runs from a checkout (CI invokes this script directly, so CI enforces
+# it); the documented `curl ... | bash` flow has no repo to compare against.
+if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
+    REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+    META_TAG_FILE="${REPO_ROOT}/ffi/wgpu-native-meta/wgpu-native-git-tag"
+    if [[ -f "${META_TAG_FILE}" ]]; then
+        META_TAG="$(tr -d '[:space:]' < "${META_TAG_FILE}")"
+        if [[ "${META_TAG}" != "${WGPU_TAG}" ]]; then
+            echo "Error: wgpu-native ABI pin mismatch." >&2
+            echo "  scripts/setup-native.sh WGPU_TAG         = ${WGPU_TAG}" >&2
+            echo "  ffi/wgpu-native-meta/wgpu-native-git-tag = ${META_TAG}" >&2
+            echo "Bumping the ABI means updating both, plus the SType and" >&2
+            echo "feature constants in wgpu/_backend/wgpu_native/native_ext.mojo." >&2
+            exit 1
+        fi
+    fi
+
+    LOADER_FILE="${REPO_ROOT}/wgpu/_backend/wgpu_native/loader.mojo"
+    if [[ -f "${LOADER_FILE}" ]]; then
+        LOADER_TAG="$(sed -n 's/^comptime _WGPU_NATIVE_VERSION = "\(.*\)"/\1/p' "${LOADER_FILE}")"
+        if [[ -n "${LOADER_TAG}" && "${LOADER_TAG}" != "${WGPU_TAG}" ]]; then
+            echo "Error: wgpu-native ABI pin mismatch." >&2
+            echo "  scripts/setup-native.sh WGPU_TAG      = ${WGPU_TAG}" >&2
+            echo "  loader.mojo _WGPU_NATIVE_VERSION      = ${LOADER_TAG}" >&2
+            exit 1
+        fi
+    fi
+fi
+
+# ---------------------------------------------------------------------------
 # Platform detection
 # ---------------------------------------------------------------------------
 OS=$(uname -s)
