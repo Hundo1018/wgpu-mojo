@@ -131,12 +131,18 @@ jobs:
   # that isolation is the whole point of the opt-in design, and it also means
   # nothing else would catch API drift in the bridge.
   #
-  # Not *run* here because MAX's host dispatch needs a real accelerator. The
-  # lavapipe job above is a software Vulkan rasterizer, which serves wgpu but
-  # not MAX (it targets CUDA/ROCm and reports no accelerator). The example
-  # guards its GPU path behind `comptime if has_accelerator()` precisely so it
-  # still compiles here; the bridge's own host-side API surface -- the part
-  # that actually drifts -- is fully compiled by this job.
+  # Scope, stated honestly. MAX compiles GPU code for the *building* machine's
+  # accelerator and hard-errors when there is none -- so on a GitHub runner this
+  # job compiles `wgpu_max` itself (catching syntax, type and import drift in
+  # the bridge's definitions, e.g. `max.gpu.host` moving) but NOT the bridge
+  # instantiated at a concrete dtype: the test and example elide their GPU
+  # bodies behind `comptime if has_accelerator()`, which is exactly what lets
+  # them compile here at all.
+  #
+  # Full instantiation and execution therefore only happen on a machine with a
+  # real GPU, via `pixi run -e maxinterop test-max-interop`. Adding lavapipe
+  # would not help: it is a software Vulkan rasterizer, which serves wgpu but
+  # not MAX (MAX targets CUDA/ROCm/Metal and reports no accelerator).
   # ---------------------------------------------------------------------------
   max-interop:
     name: MAX interop (compile-check)

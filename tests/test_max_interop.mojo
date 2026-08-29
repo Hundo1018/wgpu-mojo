@@ -8,6 +8,7 @@ This test is not in `pixi run test` or `check-compile` on purpose: the default
 environment has no `max`, so it would not even compile there.
 """
 
+from std.sys import has_accelerator
 from std.testing import assert_equal, assert_true
 from max.gpu.host import DeviceContext
 
@@ -172,7 +173,7 @@ def test_bridge_is_lossless_both_ways() raises:
     _ = device^
 
 
-def main() raises:
+def run_all() raises:
     test_max_host_round_trip()
     print("  PASS: MAX host round trip")
     test_max_to_wgpu()
@@ -184,3 +185,16 @@ def main() raises:
     test_bridge_is_lossless_both_ways()
     print("  PASS: wgpu -> MAX -> wgpu lossless")
     print("test_max_interop: ALL PASSED")
+
+
+def main() raises:
+    # Same `comptime if` guard as examples/max_interop.mojo: instantiating the
+    # bridge for a concrete dtype pulls in MAX device code, and MAX compiles
+    # that for the *building* machine's GPU -- on a GPU-less box it is a
+    # compile error, not a runtime one. Guarding lets CI compile-check this
+    # file; see the max-interop job in .github/workflows/ci.yml for what that
+    # does and does not buy.
+    comptime if not has_accelerator():
+        print("test_max_interop: SKIPPED (no GPU accelerator)")
+    else:
+        run_all()
