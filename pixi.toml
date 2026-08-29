@@ -54,6 +54,28 @@ env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIB
 mojo = ">=1.0.0,<2"
 glfw = ">=3.4,<4"
 
+# ---------------------------------------------------------------------------
+# Opt-in: interop with Mojo's built-in GPU stack
+# ---------------------------------------------------------------------------
+# `max` ships the host-side half of Mojo's GPU stack (DeviceContext,
+# DeviceBuffer, enqueue_function); `std.gpu` in the base `mojo` package only
+# covers the kernel side. The core library deliberately does NOT depend on
+# `max` -- see wgpu_max/interop.mojo for the reasoning. Confining it to a
+# feature keeps the default environment, every `pixi run <task>`, and the
+# published conda package free of it: only `pixi run -e maxinterop ...` pays.
+[feature.maxinterop.dependencies]
+max = ">=26.5,<27"
+
+[feature.maxinterop.tasks]
+test-max-interop    = { cmd = "mojo run -I . tests/test_max_interop.mojo", depends-on = ["build-callbacks"] }
+example-max-interop = { cmd = "mojo run -I . examples/max_interop.mojo", depends-on = ["build-callbacks"] }
+# Compile-check the opt-in package itself. `mojo package wgpu` cannot cover it
+# (wgpu_max is not part of the wgpu package, by design), so this is its backstop.
+check-compile-max   = { cmd = "bash scripts/check-compile-max.sh", depends-on = ["build-callbacks"] }
+
+[environments]
+maxinterop = ["maxinterop"]
+
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
 build-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -L$CONDA_PREFIX/lib -lwgpu_native -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"

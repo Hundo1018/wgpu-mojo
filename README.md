@@ -220,6 +220,59 @@ Full source (with the WGSL): [`examples/triangle_window.mojo`](examples/triangle
 
 ---
 
+## Interop with Mojo's built-in GPU stack (opt-in)
+
+Mojo's own GPU stack is split across two conda packages: kernel-side indexing
+(`std.gpu`) ships in the base `mojo` package, but host-side dispatch —
+`DeviceContext`, `DeviceBuffer`, `enqueue_function` — ships only in `max`.
+
+**wgpu-mojo does not depend on `max`.** The bridge lives in a separate
+`wgpu_max` package that `mojo package wgpu` never compiles, so installing
+wgpu-mojo pulls in `mojo-compiler` and nothing more. Only users who want the
+bridge pay for it:
+
+```toml
+# your pixi.toml
+[feature.maxinterop.dependencies]
+max = ">=26.5,<27"
+
+[environments]
+maxinterop = ["maxinterop"]
+```
+
+```mojo
+from max.gpu.host import DeviceContext
+from wgpu_max import device_buffer_to_wgpu, wgpu_storage_to_device_buffer
+
+# MAX kernel output -> a wgpu storage buffer a WGSL shader can read
+device_buffer_to_wgpu[DType.float32](ctx, max_out, N, device, buf_a)
+
+# wgpu compute result -> back into a MAX device buffer
+wgpu_storage_to_device_buffer[DType.float32](ctx, device, buf_c, max_back, N)
+```
+
+| Function | Direction | Source/destination requirement |
+|----------|-----------|-------------------------------|
+| `wgpu_storage_to_device_buffer` | wgpu → MAX | source needs `COPY_SRC` (stages + submits for you) |
+| `wgpu_to_device_buffer` | wgpu → MAX | source needs `MAP_READ` |
+| `device_buffer_to_wgpu` | MAX → wgpu | destination needs `COPY_DST` |
+| `list_to_device_buffer` · `device_buffer_to_list` | host ↔ MAX | — |
+
+**Every crossing is a host round trip.** There is no zero-copy path: sharing
+allocations between the two stacks needs an external-memory handle
+(`VK_KHR_external_memory_fd` and friends) and wgpu-native exposes no API to
+obtain or import one. Bridge at stage boundaries, not per frame.
+
+Runnable end-to-end demo — a MAX kernel feeds a WGSL shader and the result
+comes back — in [`examples/max_interop.mojo`](examples/max_interop.mojo):
+
+```bash
+pixi run -e maxinterop example-max-interop
+pixi run -e maxinterop test-max-interop
+```
+
+---
+
 ## API reference
 
 Every type is re-exported from `wgpu`, so `from wgpu import Instance` always works.

@@ -122,3 +122,43 @@ jobs:
           pixi run test-device
           pixi run test-buffer
           pixi run test-compute
+
+  # ---------------------------------------------------------------------------
+  # Opt-in wgpu <-> MAX bridge (wgpu_max/).
+  #
+  # Compile-check only, and deliberately a separate job: `max` is not in the
+  # default environment, so none of the jobs above touch this code at all --
+  # that isolation is the whole point of the opt-in design, and it also means
+  # nothing else would catch API drift in the bridge.
+  #
+  # Not *run* here because MAX's host dispatch needs a real accelerator. The
+  # lavapipe job above is a software Vulkan rasterizer, which serves wgpu but
+  # not MAX (it targets CUDA/ROCm and reports no accelerator). The example
+  # guards its GPU path behind `comptime if has_accelerator()` precisely so it
+  # still compiles here; the bridge's own host-side API surface -- the part
+  # that actually drifts -- is fully compiled by this job.
+  # ---------------------------------------------------------------------------
+  max-interop:
+    name: MAX interop (compile-check)
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}   # branch tip = auto-commit; see `test` job
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.0
+        with:
+          cache: true
+          environments: maxinterop
+          activate-environment: maxinterop   # exports CONDA_PREFIX/PATH for setup-native.sh
+
+      - name: Install wgpu-native + build C bridges
+        run: bash scripts/setup-native.sh
+
+      - name: Compile-check the bridge, its test and its example
+        run: pixi run -e maxinterop check-compile-max
