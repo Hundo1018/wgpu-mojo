@@ -28,7 +28,7 @@ from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 
 @fieldwise_init
 struct WGPUStringView(TrivialRegisterPassable):
-    var data: UnsafePointer[NoneType, MutUntrackedOrigin]  # void* equivalent; bitcast to read chars
+    var data: Pointer[NoneType, MutUntrackedOrigin]  # void* equivalent; bitcast to read chars
     var length: UInt  # size_t
 
     @staticmethod
@@ -48,11 +48,11 @@ struct WGPUBorrowedStringView[
 ](TrivialRegisterPassable):
     """Origin-tracked StringView used before crossing the FFI boundary."""
 
-    var data: UnsafePointer[NoneType, Self.origin]
+    var data: Pointer[NoneType, Self.origin]
     var length: UInt
 
     def to_ffi(self) -> WGPUStringView:
-        var erased = rebind[UnsafePointer[NoneType, MutUntrackedOrigin]](self.data)
+        var erased = rebind[Pointer[NoneType, MutUntrackedOrigin]](self.data)
         return WGPUStringView(erased, self.length)
 
 
@@ -63,8 +63,8 @@ def str_to_borrowed_sv[
 ](ref[origin] s: String) -> WGPUBorrowedStringView[origin]:
     """Borrow `s` with origin tracking so the compiler can extend lifetime."""
     var bytes = s.as_bytes()
-    var raw = UnsafePointer(bytes.unsafe_ptr()).unsafe_bitcast[NoneType]()
-    var ptr = rebind[UnsafePointer[NoneType, origin]](raw)
+    var raw = Pointer(bytes.unsafe_ptr()).unsafe_bitcast[NoneType]()
+    var ptr = rebind[Pointer[NoneType, origin]](raw)
     return WGPUBorrowedStringView[origin](ptr, UInt(len(bytes)))
 
 
@@ -82,7 +82,7 @@ comptime WGPUBufferMapCallback = def(
 
 comptime WGPUCompilationInfoCallback = def(
     WGPUCompilationInfoRequestStatus,
-    UnsafePointer[WGPUCompilationInfo, MutUntrackedOrigin],
+    Pointer[WGPUCompilationInfo, MutUntrackedOrigin],
 ) -> None
 
 comptime WGPUCreateComputePipelineAsyncCallback = def(
@@ -389,7 +389,7 @@ struct WGPUBindGroupLayoutDescriptor(TrivialRegisterPassable):
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var label: WGPUStringView
     var entry_count: UInt
-    var entries: UnsafePointer[WGPUBindGroupLayoutEntry, MutUntrackedOrigin]
+    var entries: Pointer[WGPUBindGroupLayoutEntry, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -409,7 +409,7 @@ struct WGPUBindGroupDescriptor(TrivialRegisterPassable):
     var label: WGPUStringView
     var layout: WGPUBindGroupLayoutHandle
     var entry_count: UInt
-    var entries: UnsafePointer[WGPUBindGroupEntry, MutUntrackedOrigin]
+    var entries: Pointer[WGPUBindGroupEntry, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -448,7 +448,7 @@ struct WGPUCompilationMessage:
 struct WGPUCompilationInfo:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var message_count: UInt
-    var messages: UnsafePointer[WGPUCompilationMessage, MutUntrackedOrigin]
+    var messages: Pointer[WGPUCompilationMessage, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -462,7 +462,7 @@ struct WGPUConstantEntry(TrivialRegisterPassable):
 struct WGPUComputePassDescriptor(TrivialRegisterPassable):
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var label: WGPUStringView
-    var timestamp_writes: UnsafePointer[NoneType, MutUntrackedOrigin]  # optional
+    var timestamp_writes: Pointer[NoneType, MutUntrackedOrigin]  # optional
 
 
 @fieldwise_init
@@ -471,7 +471,7 @@ struct WGPUComputeState(TrivialRegisterPassable):
     var module: WGPUShaderModuleHandle
     var entry_point: WGPUStringView
     var constant_count: UInt
-    var constants: UnsafePointer[WGPUConstantEntry, MutUntrackedOrigin]
+    var constants: Pointer[WGPUConstantEntry, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -493,8 +493,8 @@ struct WGPUDeviceDescriptor:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var label: WGPUStringView
     var required_feature_count: UInt
-    var required_features: Optional[UnsafePointer[UInt32, MutUntrackedOrigin]]
-    var required_limits: Optional[UnsafePointer[WGPULimits, MutUntrackedOrigin]]  # nullable
+    var required_features: Optional[Pointer[UInt32, MutUntrackedOrigin]]
+    var required_limits: Optional[Pointer[WGPULimits, MutUntrackedOrigin]]  # nullable
     var default_queue: WGPUQueueDescriptor
     var device_lost_callback_info: WGPUDeviceLostCallbackInfo
     var uncaptured_error_callback_info: WGPUUncapturedErrorCallbackInfo
@@ -504,8 +504,8 @@ struct WGPUDeviceDescriptor:
 struct WGPUInstanceDescriptor:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var required_feature_count: UInt
-    var required_features: Optional[UnsafePointer[UInt32, MutUntrackedOrigin]]
-    var required_limits: Optional[UnsafePointer[NoneType, MutUntrackedOrigin]]  # nullable WGPUInstanceLimits*
+    var required_features: Optional[Pointer[UInt32, MutUntrackedOrigin]]
+    var required_limits: Optional[Pointer[NoneType, MutUntrackedOrigin]]  # nullable WGPUInstanceLimits*
 
 
 @fieldwise_init
@@ -529,7 +529,7 @@ struct WGPUPipelineLayoutDescriptor:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var label: WGPUStringView
     var bind_group_layout_count: UInt
-    var bind_group_layouts: UnsafePointer[WGPUBindGroupLayoutHandle, MutUntrackedOrigin]
+    var bind_group_layouts: Pointer[WGPUBindGroupLayoutHandle, MutUntrackedOrigin]
     var immediate_size: UInt32
 
 
@@ -591,10 +591,10 @@ struct WGPURenderPassDescriptor:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var label: WGPUStringView
     var color_attachment_count: UInt
-    var color_attachments: UnsafePointer[WGPURenderPassColorAttachment, MutUntrackedOrigin]
-    var depth_stencil_attachment: Optional[UnsafePointer[WGPURenderPassDepthStencilAttachment, MutUntrackedOrigin]]  # nullable
+    var color_attachments: Pointer[WGPURenderPassColorAttachment, MutUntrackedOrigin]
+    var depth_stencil_attachment: Optional[Pointer[WGPURenderPassDepthStencilAttachment, MutUntrackedOrigin]]  # nullable
     var occlusion_query_set: WGPUQuerySetHandle   # nullable
-    var timestamp_writes: Optional[UnsafePointer[WGPUPassTimestampWrites, MutUntrackedOrigin]]  # nullable
+    var timestamp_writes: Optional[Pointer[WGPUPassTimestampWrites, MutUntrackedOrigin]]  # nullable
 
 
 @fieldwise_init
@@ -608,7 +608,7 @@ struct WGPURenderBundleEncoderDescriptor:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var label: WGPUStringView
     var color_format_count: UInt
-    var color_formats: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var color_formats: Pointer[UInt32, MutUntrackedOrigin]
     var depth_stencil_format: UInt32
     var sample_count: UInt32
     var depth_read_only: UInt32   # WGPUBool
@@ -647,7 +647,7 @@ struct WGPUShaderSourceWGSL:
 struct WGPUShaderSourceSPIRV:
     var chain: WGPUChainedStruct
     var code_size: UInt32
-    var code: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var code: Pointer[UInt32, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -684,11 +684,11 @@ struct WGPUSurfaceCapabilities:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var usages: UInt64   # WGPUTextureUsage
     var format_count: UInt
-    var formats: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var formats: Pointer[UInt32, MutUntrackedOrigin]
     var present_mode_count: UInt
-    var present_modes: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var present_modes: Pointer[UInt32, MutUntrackedOrigin]
     var alpha_mode_count: UInt
-    var alpha_modes: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var alpha_modes: Pointer[UInt32, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -700,7 +700,7 @@ struct WGPUSurfaceConfiguration:
     var width: UInt32
     var height: UInt32
     var view_format_count: UInt
-    var view_formats: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var view_formats: Pointer[UInt32, MutUntrackedOrigin]
     var alpha_mode: UInt32
     var present_mode: UInt32
 
@@ -744,7 +744,7 @@ struct WGPUTextureDescriptor:
     var mip_level_count: UInt32
     var sample_count: UInt32
     var view_format_count: UInt
-    var view_formats: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var view_formats: Pointer[UInt32, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -775,14 +775,14 @@ struct WGPUVertexBufferLayout:
     var step_mode: UInt32
     var array_stride: UInt64
     var attribute_count: UInt
-    var attributes: UnsafePointer[WGPUVertexAttribute, MutUntrackedOrigin]
+    var attributes: Pointer[WGPUVertexAttribute, MutUntrackedOrigin]
 
 
 @fieldwise_init
 struct WGPUColorTargetState:
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var format: UInt32
-    var blend: Optional[UnsafePointer[WGPUBlendState, MutUntrackedOrigin]]   # nullable
+    var blend: Optional[Pointer[WGPUBlendState, MutUntrackedOrigin]]   # nullable
     var write_mask: UInt64   # WGPUColorWriteMask
 
 
@@ -792,9 +792,9 @@ struct WGPUVertexState(TrivialRegisterPassable):
     var module: WGPUShaderModuleHandle
     var entry_point: WGPUStringView
     var constant_count: UInt
-    var constants: UnsafePointer[WGPUConstantEntry, MutUntrackedOrigin]
+    var constants: Pointer[WGPUConstantEntry, MutUntrackedOrigin]
     var buffer_count: UInt
-    var buffers: UnsafePointer[WGPUVertexBufferLayout, MutUntrackedOrigin]
+    var buffers: Pointer[WGPUVertexBufferLayout, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -803,9 +803,9 @@ struct WGPUFragmentState(TrivialRegisterPassable):
     var module: WGPUShaderModuleHandle
     var entry_point: WGPUStringView
     var constant_count: UInt
-    var constants: UnsafePointer[WGPUConstantEntry, MutUntrackedOrigin]
+    var constants: Pointer[WGPUConstantEntry, MutUntrackedOrigin]
     var target_count: UInt
-    var targets: UnsafePointer[WGPUColorTargetState, MutUntrackedOrigin]
+    var targets: Pointer[WGPUColorTargetState, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -815,15 +815,15 @@ struct WGPURenderPipelineDescriptor(Movable):
     var layout: WGPUPipelineLayoutHandle   # nullable
     var vertex: WGPUVertexState
     var primitive: WGPUPrimitiveState
-    var depth_stencil: Optional[UnsafePointer[WGPUDepthStencilState, MutUntrackedOrigin]]  # nullable
+    var depth_stencil: Optional[Pointer[WGPUDepthStencilState, MutUntrackedOrigin]]  # nullable
     var multisample: WGPUMultisampleState
-    var fragment: Optional[UnsafePointer[WGPUFragmentState, MutUntrackedOrigin]]   # nullable
+    var fragment: Optional[Pointer[WGPUFragmentState, MutUntrackedOrigin]]   # nullable
 
 
 @fieldwise_init
 struct WGPUSupportedFeatures:
     var feature_count: UInt
-    var features: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var features: Pointer[UInt32, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -832,7 +832,7 @@ struct WGPUSupportedInstanceFeatures:
     # This struct has no nextInChain — an earlier definition carried one, which
     # shifted every field by 8 bytes.
     var feature_count: UInt
-    var features: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var features: Pointer[UInt32, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -887,7 +887,7 @@ struct WGPUShaderSourceGLSL:
     var stage: UInt64              # WGPUShaderStage bitflag
     var code: WGPUStringView
     var define_count: UInt32
-    var defines: UnsafePointer[WGPUShaderDefine, MutUntrackedOrigin]
+    var defines: Pointer[WGPUShaderDefine, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -896,7 +896,7 @@ struct WGPUShaderModuleDescriptorSpirV:
     # sourceSize counts 32-bit words, not bytes.
     var label: WGPUStringView
     var source_size: UInt32
-    var source: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var source: Pointer[UInt32, MutUntrackedOrigin]
 
 
 @fieldwise_init
@@ -912,7 +912,7 @@ struct WGPUCompatibilityModeLimits(TrivialRegisterPassable):
 @fieldwise_init
 struct WGPUSupportedWGSLLanguageFeatures:
     var feature_count: UInt
-    var features: UnsafePointer[UInt32, MutUntrackedOrigin]
+    var features: Pointer[UInt32, MutUntrackedOrigin]
 
 
 # ---------------------------------------------------------------------------

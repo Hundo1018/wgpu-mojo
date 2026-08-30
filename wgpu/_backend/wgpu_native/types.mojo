@@ -8,7 +8,7 @@ from std.ffi import OwnedDLHandle
 # ---------------------------------------------------------------------------
 # Opaque handle types (all wgpu objects are pointer-sized)
 # ---------------------------------------------------------------------------
-comptime NullableUnsafePointer[T: AnyType] = Optional[UnsafePointer[T, MutUntrackedOrigin]]
+comptime NullableUnsafePointer[T: AnyType] = Optional[Pointer[T, MutUntrackedOrigin]]
 
 comptime WGPUAdapterHandle = OpaquePointer[MutUntrackedOrigin]
 comptime WGPUBindGroupHandle = OpaquePointer[MutUntrackedOrigin]

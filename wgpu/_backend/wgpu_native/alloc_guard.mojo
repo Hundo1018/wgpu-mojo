@@ -4,7 +4,7 @@
 struct AllocGuard[T: AnyType](Movable):
     """Owns an `alloc[T](count)` allocation and frees it on scope exit."""
 
-    var _ptr: UnsafePointer[Self.T, MutUntrackedOrigin]
+    var _ptr: Pointer[Self.T, MutUntrackedOrigin]
     var _is_live: Bool
 
     def __init__(out self, count: Int):
@@ -19,14 +19,14 @@ struct AllocGuard[T: AnyType](Movable):
         if self._is_live:
             self._ptr.unsafe_free()
 
-    def __enter__(mut self) -> UnsafePointer[Self.T, MutUntrackedOrigin]:
+    def __enter__(mut self) -> Pointer[Self.T, MutUntrackedOrigin]:
         return self._ptr
 
     def __exit__(mut self):
         if self._is_live:
             self._ptr.unsafe_free()
-            self._ptr = UnsafePointer[Self.T, MutUntrackedOrigin].unsafe_dangling()
+            self._ptr = Pointer[Self.T, MutUntrackedOrigin].unsafe_dangling()
             self._is_live = False
 
-    def ptr(self) -> UnsafePointer[Self.T, MutUntrackedOrigin]:
+    def ptr(self) -> Pointer[Self.T, MutUntrackedOrigin]:
         return self._ptr

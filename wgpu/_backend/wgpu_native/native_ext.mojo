@@ -212,17 +212,17 @@ struct WGPUPushConstantRange(TrivialRegisterPassable):
 struct WGPUPipelineLayoutExtras:
     var chain: WGPUChainedStruct
     var push_constant_range_count: UInt
-    var push_constant_ranges: UnsafePointer[WGPUPushConstantRange, MutUntrackedOrigin]
+    var push_constant_ranges: Pointer[WGPUPushConstantRange, MutUntrackedOrigin]
 
 
 @fieldwise_init
 struct WGPUBindGroupEntryExtras:
     var chain:            WGPUChainedStruct
-    var buffers:          UnsafePointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUBuffer*
+    var buffers:          Pointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUBuffer*
     var buffer_count:     UInt
-    var samplers:         UnsafePointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUSampler*
+    var samplers:         Pointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUSampler*
     var sampler_count:    UInt
-    var texture_views:    UnsafePointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUTextureView*
+    var texture_views:    Pointer[OpaquePointer[MutUntrackedOrigin], MutUntrackedOrigin]  # WGPUTextureView*
     var texture_view_count: UInt
 
 
@@ -235,7 +235,7 @@ struct WGPUBindGroupLayoutEntryExtras:
 @fieldwise_init
 struct WGPUQuerySetDescriptorExtras:
     var chain:                      WGPUChainedStruct
-    var pipeline_statistics:        UnsafePointer[UInt32, MutUntrackedOrigin]
+    var pipeline_statistics:        Pointer[UInt32, MutUntrackedOrigin]
     var pipeline_statistic_count:   UInt
 
 
