@@ -4,6 +4,7 @@ Wgpu.diagnostics — Logging and preflight helpers for wgpu-mojo.
 
 from wgpu._ffi.lib import WGPULib
 from wgpu._backend.wgpu_native.loader import _WGPU_NATIVE_VERSION
+from wgpu._backend.wgpu_native.native_ext import WGPULogLevel
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import WGPUAdapterHandle, WGPUAdapterType, WGPUBackendType
 from wgpu._ffi.structs import (
@@ -82,6 +83,61 @@ def check_symbols() raises -> List[String]:
     only if the library cannot be loaded at all. Needs no GPU or adapter.
     """
     return missing_symbols(WGPULib())
+
+
+comptime _LOG_MSG_CAP = 512
+
+
+def _log_level_name(level: UInt32) -> String:
+    if level == WGPULogLevel.Error: return "ERROR"
+    if level == WGPULogLevel.Warn:  return "WARN"
+    if level == WGPULogLevel.Info:  return "INFO"
+    if level == WGPULogLevel.Debug: return "DEBUG"
+    if level == WGPULogLevel.Trace: return "TRACE"
+    return "LEVEL" + String(level)
+
+
+def install_log_callback(level: UInt32 = WGPULogLevel.Warn) raises:
+    """Route wgpu-native's log into a buffer that `drain_log()` can read.
+
+    Without this, wgpu-native writes to stderr and Mojo never sees it, so
+    validation failures surface only as raw status codes. Sets the log level
+    too — the callback receives nothing at `WGPULogLevel.Off`.
+
+    Installs a process-global callback: calling it twice just replaces it.
+    """
+    var lib = WGPULib()
+    lib.log_install()
+    lib.set_log_level(level)
+
+
+def drain_log() raises -> List[String]:
+    """Take all buffered log messages, oldest first, as "LEVEL: text".
+
+    Empty if nothing was logged or `install_log_callback()` was never called.
+    Draining removes the messages, so each is returned exactly once.
+    """
+    var lib = WGPULib()
+    var out = List[String]()
+    var buf = alloc[UInt8](_LOG_MSG_CAP)
+    var lvl = alloc[UInt32](1)
+    while True:
+        lvl[] = UInt32(0)
+        var n = lib.log_take(buf, UInt(_LOG_MSG_CAP), lvl)
+        if n < 0:
+            break
+        var text = String()
+        for i in range(Int(n)):
+            text += chr(Int(buf[i]))
+        out.append(_log_level_name(lvl[]) + ": " + text)
+    buf.free()
+    lvl.free()
+    return out^
+
+
+def log_dropped_count() raises -> UInt64:
+    """Messages discarded because the C-side ring buffer was full."""
+    return WGPULib().log_dropped()
 
 
 def _backend_type_name(t: UInt32) -> String:

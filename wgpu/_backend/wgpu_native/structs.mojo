@@ -843,6 +843,63 @@ struct WGPUInstanceLimits(TrivialRegisterPassable):
 
 
 @fieldwise_init
+struct WGPURenderPassMaxDrawCount(TrivialRegisterPassable):
+    # Chains onto WGPURenderPassDescriptor via SType.RenderPassMaxDrawCount.
+    var chain: WGPUChainedStruct
+    var max_draw_count: UInt64
+
+
+@fieldwise_init
+struct WGPUSurfaceColorManagement(TrivialRegisterPassable):
+    # Chains onto WGPUSurfaceConfiguration.
+    var chain: WGPUChainedStruct
+    var color_space: UInt32        # WGPUPredefinedColorSpace
+    var tone_mapping_mode: UInt32  # WGPUToneMappingMode
+
+
+@fieldwise_init
+struct WGPUTextureComponentSwizzle(TrivialRegisterPassable):
+    # Four WGPUComponentSwizzle values; note this one has no chain.
+    var r: UInt32
+    var g: UInt32
+    var b: UInt32
+    var a: UInt32
+
+
+@fieldwise_init
+struct WGPUTextureComponentSwizzleDescriptor(TrivialRegisterPassable):
+    # Chains onto WGPUTextureViewDescriptor.
+    var chain: WGPUChainedStruct
+    var swizzle: WGPUTextureComponentSwizzle
+
+
+@fieldwise_init
+struct WGPUShaderDefine:
+    # wgpu.h: { WGPUStringView name; WGPUStringView value; }
+    var name: WGPUStringView
+    var value: WGPUStringView
+
+
+@fieldwise_init
+struct WGPUShaderSourceGLSL:
+    # wgpu-native extension: chains onto WGPUShaderModuleDescriptor.
+    var chain: WGPUChainedStruct
+    var stage: UInt64              # WGPUShaderStage bitflag
+    var code: WGPUStringView
+    var define_count: UInt32
+    var defines: UnsafePointer[WGPUShaderDefine, MutUntrackedOrigin]
+
+
+@fieldwise_init
+struct WGPUShaderModuleDescriptorSpirV:
+    # wgpu.h: { WGPUStringView label; uint32_t sourceSize; uint32_t const* source; }
+    # sourceSize counts 32-bit words, not bytes.
+    var label: WGPUStringView
+    var source_size: UInt32
+    var source: UnsafePointer[UInt32, MutUntrackedOrigin]
+
+
+@fieldwise_init
 struct WGPUCompatibilityModeLimits(TrivialRegisterPassable):
     # Chains onto WGPULimits via SType.CompatibilityModeLimits.
     var chain: WGPUChainedStruct

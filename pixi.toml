@@ -78,7 +78,7 @@ maxinterop = ["maxinterop"]
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
-build-callbacks = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c -Iffi/include -Lffi/lib -L$CONDA_PREFIX/lib -lwgpu_native -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib && gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib"
+build-callbacks = "bash scripts/build-callbacks.sh"
 build-callback-probe = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.so ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'"
 
 # Compile-check all tests (except abi_probes — intentional negative probes)
@@ -114,6 +114,10 @@ test-command     = { cmd = "mojo run -I . tests/test_command_encoder.mojo", depe
 test-pipeline-layout = { cmd = "mojo run -I . tests/test_pipeline_layout.mojo", depends-on = ["build-callbacks"] }
 test-error-scope    = { cmd = "mojo run -I . tests/test_error_scope.mojo",   depends-on = ["build-callbacks"] }
 test-preflight      = { cmd = "mojo run -I . tests/test_preflight.mojo",     depends-on = ["build-callbacks"] }
+test-add-ref        = { cmd = "mojo run -I . tests/test_add_ref.mojo",       depends-on = ["build-callbacks"] }
+test-spirv          = { cmd = "mojo run -I . tests/test_spirv.mojo",         depends-on = ["build-callbacks"] }
+test-log-bridge     = { cmd = "mojo run -I . tests/test_log_bridge.mojo",    depends-on = ["build-callbacks"] }
+test-debug-groups   = { cmd = "mojo run -I . tests/test_debug_groups.mojo",  depends-on = ["build-callbacks"] }
 test-render-bundle  = { cmd = "mojo run -I . tests/test_render_bundle.mojo", depends-on = ["build-callbacks"] }
 
 # Callback ABI test (non-GPU)

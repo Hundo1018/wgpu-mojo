@@ -61,8 +61,22 @@ def test_texture_dimensions() raises:
     assert_equal(tex.height(), h)
 
 
+def test_native_metal_texture_off_metal() raises:
+    """The Metal texture getter is safe to call on non-Metal backends."""
+    var device = create_test_device()
+    var tex = device.create_texture(
+        UInt32(8), UInt32(8), UInt32(1),
+        WGPUTextureFormat.RGBA8Unorm,
+        WGPUTextureUsage.TEXTURE_BINDING,
+        2, 1, 1, "metal_texture",
+    )
+    _ = tex.native_metal_texture()
+    _ = device^
+
+
 def main() raises:
     test_create_2d_texture()
     test_create_texture_view()
     test_texture_dimensions()
+    test_native_metal_texture_off_metal()
     print("test_texture: ALL PASSED")

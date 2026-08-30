@@ -27,6 +27,16 @@ struct TextureView(Movable, Boolable):
     def __del__(deinit self):
         self._lib[].texture_view_release(self._handle)
 
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuTextureViewAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].texture_view_add_ref(self._handle)
+        return Self(self._lib, self._handle)
+
     def handle(self) -> TextureViewHandle:
         return TextureViewHandle(self._handle)
 
@@ -49,6 +59,20 @@ struct Texture(Movable, Boolable):
 
     def __del__(deinit self):
         self._lib[].texture_release(self._handle)
+
+    def native_metal_texture(self) -> OpaquePointer[MutUntrackedOrigin]:
+        """Underlying `MTLTexture`, or null on non-Metal backends."""
+        return self._lib[].texture_get_native_metal_texture(self._handle)
+
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuTextureAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].texture_add_ref(self._handle)
+        return Self(self._lib, self._handle)
 
     def handle(self) -> TextureHandle:
         return TextureHandle(self._handle)

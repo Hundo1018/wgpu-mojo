@@ -335,11 +335,16 @@ full CI/release pipeline.
 | Platform | GPU driver |
 |----------|-----------|
 | **Linux** (`linux-64`) | Vulkan: `mesa-vulkan-drivers` + `libvulkan1`, or NVIDIA proprietary |
-| **macOS** (`osx-arm64`) | Metal — built in, nothing to install |
+| **macOS** (`osx-arm64`) | Metal — built in, nothing to install (**compute only**, see below) |
 | **Windows** | D3D12 or Vulkan — usually present with vendor drivers |
 
 `linux-64` and `osx-arm64` are first-class via pixi. `osx-x86_64` / `win-x64` can be built
 manually — see [`conda.recipe/recipe.yaml`](conda.recipe/recipe.yaml).
+
+> **macOS is compute-only today.** Surface creation is implemented for Xlib and
+> Wayland only, so headless compute works on `osx-arm64` but nothing windowed
+> does — there is no `CAMetalLayer` path yet. Tracked as Tier 1 in
+> [`docs/BINDING_ROADMAP.md`](docs/BINDING_ROADMAP.md).
 
 ### Diagnostics
 

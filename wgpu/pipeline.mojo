@@ -29,6 +29,16 @@ struct ComputePipeline(Movable, Boolable):
     def __del__(deinit self):
         self._lib[].compute_pipeline_release(self._handle)
 
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuComputePipelineAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].compute_pipeline_add_ref(self._handle)
+        return Self(self._lib, self._handle)
+
     def handle(self) -> ComputePipelineHandle:
         return ComputePipelineHandle(self._handle)
 
@@ -55,6 +65,16 @@ struct RenderPipeline(Movable, Boolable):
 
     def __del__(deinit self):
         self._lib[].render_pipeline_release(self._handle)
+
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuRenderPipelineAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].render_pipeline_add_ref(self._handle)
+        return Self(self._lib, self._handle)
 
     def handle(self) -> RenderPipelineHandle:
         return RenderPipelineHandle(self._handle)

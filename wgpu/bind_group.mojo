@@ -28,6 +28,16 @@ struct BindGroupLayout(Movable, Boolable):
     def __del__(deinit self):
         self._lib[].bind_group_layout_release(self._handle)
 
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuBindGroupLayoutAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].bind_group_layout_add_ref(self._handle)
+        return Self(self._lib, self._handle)
+
     def handle(self) -> BindGroupLayoutHandle:
         return BindGroupLayoutHandle(self._handle)
 
@@ -50,6 +60,16 @@ struct BindGroup(Movable, Boolable):
 
     def __del__(deinit self):
         self._lib[].bind_group_release(self._handle)
+
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuBindGroupAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].bind_group_add_ref(self._handle)
+        return Self(self._lib, self._handle)
 
     def handle(self) -> BindGroupHandle:
         return BindGroupHandle(self._handle)

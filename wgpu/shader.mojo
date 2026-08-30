@@ -36,6 +36,16 @@ struct ShaderModule(Movable, Boolable):
     def __del__(deinit self):
         self._lib[].shader_module_release(self._handle)
 
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuShaderModuleAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].shader_module_add_ref(self._handle)
+        return Self(self._lib, self._handle, self._instance)
+
     def handle(self) -> ShaderModuleHandle:
         return ShaderModuleHandle(self._handle)
 

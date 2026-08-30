@@ -30,6 +30,9 @@ FILES=(
   tests/test_preflight.mojo
   tests/test_error_scope.mojo
   tests/test_render_bundle.mojo
+  tests/test_add_ref.mojo
+  tests/test_spirv.mojo
+  tests/test_log_bridge.mojo
   examples/enumerate_adapters.mojo
   examples/compute_add.mojo
   examples/compute_add_v2.mojo

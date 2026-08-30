@@ -52,10 +52,42 @@ def test_queue_available() raises:
     assert_true(device.queue().raw != null_opaque())
 
 
+def test_graphics_debugger_capture() raises:
+    """Capture start/stop must be safe with no debugger attached.
+
+    wgpuDeviceStartGraphicsDebuggerCapture returns false when nothing is
+    listening; the pair must not error or abort either way.
+    """
+    var device = create_test_device()
+    device.push_error_scope()
+    var started = device.start_graphics_debugger_capture()
+    if started:
+        device.stop_graphics_debugger_capture()
+    var err = device.pop_error_scope()
+    assert_equal(err.byte_length(), 0, "debugger capture raised: " + err)
+    _ = device^
+
+
+def test_native_metal_handles_are_null_off_metal() raises:
+    """The Metal getters return null on non-Metal backends rather than failing.
+
+    On macOS these return real MTLDevice / MTLCommandQueue pointers; this
+    asserts only that calling them anywhere is safe.
+    """
+    var device = create_test_device()
+    var mtl_device = device.native_metal_device()
+    var mtl_queue  = device.native_metal_command_queue()
+    _ = mtl_device
+    _ = mtl_queue
+    _ = device^
+
+
 def main() raises:
     test_request_device()
     test_device_get_limits()
     test_device_has_feature()
     test_device_poll()
     test_queue_available()
+    test_graphics_debugger_capture()
+    test_native_metal_handles_are_null_off_metal()
     print("test_device: ALL PASSED")
