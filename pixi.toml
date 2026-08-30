@@ -88,6 +88,10 @@ check-compile = { cmd = "bash scripts/check-compile.sh", depends-on = ["build-ca
 # Verify every wgpu-native symbol the binding resolves is exported by the .so.
 # Catches ABI drift that check-compile cannot see (symbols resolve lazily).
 check-symbols = { cmd = "bash scripts/check-symbols.sh" }
+# Verify every FFI struct's byte size and field count against the real headers.
+# The one correctness hole no other gate can see — a wrong layout silently
+# corrupts every read through that struct.
+check-struct-layout = { cmd = "python3 scripts/check_struct_layout.py" }
 
 # Run all non-GPU tests
 test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
@@ -118,6 +122,9 @@ test-add-ref        = { cmd = "mojo run -I . tests/test_add_ref.mojo",       dep
 test-spirv          = { cmd = "mojo run -I . tests/test_spirv.mojo",         depends-on = ["build-callbacks"] }
 test-log-bridge     = { cmd = "mojo run -I . tests/test_log_bridge.mojo",    depends-on = ["build-callbacks"] }
 test-debug-groups   = { cmd = "mojo run -I . tests/test_debug_groups.mojo",  depends-on = ["build-callbacks"] }
+test-query-set      = { cmd = "mojo run -I . tests/test_query_set.mojo",     depends-on = ["build-callbacks"] }
+test-render-pipeline = { cmd = "mojo run -I . tests/test_render_pipeline.mojo", depends-on = ["build-callbacks"] }
+test-gpu-compile    = { cmd = "mojo run -I . tests/test_gpu_compile.mojo",   depends-on = ["build-callbacks"] }
 test-render-bundle  = { cmd = "mojo run -I . tests/test_render_bundle.mojo", depends-on = ["build-callbacks"] }
 
 # Callback ABI test (non-GPU)

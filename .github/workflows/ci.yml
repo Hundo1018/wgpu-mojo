@@ -68,6 +68,9 @@ jobs:
       - name: Check FFI symbols resolve (catches wgpu-native ABI drift)
         run: pixi run check-symbols
 
+      - name: Check FFI struct layouts against the C headers
+        run: pixi run check-struct-layout
+
   # ---------------------------------------------------------------------------
   # Headless GPU tests on a free runner via Mesa lavapipe (software Vulkan).
   # No physical GPU and no display server are needed — only the compute/headless
@@ -128,6 +131,8 @@ jobs:
           pixi run test-add-ref
           pixi run test-spirv
           pixi run test-log-bridge
+          pixi run test-query-set
+          pixi run test-render-pipeline
 
   # ---------------------------------------------------------------------------
   # Opt-in wgpu <-> MAX bridge (wgpu_max/).
