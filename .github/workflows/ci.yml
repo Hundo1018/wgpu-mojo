@@ -65,6 +65,9 @@ jobs:
       - name: Compile-check all tests & examples (catches API drift)
         run: pixi run check-compile
 
+      - name: Check FFI symbols resolve (catches wgpu-native ABI drift)
+        run: pixi run check-symbols
+
   # ---------------------------------------------------------------------------
   # Headless GPU tests on a free runner via Mesa lavapipe (software Vulkan).
   # No physical GPU and no display server are needed — only the compute/headless

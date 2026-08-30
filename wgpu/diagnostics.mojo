@@ -3,6 +3,7 @@ Wgpu.diagnostics — Logging and preflight helpers for wgpu-mojo.
 """
 
 from wgpu._ffi.lib import WGPULib
+from wgpu._backend.wgpu_native.loader import _WGPU_NATIVE_VERSION
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import WGPUAdapterHandle, WGPUAdapterType, WGPUBackendType
 from wgpu._ffi.structs import (
@@ -14,6 +15,76 @@ def set_log_level(level: UInt32) raises:
     """Set wgpu-native log level (0=Off, 1=Error, 2=Warn, 3=Info, 4=Debug, 5=Trace)."""
     var lib = WGPULib()
     lib.set_log_level(level)
+
+
+# ----------------------------------------------------------------------
+# Symbol / ABI checks
+# ----------------------------------------------------------------------
+
+
+def critical_symbols() -> List[String]:
+    """wgpu-native symbols whose absence means the loaded library does not
+    match the ABI this binding targets (see `_WGPU_NATIVE_VERSION`).
+
+    Deliberately not exhaustive: it covers the core object-lifecycle path
+    plus the entry points upstream has renamed across recent releases, which
+    is where drift actually shows up. `scripts/check-symbols.sh` checks every
+    symbol the binding resolves; this list is the runtime canary `preflight()`
+    reports on.
+    """
+    return [
+        # Core path: instance -> adapter -> device -> resources -> submit.
+        "wgpuGetVersion",
+        "wgpuCreateInstance",
+        "wgpuInstanceRequestAdapter",
+        "wgpuInstanceEnumerateAdapters",
+        "wgpuAdapterRequestDevice",
+        "wgpuAdapterGetInfo",
+        "wgpuDeviceCreateBuffer",
+        "wgpuDeviceCreateTexture",
+        "wgpuDeviceCreateShaderModule",
+        "wgpuDeviceCreateComputePipeline",
+        "wgpuDeviceCreateRenderPipeline",
+        "wgpuDeviceCreateCommandEncoder",
+        "wgpuQueueSubmit",
+        "wgpuQueueWriteBuffer",
+        "wgpuBufferMapAsync",
+        "wgpuQueueOnSubmittedWorkDone",
+        "wgpuDevicePoll",
+        "wgpuSurfaceGetCapabilities",
+        "wgpuSurfaceConfigure",
+        # Renamed or added by recent wgpu-native releases — drift-prone.
+        # v29 renamed the push-constant entry points to *SetImmediates;
+        # binding the pre-v29 *SetPushConstants names built fine and would
+        # only have failed at the first call.
+        "wgpuRenderPassEncoderSetImmediates",
+        "wgpuComputePassEncoderSetImmediates",
+        "wgpuRenderBundleEncoderSetImmediates",
+        "wgpuRenderPassEncoderMultiDrawIndirect",
+        "wgpuQueueGetTimestampPeriod",
+        "wgpuDevicePopErrorScope",
+        "wgpuShaderModuleGetCompilationInfo",
+        "wgpuDeviceCreateComputePipelineAsync",
+        "wgpuDeviceCreateRenderPipelineAsync",
+    ]
+
+
+def missing_symbols(lib: WGPULib) raises -> List[String]:
+    """Return the critical symbols absent from an already-loaded library."""
+    var missing = List[String]()
+    for name in critical_symbols():
+        if not lib.has_symbol(name):
+            missing.append(name)
+    return missing^
+
+
+def check_symbols() raises -> List[String]:
+    """Load libwgpu_native and return the critical symbols it does not export.
+
+    An empty list means the loaded library matches the expected ABI. Raises
+    only if the library cannot be loaded at all. Needs no GPU or adapter.
+    """
+    return missing_symbols(WGPULib())
 
 
 def _backend_type_name(t: UInt32) -> String:
@@ -61,6 +132,26 @@ def preflight() -> String:
 
     var lines = String("wgpu preflight OK\n")
     lines += "  wgpu-native version: " + String(lib.get_version()) + "\n"
+
+    # preflight() must never raise — errors go into the returned string.
+    try:
+        var missing = missing_symbols(lib)
+        if len(missing) > 0:
+            lines += (
+                "  SYMBOL CHECK FAILED: " + String(len(missing)) + " of "
+                + String(len(critical_symbols()))
+                + " critical symbols are missing from the loaded library.\n"
+                + "  Expected wgpu-native ABI: " + _WGPU_NATIVE_VERSION + "\n"
+            )
+            for name in missing:
+                lines += "    missing: " + name + "\n"
+        else:
+            lines += (
+                "  symbol check: OK (" + String(len(critical_symbols()))
+                + " critical symbols present)\n"
+            )
+    except e:
+        lines += "  symbol check: FAILED to run: " + String(e) + "\n"
 
     var desc_p = alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
