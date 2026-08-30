@@ -19,6 +19,7 @@ Last measured: 2026-08-30, against `ffi/lib/libwgpu_native.so`.
 | C functions, vs. everything exported | 185 | 226 | 81.9% |
 | Structs, vs. the target surface | 101 | 101 | **100%** |
 | Structs, vs. every struct in the headers | 101 | 113 | 89.4% |
+| Struct layouts verified against `gcc sizeof()` | 88 | 88 | **100%** |
 | Enum groups | 59 + 5 bitflags | 56 header enums | substantially complete |
 | Handle newtypes | 22 | all WebGPU objects | 100% |
 
@@ -50,11 +51,19 @@ Everything this binding names both resolves *and* works.
    listed in `scripts/excluded-symbols.txt` fails the gate. An upstream bump
    therefore cannot silently widen the gap.
 
-What is still *not* measured: signatures and struct layout. A binding can
-resolve, be implemented, and still be wrong if the argument types or field
-layout disagree with the header. Layout is guarded by byte-size assertions in
-`tests/test_structs.mojo`, checked against `gcc sizeof()` on the real headers,
-and by the C bridge layout contract described in `CLAUDE.md`.
+`scripts/check_struct_layout.py` (`pixi run check-struct-layout`) covers the
+struct side: for all 88 FFI structs that exist in both the Mojo layer and the
+headers, it compares byte size against `gcc sizeof()` and field count against
+the header's field list. Size alone would miss two same-size fields merged into
+one; field count alone would miss a wrong field type. Both failure modes are
+verified by mutation.
+
+What is still *not* measured: **function signatures**, and **field order** where
+sizes happen to match. Checking field order needs per-field offsets on the Mojo
+side, which needs a constructed instance of each of the 88 structs. Signatures
+have no cheap check at all — a wrong argument type compiles, resolves, and
+corrupts the call. The C bridge layout contract in `CLAUDE.md` remains
+hand-maintained.
 
 ## Deliberate exclusions
 
