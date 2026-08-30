@@ -21,7 +21,7 @@ from wgpu.render_bundle import RenderBundle
 
 
 @explicit_destroy("Must call end() or abandon()")
-struct FrameRenderPass(Movable, ImplicitlyDeletable where False):
+struct FrameRenderPass(Movable, Deinitable where False):
     """High-level linear render pass that retains the frame TextureView.
 
     This wrapper keeps the underlying TextureView alive for the full pass
@@ -83,7 +83,7 @@ struct FrameRenderPass(Movable, ImplicitlyDeletable where False):
 
 
 @explicit_destroy("Must call end() or abandon()")
-struct RenderPassEncoder(Movable, ImplicitlyDeletable where False):
+struct RenderPassEncoder(Movable, Deinitable where False):
     """RAII wrapper around a WGPURenderPassEncoder.
 
     Linear type: the compiler enforces that `end()` or `abandon()` is
@@ -127,7 +127,7 @@ struct RenderPassEncoder(Movable, ImplicitlyDeletable where False):
     ):
         var ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
         self._lib[].render_pass_set_bind_group(
-            self._handle, index, bind_group, UInt(len(offsets)), ptr.bitcast[NoneType]()
+            self._handle, index, bind_group, UInt(len(offsets)), ptr.unsafe_bitcast[NoneType]()
         )
 
     def set_vertex_buffer(
@@ -220,7 +220,7 @@ struct RenderPassEncoder(Movable, ImplicitlyDeletable where False):
         self._lib[].render_pass_set_scissor_rect(self._handle, x, y, width, height)
 
     def set_blend_constant(self, color: UnsafePointer[WGPUColor, MutUntrackedOrigin]):
-        self._lib[].render_pass_set_blend_constant(self._handle, color.bitcast[NoneType]())
+        self._lib[].render_pass_set_blend_constant(self._handle, color.unsafe_bitcast[NoneType]())
 
     def set_stencil_reference(self, reference: UInt32):
         self._lib[].render_pass_set_stencil_reference(self._handle, reference)

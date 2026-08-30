@@ -192,7 +192,7 @@ def test_offscreen_render_texture_readback() raises:
 
     var device_pin = device^
     var raw = readback.map_read()
-    var pixels = raw.bitcast[UInt8]()
+    var pixels = raw.unsafe_bitcast[UInt8]()
 
     assert_true(pixels[0] == UInt8(0))
     assert_true(pixels[1] == UInt8(255))
@@ -284,7 +284,7 @@ def test_example_texture_sample_upload_readback() raises:
 
     var device_pin = device^
     var raw = readback.map_read()
-    var pixels = raw.bitcast[UInt8]()
+    var pixels = raw.unsafe_bitcast[UInt8]()
 
     assert_true(pixels[0] == UInt8(255))
     assert_true(pixels[1] == UInt8(0))

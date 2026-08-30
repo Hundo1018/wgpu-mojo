@@ -83,8 +83,8 @@ def test_render_pass_debug_groups() raises:
     rpass.insert_debug_marker("mid_render")
     rpass.pop_debug_group()
     rpass^.end()
-    color_att_p.free()
-    rp_desc_p.free()
+    color_att_p.unsafe_free()
+    rp_desc_p.unsafe_free()
     var cmd = enc^.finish()
     assert_true(cmd.raw() != null_opaque())
 

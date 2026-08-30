@@ -130,8 +130,8 @@ def drain_log() raises -> List[String]:
         for i in range(Int(n)):
             text += chr(Int(buf[i]))
         out.append(_log_level_name(lvl[]) + ": " + text)
-    buf.free()
-    lvl.free()
+    buf.unsafe_free()
+    lvl.unsafe_free()
     return out^
 
 
@@ -163,7 +163,7 @@ def _sv_to_str(sv: WGPUStringView) -> String:
     var null_ptr = null_any_ptr()
     if sv.data == null_ptr:
         return "<null>"
-    var p = sv.data.bitcast[UInt8]()
+    var p = sv.data.unsafe_bitcast[UInt8]()
     var n = sv.length
     if n > 2048:
         n = 2048
@@ -214,7 +214,7 @@ def preflight() -> String:
         null_opaque(),
     )
     var inst = lib.create_instance(desc_p)
-    desc_p.free()
+    desc_p.unsafe_free()
     if inst == null_opaque():
         return lines + "  ERROR: wgpuCreateInstance returned null\n"
 
@@ -259,7 +259,7 @@ def preflight() -> String:
         )
         lib.adapter_release(adapters[i])
 
-    info_p.free()
-    adapters.free()
+    info_p.unsafe_free()
+    adapters.unsafe_free()
     lib.instance_release(inst)
     return lines

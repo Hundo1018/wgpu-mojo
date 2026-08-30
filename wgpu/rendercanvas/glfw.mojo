@@ -169,7 +169,7 @@ struct GLFWLib(Movable):
         self._lib = move._lib^
         self._input_cb = move._input_cb^
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         pass  # OwnedDLHandle handles dlclose
 
     # --- Core lifecycle ------------------------------------------------

@@ -83,7 +83,7 @@ struct Surface(Movable):
         self._width  = move._width
         self._height = move._height
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         if Int(self._handle) != 0:
             self._lib[].surface_unconfigure(self._handle)
         self._lib[].surface_release(self._handle)
@@ -208,7 +208,7 @@ def create_surface_wayland(
     )
     var desc_guard = AllocGuard[WGPUSurfaceDescriptor](1)
     desc_guard.ptr()[] = WGPUSurfaceDescriptor(
-        src_guard.ptr().bitcast[NoneType](),
+        src_guard.ptr().unsafe_bitcast[NoneType](),
         WGPUStringView.null_view(),
     )
     var h = lib[].instance_create_surface(inst, desc_guard.ptr())
@@ -231,7 +231,7 @@ def create_surface_xlib(
     )
     var desc_guard = AllocGuard[WGPUSurfaceDescriptor](1)
     desc_guard.ptr()[] = WGPUSurfaceDescriptor(
-        src_guard.ptr().bitcast[NoneType](),
+        src_guard.ptr().unsafe_bitcast[NoneType](),
         WGPUStringView.null_view(),
     )
     var h = lib[].instance_create_surface(inst, desc_guard.ptr())

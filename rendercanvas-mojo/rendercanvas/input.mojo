@@ -35,14 +35,14 @@ struct InputState(Movable):
     """
 
     # Key state arrays — indexed by GLFW key code (0..511)
-    var _keys_pressed:       UnsafePointer[Bool, MutExternalOrigin]
-    var _keys_just_pressed:  UnsafePointer[Bool, MutExternalOrigin]
-    var _keys_just_released: UnsafePointer[Bool, MutExternalOrigin]
+    var _keys_pressed:       UnsafePointer[Bool, MutUntrackedOrigin]
+    var _keys_just_pressed:  UnsafePointer[Bool, MutUntrackedOrigin]
+    var _keys_just_released: UnsafePointer[Bool, MutUntrackedOrigin]
 
     # Mouse button state (0..7)
-    var _mouse_pressed:       UnsafePointer[Bool, MutExternalOrigin]
-    var _mouse_just_pressed:  UnsafePointer[Bool, MutExternalOrigin]
-    var _mouse_just_released: UnsafePointer[Bool, MutExternalOrigin]
+    var _mouse_pressed:       UnsafePointer[Bool, MutUntrackedOrigin]
+    var _mouse_just_pressed:  UnsafePointer[Bool, MutUntrackedOrigin]
+    var _mouse_just_released: UnsafePointer[Bool, MutUntrackedOrigin]
 
     # Cursor position and per-frame delta
     var mouse_x:  Float64
@@ -93,13 +93,13 @@ struct InputState(Movable):
         self.scroll_x = move.scroll_x
         self.scroll_y = move.scroll_y
 
-    def __del__(deinit self):
-        self._keys_pressed.free()
-        self._keys_just_pressed.free()
-        self._keys_just_released.free()
-        self._mouse_pressed.free()
-        self._mouse_just_pressed.free()
-        self._mouse_just_released.free()
+    def __deinit__(deinit self):
+        self._keys_pressed.unsafe_free()
+        self._keys_just_pressed.unsafe_free()
+        self._keys_just_released.unsafe_free()
+        self._mouse_pressed.unsafe_free()
+        self._mouse_just_pressed.unsafe_free()
+        self._mouse_just_released.unsafe_free()
 
     # ------------------------------------------------------------------
     # Frame lifecycle
@@ -123,7 +123,7 @@ struct InputState(Movable):
         var evt = alloc[MojoInputEvent](1)
         while Bool(glfw.poll_input_event(evt)):
             self._process_event(evt[])
-        evt.free()
+        evt.unsafe_free()
 
     def process_event(mut self, event: MojoInputEvent):
         """Process a single input event (public, for testing without GLFW)."""

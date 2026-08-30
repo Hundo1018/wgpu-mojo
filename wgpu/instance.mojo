@@ -36,7 +36,7 @@ struct Instance(Movable):
             null_opaque(),
         )
         var inst = lib.create_instance(desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         if inst == null_opaque():
             raise Error("wgpuCreateInstance returned null")
 
@@ -85,7 +85,7 @@ struct Instance(Movable):
         for i in range(Int(count)):
             if i != index:
                 self._owner[].lib()[].adapter_release(adapters[i])
-        adapters.free()
+        adapters.unsafe_free()
 
         return Adapter(self._owner, chosen)
 
@@ -114,7 +114,7 @@ def instance_limits() raises -> WGPUInstanceLimits:
     p[] = WGPUInstanceLimits(null_opaque(), UInt(0))
     var status = lib.get_instance_limits(p)
     var limits = p[]
-    p.free()
+    p.unsafe_free()
     if status != WGPUStatus.Success:
         raise Error(
             "wgpuGetInstanceLimits failed with status " + String(status)

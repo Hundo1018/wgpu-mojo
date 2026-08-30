@@ -15,16 +15,16 @@ struct AllocGuard[T: AnyType](Movable):
         self._ptr = move._ptr
         self._is_live = move._is_live
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         if self._is_live:
-            self._ptr.free()
+            self._ptr.unsafe_free()
 
     def __enter__(mut self) -> UnsafePointer[Self.T, MutUntrackedOrigin]:
         return self._ptr
 
     def __exit__(mut self):
         if self._is_live:
-            self._ptr.free()
+            self._ptr.unsafe_free()
             self._ptr = UnsafePointer[Self.T, MutUntrackedOrigin].unsafe_dangling()
             self._is_live = False
 

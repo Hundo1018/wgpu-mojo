@@ -21,7 +21,7 @@ struct InstanceOwner(Movable):
         self._lib = move._lib^
         self._inst = move._inst
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].instance_release(self._inst)
 
     def lib(self) -> ArcPointer[WGPULib]:

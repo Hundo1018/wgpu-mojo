@@ -34,8 +34,8 @@ def test_glfw_input_integration() raises:
     # ── Part 1: Polling APIs ────────────────────────────────────────────
     var title = String("test_input")
     var title_bytes = title.as_bytes()
-    var raw = UnsafePointer(title_bytes.unsafe_ptr()).bitcast[NoneType]()
-    var title_ptr = rebind[OpaquePointer[MutExternalOrigin]](raw)
+    var raw = UnsafePointer(title_bytes.unsafe_ptr()).unsafe_bitcast[NoneType]()
+    var title_ptr = rebind[OpaquePointer[MutUntrackedOrigin]](raw)
     var window = glfw.create_window(Int32(1), Int32(1), title_ptr)
     _ = title_bytes
     assert_true(window != null_opaque())
@@ -53,8 +53,8 @@ def test_glfw_input_integration() raises:
     # Cursor pos is undefined for newly created window; just check it doesn't crash
     _ = cx_p[]
     _ = cy_p[]
-    cx_p.free()
-    cy_p.free()
+    cx_p.unsafe_free()
+    cy_p.unsafe_free()
 
     var cursor_mode = glfw.get_input_mode(window, GLFW_CURSOR)
     assert_true(cursor_mode > Int32(0))  # should be GLFW_CURSOR_NORMAL (0x34001)
@@ -77,7 +77,7 @@ def test_glfw_input_integration() raises:
     var drained = 0
     while Bool(glfw.poll_input_event(evt)):
         drained += 1
-    evt.free()
+    evt.unsafe_free()
 
     # After draining, queue must be empty
     assert_equal(glfw.input_queue_count(), Int32(0))

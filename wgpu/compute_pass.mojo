@@ -18,7 +18,7 @@ from wgpu.query_set import QuerySet
 
 
 @explicit_destroy("Must call end() or abandon()")
-struct ComputePassEncoder(Movable, ImplicitlyDeletable where False):
+struct ComputePassEncoder(Movable, Deinitable where False):
     """RAII wrapper around a WGPUComputePassEncoder.
 
     Linear type: the compiler enforces that `end()` or `abandon()` is
@@ -63,7 +63,7 @@ struct ComputePassEncoder(Movable, ImplicitlyDeletable where False):
         var ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
         self._lib[].compute_pass_set_bind_group(
             self._handle, index, bind_group,
-            ptr.bitcast[NoneType](), UInt(len(offsets))
+            ptr.unsafe_bitcast[NoneType](), UInt(len(offsets))
         )
 
     def set_bind_group_with_offsets(
@@ -76,7 +76,7 @@ struct ComputePassEncoder(Movable, ImplicitlyDeletable where False):
         var ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
         self._lib[].compute_pass_set_bind_group(
             self._handle, index, bind_group.handle().raw,
-            ptr.bitcast[NoneType](), UInt(len(offsets))
+            ptr.unsafe_bitcast[NoneType](), UInt(len(offsets))
         )
 
     def dispatch_workgroups(self, x: UInt32, y: UInt32 = 1, z: UInt32 = 1):

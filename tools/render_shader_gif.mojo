@@ -215,7 +215,7 @@ def render_scene(mut device: Device, name: String, shade_wgsl: String) raises:
             _ = device.poll(True)
 
             var raw = staging.map_read()
-            var src = raw.bitcast[UInt32]()
+            var src = raw.unsafe_bitcast[UInt32]()
             var bytes = List[UInt8](capacity=BYTES)
             for i in range(W * H):
                 var px = src[i]

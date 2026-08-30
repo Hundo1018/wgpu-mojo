@@ -165,7 +165,7 @@ def main() raises:
     # 9. Readback
     # ----------------------------------------------------------------
     var raw    = buf_r.map_read()
-    var result = raw.bitcast[Float32]()
+    var result = raw.unsafe_bitcast[Float32]()
     print("Result[0]:", result[0], "expected:", Float32(0.0))
     print("Result[1]:", result[1], "expected:", Float32(3.0))
     print("Result[N-1]:", result[N - 1], "expected:", Float32(Float32(N - 1) * Float32(3.0)))

@@ -63,7 +63,7 @@ def str_to_borrowed_sv[
 ](ref[origin] s: String) -> WGPUBorrowedStringView[origin]:
     """Borrow `s` with origin tracking so the compiler can extend lifetime."""
     var bytes = s.as_bytes()
-    var raw = UnsafePointer(bytes.unsafe_ptr()).bitcast[NoneType]()
+    var raw = UnsafePointer(bytes.unsafe_ptr()).unsafe_bitcast[NoneType]()
     var ptr = rebind[UnsafePointer[NoneType, origin]](raw)
     return WGPUBorrowedStringView[origin](ptr, UInt(len(bytes)))
 

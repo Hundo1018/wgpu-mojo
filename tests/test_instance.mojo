@@ -39,7 +39,7 @@ def test_create_instance() raises:
         None,
     )
     var inst = lib.create_instance(desc_p)
-    desc_p.free()
+    desc_p.unsafe_free()
     assert_true(inst != null_opaque())
     lib.instance_release(inst)
 
@@ -54,7 +54,7 @@ def test_enumerate_adapters() raises:
         None,
     )
     var inst = lib.create_instance(desc_p)
-    desc_p.free()
+    desc_p.unsafe_free()
     var count = lib.enumerate_adapters(
         inst,
         null_opaque(),
@@ -67,7 +67,7 @@ def test_enumerate_adapters() raises:
     assert_true(adapters[0] != null_opaque())
     for i in range(Int(count)):
         lib.adapter_release(adapters[i])
-    adapters.free()
+    adapters.unsafe_free()
     lib.instance_release(inst)
 
 
