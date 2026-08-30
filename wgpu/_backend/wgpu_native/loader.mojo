@@ -88,22 +88,10 @@ struct _PopErrorResult(TrivialRegisterPassable):
     var message_len: UInt
 
 
-@fieldwise_init
-struct _CompilationResult(TrivialRegisterPassable):
-    var status: UInt32
-    var info: OpaquePointer[MutUntrackedOrigin]  # const WGPUCompilationInfo*; valid while ShaderModule alive
 
 
-@fieldwise_init
-struct _ComputePipelineAsyncResult(TrivialRegisterPassable):
-    var status: UInt32
-    var pipeline: OpaquePointer[MutUntrackedOrigin]  # WGPUComputePipelineHandle
 
 
-@fieldwise_init
-struct _RenderPipelineAsyncResult(TrivialRegisterPassable):
-    var status: UInt32
-    var pipeline: OpaquePointer[MutUntrackedOrigin]  # WGPURenderPipelineHandle
 
 
 # ---------------------------------------------------------------------------
@@ -254,9 +242,6 @@ struct WGPULib(Movable):
     var _map_cb_ptr: OpaquePointer[MutUntrackedOrigin]
     var _done_cb_ptr: OpaquePointer[MutUntrackedOrigin]
     var _pop_error_cb_ptr: OpaquePointer[MutUntrackedOrigin]
-    var _compilation_info_cb_ptr: OpaquePointer[MutUntrackedOrigin]
-    var _compute_pipeline_async_cb_ptr: OpaquePointer[MutUntrackedOrigin]
-    var _render_pipeline_async_cb_ptr: OpaquePointer[MutUntrackedOrigin]
 
     def __init__(out self) raises:
         # Three-stage fallback for each library:
@@ -271,9 +256,6 @@ struct WGPULib(Movable):
         self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePointer[MutUntrackedOrigin]]()
         self._done_cb_ptr    = self._cb.call["wgpu_mojo_get_queue_done_callback", OpaquePointer[MutUntrackedOrigin]]()
         self._pop_error_cb_ptr = self._cb.call["wgpu_mojo_get_pop_error_callback", OpaquePointer[MutUntrackedOrigin]]()
-        self._compilation_info_cb_ptr = self._cb.call["wgpu_mojo_get_compilation_info_callback", OpaquePointer[MutUntrackedOrigin]]()
-        self._compute_pipeline_async_cb_ptr = self._cb.call["wgpu_mojo_get_compute_pipeline_async_callback", OpaquePointer[MutUntrackedOrigin]]()
-        self._render_pipeline_async_cb_ptr  = self._cb.call["wgpu_mojo_get_render_pipeline_async_callback",  OpaquePointer[MutUntrackedOrigin]]()
 
     def __init__(out self, *, deinit move: Self):
         self._wgpu = move._wgpu^
@@ -283,9 +265,6 @@ struct WGPULib(Movable):
         self._map_cb_ptr     = move._map_cb_ptr
         self._done_cb_ptr    = move._done_cb_ptr
         self._pop_error_cb_ptr = move._pop_error_cb_ptr
-        self._compilation_info_cb_ptr = move._compilation_info_cb_ptr
-        self._compute_pipeline_async_cb_ptr = move._compute_pipeline_async_cb_ptr
-        self._render_pipeline_async_cb_ptr  = move._render_pipeline_async_cb_ptr
 
     # ------------------------------------------------------------------
     # Symbol introspection (ABI drift detection)
@@ -349,17 +328,6 @@ struct WGPULib(Movable):
 
     def instance_process_events(self, instance: WGPUInstanceHandle):
         self._wgpu.call["wgpuInstanceProcessEvents"](instance)
-
-    def instance_wait_any(
-        self,
-        instance: WGPUInstanceHandle,
-        count: UInt,
-        waits: UnsafePointer[WGPUFutureWaitInfo, MutUntrackedOrigin],
-        timeout_ns: UInt64,
-    ) -> UInt32:
-        return self._wgpu.call["wgpuInstanceWaitAny", UInt32](
-            instance, count, waits, timeout_ns
-        )
 
     def instance_create_surface(
         self,
@@ -474,26 +442,6 @@ struct WGPULib(Movable):
     ) -> WGPURenderPipelineHandle:
         return self._wgpu.call["wgpuDeviceCreateRenderPipeline", WGPURenderPipelineHandle](
             device, desc
-        )
-
-    def device_create_compute_pipeline_async(
-        self,
-        device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUComputePipelineDescriptor, MutUntrackedOrigin],
-        callback_info_ptr: UnsafePointer[WGPUCreateComputePipelineAsyncCallbackInfo, MutUntrackedOrigin],
-    ):
-        self._cb.call["wgpu_mojo_device_create_compute_pipeline_async"](
-            device, desc, callback_info_ptr
-        )
-
-    def device_create_render_pipeline_async(
-        self,
-        device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPURenderPipelineDescriptor, MutUntrackedOrigin],
-        callback_info_ptr: UnsafePointer[WGPUCreateRenderPipelineAsyncCallbackInfo, MutUntrackedOrigin],
-    ):
-        self._cb.call["wgpu_mojo_device_create_render_pipeline_async"](
-            device, desc, callback_info_ptr
         )
 
     def device_create_shader_module(
@@ -635,31 +583,6 @@ struct WGPULib(Movable):
 
     def buffer_get_usage(self, buffer: WGPUBufferHandle) -> UInt64:
         return self._wgpu.call["wgpuBufferGetUsage", UInt64](buffer)
-
-    def buffer_get_map_state(self, buffer: WGPUBufferHandle) -> UInt32:
-        return self._wgpu.call["wgpuBufferGetMapState", UInt32](buffer)
-
-    def buffer_write_mapped_range(
-        self,
-        buffer: WGPUBufferHandle,
-        offset: UInt,
-        data: OpaquePointer[MutUntrackedOrigin],
-        size: UInt,
-    ) -> UInt32:
-        return self._wgpu.call["wgpuBufferWriteMappedRange", UInt32](
-            buffer, offset, data, size
-        )
-
-    def buffer_read_mapped_range(
-        self,
-        buffer: WGPUBufferHandle,
-        offset: UInt,
-        data: OpaquePointer[MutUntrackedOrigin],
-        size: UInt,
-    ) -> UInt32:
-        return self._wgpu.call["wgpuBufferReadMappedRange", UInt32](
-            buffer, offset, data, size
-        )
 
     def buffer_destroy(self, buffer: WGPUBufferHandle):
         self._wgpu.call["wgpuBufferDestroy"](buffer)
@@ -1114,30 +1037,9 @@ struct WGPULib(Movable):
     ) -> UInt32:   # WGPUStatus
         return self._wgpu.call["wgpuGetInstanceLimits", UInt32](limits)
 
-    def instance_get_wgsl_language_features(
-        self,
-        instance: WGPUInstanceHandle,
-        features: UnsafePointer[WGPUSupportedWGSLLanguageFeatures, MutUntrackedOrigin],
-    ):
-        self._wgpu.call["wgpuInstanceGetWGSLLanguageFeatures"](instance, features)
-
-    def instance_has_wgsl_language_feature(
-        self,
-        instance: WGPUInstanceHandle,
-        feature: UInt32,
-    ) -> UInt32:
-        return self._wgpu.call["wgpuInstanceHasWGSLLanguageFeature", UInt32](instance, feature)
-
     # ------------------------------------------------------------------
     # Missing Device methods
     # ------------------------------------------------------------------
-
-    def device_get_adapter_info(
-        self,
-        device: WGPUDeviceHandle,
-        info: UnsafePointer[WGPUAdapterInfo, MutUntrackedOrigin],
-    ) -> UInt32:
-        return self._wgpu.call["wgpuDeviceGetAdapterInfo", UInt32](device, info)
 
     def device_get_features(
         self,
@@ -1145,12 +1047,6 @@ struct WGPULib(Movable):
         features: UnsafePointer[WGPUSupportedFeatures, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuDeviceGetFeatures"](device, features)
-
-    def device_get_lost_future(self, device: WGPUDeviceHandle) -> WGPUFuture:
-        return self._wgpu.call["wgpuDeviceGetLostFuture", WGPUFuture](device)
-
-    def device_set_label(self, device: WGPUDeviceHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuDeviceSetLabel"](device, label)
 
     def device_pop_error_scope(
         self,
@@ -1171,9 +1067,6 @@ struct WGPULib(Movable):
     # ------------------------------------------------------------------
     # Missing Buffer methods
     # ------------------------------------------------------------------
-
-    def buffer_set_label(self, buffer: WGPUBufferHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuBufferSetLabel"](buffer, label)
 
     # ------------------------------------------------------------------
     # Missing CommandEncoder methods
@@ -1213,13 +1106,6 @@ struct WGPULib(Movable):
     ):
         self._wgpu.call["wgpuCommandEncoderWriteTimestamp"](encoder, query_set, query_index)
 
-    def command_encoder_set_label(
-        self,
-        encoder: WGPUCommandEncoderHandle,
-        label: WGPUStringView,
-    ):
-        self._wgpu.call["wgpuCommandEncoderSetLabel"](encoder, label)
-
     # ------------------------------------------------------------------
     # Missing ComputePassEncoder methods
     # ------------------------------------------------------------------
@@ -1240,13 +1126,6 @@ struct WGPULib(Movable):
 
     def compute_pass_pop_debug_group(self, pass_enc: WGPUComputePassEncoderHandle):
         self._wgpu.call["wgpuComputePassEncoderPopDebugGroup"](pass_enc)
-
-    def compute_pass_set_label(
-        self,
-        pass_enc: WGPUComputePassEncoderHandle,
-        label: WGPUStringView,
-    ):
-        self._wgpu.call["wgpuComputePassEncoderSetLabel"](pass_enc, label)
 
     # ------------------------------------------------------------------
     # Missing RenderPassEncoder methods
@@ -1303,13 +1182,6 @@ struct WGPULib(Movable):
     def render_pass_pop_debug_group(self, pass_enc: WGPURenderPassEncoderHandle):
         self._wgpu.call["wgpuRenderPassEncoderPopDebugGroup"](pass_enc)
 
-    def render_pass_set_label(
-        self,
-        pass_enc: WGPURenderPassEncoderHandle,
-        label: WGPUStringView,
-    ):
-        self._wgpu.call["wgpuRenderPassEncoderSetLabel"](pass_enc, label)
-
     def render_pass_set_stencil_reference(
         self,
         pass_enc: WGPURenderPassEncoderHandle,
@@ -1341,9 +1213,6 @@ struct WGPULib(Movable):
             self._wgpu.call["wgpuInstanceProcessEvents"](instance)
             return result[].status
 
-    def queue_set_label(self, queue: WGPUQueueHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuQueueSetLabel"](queue, label)
-
     # ------------------------------------------------------------------
     # Missing Texture methods
     # ------------------------------------------------------------------
@@ -1357,46 +1226,12 @@ struct WGPULib(Movable):
     def texture_get_sample_count(self, texture: WGPUTextureHandle) -> UInt32:
         return self._wgpu.call["wgpuTextureGetSampleCount", UInt32](texture)
 
-    def texture_set_label(self, texture: WGPUTextureHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuTextureSetLabel"](texture, label)
-
     def texture_add_ref(self, texture: WGPUTextureHandle):
         self._wgpu.call["wgpuTextureAddRef"](texture)
 
     # ------------------------------------------------------------------
     # Missing setLabel methods on remaining objects
     # ------------------------------------------------------------------
-
-    def texture_view_set_label(self, view: WGPUTextureViewHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuTextureViewSetLabel"](view, label)
-
-    def sampler_set_label(self, sampler: WGPUSamplerHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuSamplerSetLabel"](sampler, label)
-
-    def shader_module_set_label(self, shader: WGPUShaderModuleHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuShaderModuleSetLabel"](shader, label)
-
-    def shader_module_get_compilation_info(
-        self,
-        shader: WGPUShaderModuleHandle,
-        callback_info_ptr: UnsafePointer[WGPUCompilationInfoCallbackInfo, MutUntrackedOrigin],
-    ):
-        self._cb.call["wgpu_mojo_shader_get_compilation_info"](shader, callback_info_ptr)
-
-    def bind_group_set_label(self, bg: WGPUBindGroupHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuBindGroupSetLabel"](bg, label)
-
-    def bind_group_layout_set_label(self, bgl: WGPUBindGroupLayoutHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuBindGroupLayoutSetLabel"](bgl, label)
-
-    def pipeline_layout_set_label(self, pl: WGPUPipelineLayoutHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuPipelineLayoutSetLabel"](pl, label)
-
-    def compute_pipeline_set_label(self, pipeline: WGPUComputePipelineHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuComputePipelineSetLabel"](pipeline, label)
-
-    def render_pipeline_set_label(self, pipeline: WGPURenderPipelineHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuRenderPipelineSetLabel"](pipeline, label)
 
     # ------------------------------------------------------------------
     # Missing QuerySet methods
@@ -1410,9 +1245,6 @@ struct WGPULib(Movable):
 
     def query_set_destroy(self, qs: WGPUQuerySetHandle):
         self._wgpu.call["wgpuQuerySetDestroy"](qs)
-
-    def query_set_set_label(self, qs: WGPUQuerySetHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuQuerySetSetLabel"](qs, label)
 
     # ------------------------------------------------------------------
     # RenderBundleEncoder methods
@@ -1519,13 +1351,6 @@ struct WGPULib(Movable):
     def render_bundle_encoder_pop_debug_group(self, encoder: WGPURenderBundleEncoderHandle):
         self._wgpu.call["wgpuRenderBundleEncoderPopDebugGroup"](encoder)
 
-    def render_bundle_encoder_set_label(
-        self,
-        encoder: WGPURenderBundleEncoderHandle,
-        label: WGPUStringView,
-    ):
-        self._wgpu.call["wgpuRenderBundleEncoderSetLabel"](encoder, label)
-
     def render_bundle_encoder_finish(
         self,
         encoder: WGPURenderBundleEncoderHandle,
@@ -1537,9 +1362,6 @@ struct WGPULib(Movable):
 
     def render_bundle_encoder_release(self, encoder: WGPURenderBundleEncoderHandle):
         self._wgpu.call["wgpuRenderBundleEncoderRelease"](encoder)
-
-    def render_bundle_set_label(self, bundle: WGPURenderBundleHandle, label: WGPUStringView):
-        self._wgpu.call["wgpuRenderBundleSetLabel"](bundle, label)
 
     def render_bundle_release(self, bundle: WGPURenderBundleHandle):
         self._wgpu.call["wgpuRenderBundleRelease"](bundle)

@@ -45,6 +45,3 @@ struct QuerySet(Movable, Boolable):
     def get_type(self) -> UInt32:
         return self._lib[].query_set_get_type(self._handle)
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].query_set_set_label(self._handle, sv)

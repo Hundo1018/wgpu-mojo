@@ -128,10 +128,6 @@ struct ComputePassEncoder(Movable, ImplicitlyDeletable where False):
     # Label
     # ------------------------------------------------------------------
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].compute_pass_set_label(self._handle, sv)
-
     # ------------------------------------------------------------------
     # wgpu-native extensions
     # ------------------------------------------------------------------

@@ -63,9 +63,6 @@ def critical_symbols() -> List[String]:
         "wgpuRenderPassEncoderMultiDrawIndirect",
         "wgpuQueueGetTimestampPeriod",
         "wgpuDevicePopErrorScope",
-        "wgpuShaderModuleGetCompilationInfo",
-        "wgpuDeviceCreateComputePipelineAsync",
-        "wgpuDeviceCreateRenderPipelineAsync",
     ]
 
 

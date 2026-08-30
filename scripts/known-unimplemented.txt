@@ -3,50 +3,10 @@
 # check passes — but CALLING ONE PANICS IN RUST AND ABORTS THE PROCESS, with no
 # Mojo-level error to catch.
 #
-# This file is a ratchet, not an endorsement: it records the stubs already bound
-# so the gate can fail on any NEW one. Everything listed here is a landmine for
-# callers and should either be removed or guarded. See docs/BINDING_ROADMAP.md.
+# This list is EMPTY, and should stay that way. The 29 entries it was seeded
+# with were removed in full (loader methods, public wrappers, C bridge paths)
+# rather than documented — see docs/BINDING_ROADMAP.md "Tier 0". The file
+# remains as the ratchet: check-symbols.sh fails if any binding resolves a stub
+# that is not listed here, so re-introducing one is a deliberate act.
 #
-# Re-derive the current set with: pixi run check-symbols
-
-# --- SetLabel: unimplemented for every object type. wgpu-mojo exposes
-# --- set_label() wrappers over these; tests/test_debug_groups.mojo already
-# --- has test_encoder_set_label() commented out of main() for this reason.
-wgpuBindGroupLayoutSetLabel
-wgpuBindGroupSetLabel
-wgpuBufferSetLabel
-wgpuCommandEncoderSetLabel
-wgpuComputePassEncoderSetLabel
-wgpuComputePipelineSetLabel
-wgpuDeviceSetLabel
-wgpuPipelineLayoutSetLabel
-wgpuQuerySetSetLabel
-wgpuQueueSetLabel
-wgpuRenderBundleEncoderSetLabel
-wgpuRenderBundleSetLabel
-wgpuRenderPassEncoderSetLabel
-wgpuRenderPipelineSetLabel
-wgpuSamplerSetLabel
-wgpuShaderModuleSetLabel
-wgpuTextureSetLabel
-wgpuTextureViewSetLabel
-
-# --- Buffer: mapped-range access and map-state query
-wgpuBufferGetMapState
-wgpuBufferReadMappedRange
-wgpuBufferWriteMappedRange
-
-# --- Async pipeline creation. BINDING_STATUS.md lists these as done; they are
-# --- bound, but the underlying implementation does not exist upstream.
-wgpuDeviceCreateComputePipelineAsync
-wgpuDeviceCreateRenderPipelineAsync
-
-# --- Device / instance queries
-wgpuDeviceGetAdapterInfo
-wgpuDeviceGetLostFuture
-wgpuInstanceWaitAny
-wgpuInstanceGetWGSLLanguageFeatures
-wgpuInstanceHasWGSLLanguageFeature
-
-# --- Shader compilation info (also listed as done in BINDING_STATUS.md)
-wgpuShaderModuleGetCompilationInfo
+# Re-derive the library's current stub set with: pixi run check-symbols

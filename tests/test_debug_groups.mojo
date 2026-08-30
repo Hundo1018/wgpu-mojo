@@ -89,17 +89,8 @@ def test_render_pass_debug_groups() raises:
     assert_true(cmd.raw() != null_opaque())
 
 
-def test_encoder_set_label() raises:
-    """Set_label on CommandEncoder should not crash."""
-    var device = create_test_device()
-    var enc    = device.create_command_encoder("original")
-    enc.set_label("renamed_encoder")
-    _ = enc^.finish()
-
-
 def main() raises:
     test_command_encoder_debug_groups()
     test_compute_pass_debug_groups()
     test_render_pass_debug_groups()
-    # test_encoder_set_label() — wgpuCommandEncoderSetLabel not implemented in wgpu-native v29
     print("test_debug_groups: ALL PASSED")

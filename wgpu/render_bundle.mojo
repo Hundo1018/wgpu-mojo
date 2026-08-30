@@ -61,11 +61,6 @@ struct RenderBundle(Movable, Boolable):
     def __bool__(self) -> Bool:
         return Int(self._handle) != 0
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].render_bundle_set_label(self._handle, sv)
-
-
 @explicit_destroy("Must call finish() or abandon()")
 struct RenderBundleEncoder(Movable, ImplicitlyDeletable where False):
     """Records draw commands into a RenderBundle.
@@ -233,10 +228,6 @@ struct RenderBundleEncoder(Movable, ImplicitlyDeletable where False):
     # ------------------------------------------------------------------
     # Labels / push constants
     # ------------------------------------------------------------------
-
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].render_bundle_encoder_set_label(self._handle, sv)
 
     def set_immediates(
         self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]

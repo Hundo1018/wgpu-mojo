@@ -131,9 +131,6 @@ struct Buffer(Movable, Boolable):
     def usage(self) -> WGPUBufferUsage:
         return self._usage
 
-    def map_state(self) -> UInt32:
-        return self._lib[].buffer_get_map_state(self._handle)
-
     def handle(self) -> BufferHandle:
         return BufferHandle(self._handle)
 
@@ -206,6 +203,3 @@ struct Buffer(Movable, Boolable):
     # Label
     # ------------------------------------------------------------------
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].buffer_set_label(self._handle, sv)

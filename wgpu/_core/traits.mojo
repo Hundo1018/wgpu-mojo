@@ -7,11 +7,13 @@ wgpu-native and Mojo-native backends must satisfy.
 
 
 trait GpuResource:
-    """Any GPU-owned object that can be labeled and is movable."""
+    """Any GPU-owned object with a wgpu-native handle behind it.
 
-    def set_label(mut self, label: String):
-        """Attach a debug label visible in GPU profilers."""
-        ...
+    Deliberately empty: the only requirement used to be set_label(), but every
+    wgpu*SetLabel entry point is an unimplemented!() stub in wgpu-native v29
+    that aborts the process when called, so the wrappers were removed. See
+    scripts/known-unimplemented.txt.
+    """
 
 
 trait GpuBuffer(GpuResource):
