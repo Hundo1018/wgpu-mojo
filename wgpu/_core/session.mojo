@@ -144,7 +144,7 @@ struct Session(Movable):
         handle_p[] = handle
         var arr = rebind[UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
         self._lib[].queue_submit(self._queue_handle, UInt(1), arr)
-        handle_p.free()
+        handle_p.unsafe_free()
 
     def flush(mut self):
         """Poll until GPU finishes, then release all pinned resources."""

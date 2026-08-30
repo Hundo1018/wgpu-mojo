@@ -24,7 +24,7 @@ struct TextureView(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].texture_view_release(self._handle)
 
     def clone(self) -> Self:
@@ -57,7 +57,7 @@ struct Texture(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].texture_release(self._handle)
 
     def native_metal_texture(self) -> OpaquePointer[MutUntrackedOrigin]:

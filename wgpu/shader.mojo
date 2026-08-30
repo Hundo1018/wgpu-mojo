@@ -33,7 +33,7 @@ struct ShaderModule(Movable, Boolable):
         self._handle   = move._handle
         self._instance = move._instance
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].shader_module_release(self._handle)
 
     def clone(self) -> Self:

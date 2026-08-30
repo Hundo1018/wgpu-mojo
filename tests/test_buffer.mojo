@@ -63,7 +63,7 @@ def test_queue_write_and_map_read_buffer() raises:
         data[3] = Float32(4.0)
         device._lib[].queue_write_buffer(
             device.queue().raw, gpu_buf.handle().raw, UInt64(0),
-            data.bitcast[NoneType](), UInt(16)
+            data.unsafe_bitcast[NoneType](), UInt(16)
         )
 
     # Copy gpu -> readback
@@ -77,7 +77,7 @@ def test_queue_write_and_map_read_buffer() raises:
 
     # Map readback and verify
     var raw = read_buf.map_read()
-    var result = raw.bitcast[Float32]()
+    var result = raw.unsafe_bitcast[Float32]()
     assert_equal(result[0], Float32(1.0))
     assert_equal(result[1], Float32(2.0))
     assert_equal(result[2], Float32(3.0))

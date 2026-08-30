@@ -23,7 +23,7 @@ struct QuerySet(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         # wgpuQuerySetDestroy in wgpu-native v29 calls query_set_drop() which
         # removes the resource from the registry immediately.  When Release
         # then decrements the Arc refcount to zero, WGPUQuerySetImpl::drop

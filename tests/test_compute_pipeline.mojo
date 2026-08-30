@@ -128,7 +128,7 @@ def test_vec_add_compute() raises:
     device.queue_submit(cmd)
 
     var raw = buf_r.map_read(UInt64(0), UInt64(16))
-    var result = raw.bitcast[Float32]()
+    var result = raw.unsafe_bitcast[Float32]()
     assert_equal(result[0], Float32(11.0))
     assert_equal(result[1], Float32(22.0))
     assert_equal(result[2], Float32(33.0))

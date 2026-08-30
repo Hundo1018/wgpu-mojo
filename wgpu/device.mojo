@@ -95,7 +95,7 @@ struct Device(Movable, Boolable):
         self._handle = move._handle
         self._queue = move._queue
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].queue_release(self._queue)
         self._lib[].device_release(self._handle)
 
@@ -111,7 +111,7 @@ struct Device(Movable, Boolable):
         limits_p[] = wgpu_limits_default()
         _ = self._lib[].device_get_limits(self._handle, limits_p)
         var result = limits_p[]
-        limits_p.free()
+        limits_p.unsafe_free()
         return result
 
     def has_feature(self, feature: UInt32) -> Bool:
@@ -142,7 +142,7 @@ struct Device(Movable, Boolable):
             mapped,
         )
         var result = self._lib[].device_create_buffer(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return Buffer(self._lib, self._instance, self._handle, result, size, usage)
 
     def create_texture(
@@ -173,7 +173,7 @@ struct Device(Movable, Boolable):
             null_ptr[UInt32](),
         )
         var result = self._lib[].device_create_texture(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return Texture(self._lib, result)
 
     def create_texture_view(self, texture: WGPUTextureHandle) -> TextureView:
@@ -219,7 +219,7 @@ struct Device(Movable, Boolable):
             max_anisotropy,
         )
         var result = self._lib[].device_create_sampler(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return Sampler(self._lib, result)
 
     def create_shader_module_wgsl(
@@ -234,12 +234,12 @@ struct Device(Movable, Boolable):
         source_p[] = WGPUShaderSourceWGSL(chain_val, code_sv)
         var desc_p = alloc[WGPUShaderModuleDescriptor](1)
         desc_p[] = WGPUShaderModuleDescriptor(
-            source_p.bitcast[NoneType](),
+            source_p.unsafe_bitcast[NoneType](),
             label_sv,
         )
         var result = self._lib[].device_create_shader_module(self._handle, desc_p)
-        source_p.free()
-        desc_p.free()
+        source_p.unsafe_free()
+        desc_p.unsafe_free()
         return ShaderModule(self._lib, result, self._instance)
 
     def create_shader_module_spirv(
@@ -258,12 +258,12 @@ struct Device(Movable, Boolable):
         )
         var desc_p = alloc[WGPUShaderModuleDescriptor](1)
         desc_p[] = WGPUShaderModuleDescriptor(
-            source_p.bitcast[NoneType](),
+            source_p.unsafe_bitcast[NoneType](),
             label_sv,
         )
         var result = self._lib[].device_create_shader_module(self._handle, desc_p)
-        source_p.free()
-        desc_p.free()
+        source_p.unsafe_free()
+        desc_p.unsafe_free()
         return ShaderModule(self._lib, result, self._instance)
 
     def start_graphics_debugger_capture(self) -> Bool:
@@ -289,7 +289,7 @@ struct Device(Movable, Boolable):
         var desc_p = alloc[WGPUBindGroupLayoutDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_bind_group_layout(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return BindGroupLayout(self._lib, result)
 
     def create_bind_group_layout(
@@ -317,7 +317,7 @@ struct Device(Movable, Boolable):
         var desc_p = alloc[WGPUBindGroupDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_bind_group(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return BindGroup(self._lib, result)
 
     def create_bind_group(
@@ -354,11 +354,11 @@ struct Device(Movable, Boolable):
         var desc_p = alloc[WGPUBindGroupDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_bind_group(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         
         # Free the entries we allocated
         if entries_len > 0:
-            entries_ptr.free()
+            entries_ptr.unsafe_free()
         
         return BindGroup(self._lib, result)
 
@@ -378,7 +378,7 @@ struct Device(Movable, Boolable):
             0,  # immediateDataRangeByteSize
         )
         var result = self._lib[].device_create_pipeline_layout(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return PipelineLayout(self._lib, result)
 
     def create_pipeline_layout(
@@ -401,7 +401,7 @@ struct Device(Movable, Boolable):
         var desc_p = alloc[WGPUComputePipelineDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_compute_pipeline(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return ComputePipeline(self._lib, result)
 
     def create_compute_pipeline(
@@ -437,7 +437,7 @@ struct Device(Movable, Boolable):
         var desc_p = alloc[WGPURenderPipelineDescriptor](1)
         desc_p[] = desc^
         var result = self._lib[].device_create_render_pipeline(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return RenderPipeline(self._lib, result)
 
     def create_render_pipeline(
@@ -499,8 +499,8 @@ struct Device(Movable, Boolable):
             multisample, fragment_p,
         )
         var result = self.create_render_pipeline(desc^)
-        target_p.free()
-        fragment_p.free()
+        target_p.unsafe_free()
+        fragment_p.unsafe_free()
         return result^
 
     def create_command_encoder(self, label: String = "") raises -> CommandEncoder:
@@ -508,7 +508,7 @@ struct Device(Movable, Boolable):
         var desc_p = alloc[WGPUCommandEncoderDescriptor](1)
         desc_p[] = WGPUCommandEncoderDescriptor(null_opaque(), label_sv)
         var result = self._lib[].device_create_command_encoder(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return CommandEncoder(self._lib, result)
 
     def create_query_set(
@@ -523,7 +523,7 @@ struct Device(Movable, Boolable):
             null_opaque(), label_sv, query_type, count
         )
         var result = self._lib[].device_create_query_set(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return QuerySet(self._lib, result)
 
     def create_render_bundle_encoder(
@@ -554,7 +554,7 @@ struct Device(Movable, Boolable):
             UInt32(1) if stencil_read_only else UInt32(0),
         )
         var result = self._lib[].device_create_render_bundle_encoder(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return RenderBundleEncoder(self._lib, result)
 
     # ------------------------------------------------------------------
@@ -576,7 +576,7 @@ struct Device(Movable, Boolable):
         handle_p[] = handle
         var arr = rebind[UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
         self._lib[].queue_submit(self._queue, UInt(1), arr)
-        handle_p.free()
+        handle_p.unsafe_free()
 
     def queue_timestamp_period(self) -> Float32:
         """Return nanoseconds per GPU timestamp tick (requires TimestampQuery feature)."""
@@ -601,7 +601,7 @@ struct Device(Movable, Boolable):
             self._queue,
             buffer.handle().raw,
             offset,
-            ptr.bitcast[NoneType](),
+            ptr.unsafe_bitcast[NoneType](),
             byte_count,
         )
 
@@ -649,9 +649,9 @@ struct Device(Movable, Boolable):
             size_ptr,
         )
 
-        layout_p.free()
-        dst_p.free()
-        size_p.free()
+        layout_p.unsafe_free()
+        dst_p.unsafe_free()
+        size_p.unsafe_free()
 
     # ------------------------------------------------------------------
     # Error scope
@@ -679,7 +679,7 @@ struct Device(Movable, Boolable):
                     null_opaque(),
                     WGPUCallbackMode.AllowSpontaneous,
                     self._lib[]._pop_error_cb_ptr,
-                    result.bitcast[NoneType](),
+                    result.unsafe_bitcast[NoneType](),
                     null_opaque(),
                 )
                 self._lib[].device_pop_error_scope(self._handle, cb_info_p)
@@ -691,7 +691,7 @@ struct Device(Movable, Boolable):
                 raise Error("pop_error_scope failed, status=" + String(status))
             if err_type == WGPUErrorType.NoError:
                 return String("")
-            var p = UnsafePointer(result[].message_data).bitcast[UInt8]()
+            var p = UnsafePointer(result[].message_data).unsafe_bitcast[UInt8]()
             var n = result[].message_len
             var out = String()
             var i = UInt(0)

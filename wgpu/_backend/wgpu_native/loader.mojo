@@ -162,7 +162,7 @@ def _read_env_var(name: String) raises -> String:
     var null_ptr = null_opaque()
     if raw == null_ptr:
         return String("")
-    var p = UnsafePointer(raw).bitcast[UInt8]()
+    var p = UnsafePointer(raw).unsafe_bitcast[UInt8]()
     var out = String()
     var i = 0
     while p[i] != 0:
@@ -317,7 +317,7 @@ struct WGPULib(Movable):
                     null_opaque(),
                     WGPUCallbackMode.AllowSpontaneous,
                     self._adapter_cb_ptr,
-                    result.bitcast[NoneType](),
+                    result.unsafe_bitcast[NoneType](),
                     null_opaque(),
                 )
                 _ = self._cb.call["wgpu_mojo_instance_request_adapter", WGPUFuture](
@@ -364,7 +364,7 @@ struct WGPULib(Movable):
                     null_opaque(),
                     WGPUCallbackMode.AllowSpontaneous,
                     self._device_cb_ptr,
-                    result.bitcast[NoneType](),
+                    result.unsafe_bitcast[NoneType](),
                     null_opaque(),
                 )
                 _ = self._cb.call["wgpu_mojo_adapter_request_device", WGPUFuture](
@@ -570,7 +570,7 @@ struct WGPULib(Movable):
                     None,
                     WGPUCallbackMode.AllowSpontaneous,
                     self._map_cb_ptr,
-                    result.bitcast[NoneType](),
+                    result.unsafe_bitcast[NoneType](),
                     None,
                 )
                 _ = self._cb.call["wgpu_mojo_buffer_map_async", WGPUFuture](
@@ -1289,7 +1289,7 @@ struct WGPULib(Movable):
                     null_opaque(),
                     WGPUCallbackMode.AllowSpontaneous,
                     self._done_cb_ptr,
-                    result.bitcast[NoneType](),
+                    result.unsafe_bitcast[NoneType](),
                     null_opaque(),
                 )
                 _ = self._cb.call["wgpu_mojo_queue_on_submitted_work_done", WGPUFuture](queue, cb_info_p)

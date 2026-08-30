@@ -54,7 +54,7 @@ struct Adapter(Movable):
         )
         _ = self._lib[].adapter_get_info(self._handle, info_p)
         self._info = info_p[]
-        info_p.free()
+        info_p.unsafe_free()
 
     def __init__(out self, *, deinit move: Self):
         self._owner = move._owner^
@@ -63,7 +63,7 @@ struct Adapter(Movable):
         self._handle = move._handle
         self._info = move._info
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].adapter_release(self._handle)
 
     def adapter_info(self) -> WGPUAdapterInfo:
@@ -125,9 +125,9 @@ struct Adapter(Movable):
             self._handle,
             desc_p,
         )
-        desc_p.free()
+        desc_p.unsafe_free()
         if len(required_features) > 0:
-            feat_ptr.free()
+            feat_ptr.unsafe_free()
 
         var device = dev_result.device
         var status = dev_result.status

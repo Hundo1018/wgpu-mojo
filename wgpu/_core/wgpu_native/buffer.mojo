@@ -53,7 +53,7 @@ struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):
     ):
         self._lib    = lib
         self._handle = handle
-        self._data   = UnsafePointer(raw).bitcast[Self.T]()
+        self._data   = UnsafePointer(raw).unsafe_bitcast[Self.T]()
         self._count  = count
 
     def __init__(out self, *, deinit move: Self):
@@ -62,7 +62,7 @@ struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):
         self._data   = move._data
         self._count  = move._count
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].buffer_unmap(self._handle)
 
     def __getitem__(self, i: Int) -> Self.T:
@@ -118,7 +118,7 @@ struct Buffer(Movable, Boolable):
         self._size     = move._size
         self._usage    = move._usage
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].buffer_release(self._handle)
 
     # ------------------------------------------------------------------

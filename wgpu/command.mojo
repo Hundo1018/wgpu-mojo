@@ -53,7 +53,7 @@ struct CommandBuffer(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].command_buffer_release(self._handle)
 
     def clone(self) -> Self:
@@ -78,7 +78,7 @@ struct CommandBuffer(Movable, Boolable):
 
 
 @explicit_destroy("Must call finish() or abandon()")
-struct CommandEncoder(Movable, ImplicitlyDeletable where False):
+struct CommandEncoder(Movable, Deinitable where False):
     """RAII wrapper around a WGPUCommandEncoder.
 
     This is a linear type: the compiler enforces that you call `finish()`
@@ -112,7 +112,7 @@ struct CommandEncoder(Movable, ImplicitlyDeletable where False):
         var desc_p = alloc[WGPUComputePassDescriptor](1)
         desc_p[] = WGPUComputePassDescriptor(null_opaque(), label_sv, null_opaque())
         var result = self._lib[].command_encoder_begin_compute_pass(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         return ComputePassEncoder(self._lib, result)
 
     def begin_render_pass(
@@ -157,8 +157,8 @@ struct CommandEncoder(Movable, ImplicitlyDeletable where False):
         )
 
         var result = self._lib[].command_encoder_begin_render_pass(self._handle, rp_desc_p)
-        color_att_p.free()
-        rp_desc_p.free()
+        color_att_p.unsafe_free()
+        rp_desc_p.unsafe_free()
         return FrameRenderPass(self._lib, result, view^)
 
     def begin_surface_clear_pass(
@@ -253,9 +253,9 @@ struct CommandEncoder(Movable, ImplicitlyDeletable where False):
         var size_p = alloc[WGPUExtent3D](1)
         size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
         self._lib[].command_encoder_copy_buffer_to_texture(self._handle, src_p, dst_p, size_p)
-        src_p.free()
-        dst_p.free()
-        size_p.free()
+        src_p.unsafe_free()
+        dst_p.unsafe_free()
+        size_p.unsafe_free()
 
     def copy_texture_to_buffer(
         self,
@@ -286,9 +286,9 @@ struct CommandEncoder(Movable, ImplicitlyDeletable where False):
         var size_p = alloc[WGPUExtent3D](1)
         size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
         self._lib[].command_encoder_copy_texture_to_buffer(self._handle, src_p, dst_p, size_p)
-        src_p.free()
-        dst_p.free()
-        size_p.free()
+        src_p.unsafe_free()
+        dst_p.unsafe_free()
+        size_p.unsafe_free()
 
     def copy_texture_to_texture(
         self,
@@ -370,7 +370,7 @@ struct CommandEncoder(Movable, ImplicitlyDeletable where False):
         var desc_p = alloc[WGPUCommandBufferDescriptor](1)
         desc_p[] = WGPUCommandBufferDescriptor(null_opaque(), label_sv)
         var result = self._lib[].command_encoder_finish(self._handle, desc_p)
-        desc_p.free()
+        desc_p.unsafe_free()
         # Release the encoder handle — no __del__ with @explicit_destroy.
         self._lib[].command_encoder_release(self._handle)
         return CommandBuffer(self._lib, result)

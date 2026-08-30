@@ -25,7 +25,7 @@ struct BindGroupLayout(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].bind_group_layout_release(self._handle)
 
     def clone(self) -> Self:
@@ -58,7 +58,7 @@ struct BindGroup(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].bind_group_release(self._handle)
 
     def clone(self) -> Self:

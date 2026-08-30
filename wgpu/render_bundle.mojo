@@ -52,7 +52,7 @@ struct RenderBundle(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].render_bundle_release(self._handle)
 
     def clone(self) -> Self:
@@ -72,7 +72,7 @@ struct RenderBundle(Movable, Boolable):
         return Int(self._handle) != 0
 
 @explicit_destroy("Must call finish() or abandon()")
-struct RenderBundleEncoder(Movable, ImplicitlyDeletable where False):
+struct RenderBundleEncoder(Movable, Deinitable where False):
     """Records draw commands into a RenderBundle.
 
     Linear type: the compiler enforces that finish() or abandon() is called

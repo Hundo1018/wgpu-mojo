@@ -53,7 +53,7 @@ struct Buffer(Movable, Boolable):
         self._size     = move._size
         self._usage    = move._usage
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].buffer_release(self._handle)
 
     def clone(self) -> Self:
@@ -132,7 +132,7 @@ struct Buffer(Movable, Boolable):
         var count = Int(self._size - offset) // _sizeof[T]()
         var raw = self.map_read(offset)
         var out = List[T](capacity=count)
-        var src = raw.bitcast[T]()
+        var src = raw.unsafe_bitcast[T]()
         for i in range(count):
             out.append(src[i])
         self.unmap()
@@ -142,7 +142,7 @@ struct Buffer(Movable, Boolable):
         """Map for write, copy List[T] data, then unmap."""
         var byte_size = UInt64(len(data) * _sizeof[T]())
         var raw = self.map_write(offset, byte_size)
-        var dst = raw.bitcast[T]()
+        var dst = raw.unsafe_bitcast[T]()
         for i in range(len(data)):
             (dst + i).init_pointee_copy(data[i])
         self.unmap()

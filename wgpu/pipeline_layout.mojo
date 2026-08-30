@@ -23,7 +23,7 @@ struct PipelineLayout(Movable, Boolable):
         self._lib    = move._lib^
         self._handle = move._handle
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         self._lib[].pipeline_layout_release(self._handle)
 
     def clone(self) -> Self:

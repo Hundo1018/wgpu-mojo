@@ -35,7 +35,7 @@ def adapter_type_name(t: UInt32) -> String:
 def print_sv(label: String, sv: WGPUStringView):
     """Print a WGPUStringView field safely."""
     if Int(sv.data) != 0:
-        var cstr = sv.data.bitcast[UInt8]()
+        var cstr = sv.data.unsafe_bitcast[UInt8]()
         var i = UInt(0)
         var result = String()
         while i < sv.length and cstr[Int(i)] != 0:
@@ -60,7 +60,7 @@ def main() raises:
         null_ptr[NoneType](),
     )
     var inst = lib.create_instance(desc_p)
-    desc_p.free()
+    desc_p.unsafe_free()
     if Int(inst) == 0:
         print("ERROR: wgpuCreateInstance returned null")
         return
@@ -92,7 +92,7 @@ def main() raises:
         )
         _ = lib.adapter_get_info(adapter, info_p)
         var info = info_p[]
-        info_p.free()
+        info_p.unsafe_free()
 
         print("\n--- Adapter", i, "---")
         print_sv("  vendor      ", info.vendor)
@@ -105,6 +105,6 @@ def main() raises:
 
         lib.adapter_release(adapter)
 
-    adapters.free()
+    adapters.unsafe_free()
     lib.instance_release(inst)
     print("\nDone.")
