@@ -3,6 +3,7 @@ Wgpu.diagnostics — Logging and preflight helpers for wgpu-mojo.
 """
 
 from wgpu._ffi.lib import WGPULib
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu._backend.wgpu_native.loader import _WGPU_NATIVE_VERSION
 from wgpu._backend.wgpu_native.native_ext import WGPULogLevel
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
@@ -119,8 +120,8 @@ def drain_log() raises -> List[String]:
     """
     var lib = WGPULib()
     var out = List[String]()
-    var buf = alloc[UInt8](_LOG_MSG_CAP)
-    var lvl = alloc[UInt32](1)
+    var buf = raw_alloc[UInt8](_LOG_MSG_CAP)
+    var lvl = raw_alloc[UInt32](1)
     while True:
         lvl[] = UInt32(0)
         var n = lib.log_take(buf, UInt(_LOG_MSG_CAP), lvl)
@@ -206,7 +207,7 @@ def preflight() -> String:
     except e:
         lines += "  symbol check: FAILED to run: " + String(e) + "\n"
 
-    var desc_p = alloc[WGPUInstanceDescriptor](1)
+    var desc_p = raw_alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
         null_opaque(),
         UInt(0),
@@ -234,14 +235,14 @@ def preflight() -> String:
         )
         return lines
 
-    var adapters = alloc[WGPUAdapterHandle](Int(count))
+    var adapters = raw_alloc[WGPUAdapterHandle](Int(count))
     _ = lib.enumerate_adapters(
         inst,
         null_opaque(),
         adapters,
     )
 
-    var info_p = alloc[WGPUAdapterInfo](1)
+    var info_p = raw_alloc[WGPUAdapterInfo](1)
     for i in range(Int(count)):
         info_p[] = WGPUAdapterInfo(
             null_opaque(),

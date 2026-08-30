@@ -22,6 +22,7 @@ from wgpu.rendercanvas.glfw import (
     GLFWLib, MojoInputEvent, InputEventType,
     GLFW_PRESS, GLFW_RELEASE,
 )
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 
 comptime _MAX_KEYS: Int = 512
 comptime _MAX_MOUSE_BUTTONS: Int = 8
@@ -55,12 +56,12 @@ struct InputState(Movable):
     var scroll_y: Float64
 
     def __init__(out self):
-        self._keys_pressed       = alloc[Bool](_MAX_KEYS)
-        self._keys_just_pressed  = alloc[Bool](_MAX_KEYS)
-        self._keys_just_released = alloc[Bool](_MAX_KEYS)
-        self._mouse_pressed       = alloc[Bool](_MAX_MOUSE_BUTTONS)
-        self._mouse_just_pressed  = alloc[Bool](_MAX_MOUSE_BUTTONS)
-        self._mouse_just_released = alloc[Bool](_MAX_MOUSE_BUTTONS)
+        self._keys_pressed       = raw_alloc[Bool](_MAX_KEYS)
+        self._keys_just_pressed  = raw_alloc[Bool](_MAX_KEYS)
+        self._keys_just_released = raw_alloc[Bool](_MAX_KEYS)
+        self._mouse_pressed       = raw_alloc[Bool](_MAX_MOUSE_BUTTONS)
+        self._mouse_just_pressed  = raw_alloc[Bool](_MAX_MOUSE_BUTTONS)
+        self._mouse_just_released = raw_alloc[Bool](_MAX_MOUSE_BUTTONS)
 
         # Zero-initialize all arrays
         for i in range(_MAX_KEYS):
@@ -120,7 +121,7 @@ struct InputState(Movable):
 
     def update(mut self, glfw: GLFWLib):
         """Drain the C-side event queue and update state. Call AFTER poll_events()."""
-        var evt = alloc[MojoInputEvent](1)
+        var evt = raw_alloc[MojoInputEvent](1)
         while Bool(glfw.poll_input_event(evt)):
             self._process_event(evt[])
         evt.unsafe_free()

@@ -4,6 +4,7 @@ Requires: libwgpu_native.so, libwgpu_mojo_cb.so, GPU hardware.
 """
 
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from std.testing import assert_true, assert_false, assert_equal, assert_not_equal
 from wgpu.instance import Instance, instance_limits
 from wgpu._ffi.lib import WGPULib
@@ -31,7 +32,7 @@ def test_wgpu_version_format() raises:
 def test_create_instance() raises:
     """WgpuCreateInstance should return non-null."""
     var lib = WGPULib()
-    var desc_p = alloc[WGPUInstanceDescriptor](1)
+    var desc_p = raw_alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
         null_opaque(),
         UInt(0),
@@ -47,7 +48,7 @@ def test_create_instance() raises:
 def test_enumerate_adapters() raises:
     """Should find at least one GPU adapter."""
     var lib = WGPULib()
-    var desc_p = alloc[WGPUInstanceDescriptor](1)
+    var desc_p = raw_alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
         null_opaque(), UInt(0),
         None,
@@ -62,7 +63,7 @@ def test_enumerate_adapters() raises:
     )
     print("Adapter count:", count)
     assert_true(count > UInt(0))
-    var adapters = alloc[WGPUAdapterHandle](Int(count))
+    var adapters = raw_alloc[WGPUAdapterHandle](Int(count))
     _ = lib.enumerate_adapters(inst, null_opaque(), adapters)
     assert_true(adapters[unsafe_offset=0] != null_opaque())
     for i in range(Int(count)):
