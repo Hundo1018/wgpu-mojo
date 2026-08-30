@@ -828,14 +828,28 @@ struct WGPUSupportedFeatures:
 
 @fieldwise_init
 struct WGPUSupportedInstanceFeatures:
-    var next_in_chain: OpaquePointer[MutUntrackedOrigin]
-    var feature_name_count: UInt
-    var feature_names: UnsafePointer[UInt32, MutUntrackedOrigin]
+    # webgpu.h: { size_t featureCount; WGPUInstanceFeatureName const* features; }
+    # This struct has no nextInChain — an earlier definition carried one, which
+    # shifted every field by 8 bytes.
+    var feature_count: UInt
+    var features: UnsafePointer[UInt32, MutUntrackedOrigin]
 
 
 @fieldwise_init
-struct WGPUInstanceLimits:
+struct WGPUInstanceLimits(TrivialRegisterPassable):
+    # webgpu.h: { WGPUChainedStruct* nextInChain; size_t timedWaitAnyMaxCount; }
     var next_in_chain: OpaquePointer[MutUntrackedOrigin]
+    var timed_wait_any_max_count: UInt
+
+
+@fieldwise_init
+struct WGPUCompatibilityModeLimits(TrivialRegisterPassable):
+    # Chains onto WGPULimits via SType.CompatibilityModeLimits.
+    var chain: WGPUChainedStruct
+    var max_storage_buffers_in_vertex_stage: UInt32
+    var max_storage_textures_in_vertex_stage: UInt32
+    var max_storage_buffers_in_fragment_stage: UInt32
+    var max_storage_textures_in_fragment_stage: UInt32
 
 
 @fieldwise_init

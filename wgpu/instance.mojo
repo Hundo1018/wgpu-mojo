@@ -7,10 +7,11 @@ from wgpu.adapter import Adapter
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
-    WGPUAdapterHandle, WGPUInstanceHandle,
+    WGPUAdapterHandle, WGPUInstanceHandle, WGPUStatus,
 )
 from wgpu._ffi.structs import (
     WGPUInstanceDescriptor,
+    WGPUInstanceLimits,
 )
 from wgpu.instance_owner import InstanceOwner
 
@@ -87,3 +88,35 @@ struct Instance(Movable):
         adapters.free()
 
         return Adapter(self._owner, chosen)
+
+
+# ---------------------------------------------------------------------------
+# Instance-global capability queries
+#
+# These are free functions in webgpu.h, not Instance methods: they answer what
+# wgpu-native supports *before* any instance exists, so there is no handle to
+# pass. They still need the shared library loaded, hence the WGPULib().
+#
+# Only instance_limits() is here. wgpuGetInstanceFeatures and
+# wgpuHasInstanceFeature are unimplemented!() stubs in wgpu-native v29 — they
+# link, but calling one aborts the process. Same for the WGSL-language-feature
+# pair. See scripts/known-unimplemented.txt.
+# ---------------------------------------------------------------------------
+
+
+def instance_limits() raises -> WGPUInstanceLimits:
+    """Instance-level limits reported by wgpu-native. No Instance required.
+
+    Raises if wgpu-native reports anything other than `WGPUStatus.Success`.
+    """
+    var lib = WGPULib()
+    var p = alloc[WGPUInstanceLimits](1)
+    p[] = WGPUInstanceLimits(null_opaque(), UInt(0))
+    var status = lib.get_instance_limits(p)
+    var limits = p[]
+    p.free()
+    if status != WGPUStatus.Success:
+        raise Error(
+            "wgpuGetInstanceLimits failed with status " + String(status)
+        )
+    return limits

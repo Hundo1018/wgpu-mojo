@@ -5,7 +5,7 @@ Requires: libwgpu_native.so, libwgpu_mojo_cb.so, GPU hardware.
 
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_false, assert_equal, assert_not_equal
-from wgpu.instance import Instance
+from wgpu.instance import Instance, instance_limits
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import (
     WGPUAdapterHandle, WGPUAdapterType, WGPUBackendType,
@@ -96,6 +96,19 @@ def test_get_version_via_instance() raises:
     assert_true(v > UInt32(0))
 
 
+def test_instance_limits() raises:
+    """wgpuGetInstanceLimits round-trips without an Instance.
+
+    One of the three instance-global queries in webgpu.h that wgpu-native v29
+    actually implements — GetInstanceFeatures and HasInstanceFeature are
+    unimplemented!() stubs that abort the process, so they are not bound.
+    """
+    var limits = instance_limits()
+    # timedWaitAnyMaxCount is 0 on v29; assert only that the field reads back,
+    # so this does not break when upstream starts reporting a real value.
+    assert_true(limits.timed_wait_any_max_count >= UInt(0))
+
+
 def main() raises:
     test_wgpu_lib_loads()
     test_wgpu_version_format()
@@ -104,4 +117,5 @@ def main() raises:
     test_request_adapter()
     test_adapter_info_fields()
     test_get_version_via_instance()
+    test_instance_limits()
     print("test_instance: ALL PASSED")
