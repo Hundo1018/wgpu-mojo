@@ -88,6 +88,20 @@ struct Surface(Movable):
             self._lib[].surface_unconfigure(self._handle)
         self._lib[].surface_release(self._handle)
 
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuSurfaceAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away. The configured format/size carry over.
+        """
+        self._lib[].surface_add_ref(self._handle)
+        var copy = Self(self._lib, self._handle)
+        copy._format = self._format
+        copy._width  = self._width
+        copy._height = self._height
+        return copy^
+
     # ------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------

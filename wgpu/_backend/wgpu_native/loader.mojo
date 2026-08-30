@@ -45,6 +45,7 @@ from wgpu._backend.wgpu_native.structs import (
     WGPULimits, WGPUSupportedFeatures,
     WGPUSupportedWGSLLanguageFeatures,
     WGPUSupportedInstanceFeatures, WGPUInstanceLimits,
+    WGPUShaderModuleDescriptorSpirV,
     WGPUCompilationInfoCallbackInfo,
     WGPUCreateComputePipelineAsyncCallbackInfo,
     WGPUCreateRenderPipelineAsyncCallbackInfo,
@@ -527,6 +528,26 @@ struct WGPULib(Movable):
     def device_add_ref(self, device: WGPUDeviceHandle):
         self._wgpu.call["wgpuDeviceAddRef"](device)
 
+    # wgpu-native extension: RenderDoc-style frame capture. Returns WGPUBool;
+    # false when no graphics debugger is attached.
+    def device_start_graphics_debugger_capture(self, device: WGPUDeviceHandle) -> UInt32:
+        return self._wgpu.call["wgpuDeviceStartGraphicsDebuggerCapture", UInt32](device)
+
+    def device_stop_graphics_debugger_capture(self, device: WGPUDeviceHandle):
+        self._wgpu.call["wgpuDeviceStopGraphicsDebuggerCapture"](device)
+
+    # Metal interop. Returns NULL on non-Metal backends rather than failing, so
+    # these are safe to call anywhere; they are only meaningful on macOS.
+    def device_get_native_metal_device(
+        self, device: WGPUDeviceHandle
+    ) -> OpaquePointer[MutUntrackedOrigin]:
+        return self._wgpu.call["wgpuDeviceGetNativeMetalDevice", OpaquePointer[MutUntrackedOrigin]](device)
+
+    def queue_get_native_metal_command_queue(
+        self, queue: WGPUQueueHandle
+    ) -> OpaquePointer[MutUntrackedOrigin]:
+        return self._wgpu.call["wgpuQueueGetNativeMetalCommandQueue", OpaquePointer[MutUntrackedOrigin]](queue)
+
     # ------------------------------------------------------------------
     # Buffer methods
     # ------------------------------------------------------------------
@@ -680,8 +701,14 @@ struct WGPULib(Movable):
     def command_encoder_release(self, encoder: WGPUCommandEncoderHandle):
         self._wgpu.call["wgpuCommandEncoderRelease"](encoder)
 
+    def command_encoder_add_ref(self, encoder: WGPUCommandEncoderHandle):
+        self._wgpu.call["wgpuCommandEncoderAddRef"](encoder)
+
     def command_buffer_release(self, cmd_buf: WGPUCommandBufferHandle):
         self._wgpu.call["wgpuCommandBufferRelease"](cmd_buf)
+
+    def command_buffer_add_ref(self, cmd_buf: WGPUCommandBufferHandle):
+        self._wgpu.call["wgpuCommandBufferAddRef"](cmd_buf)
 
     # ------------------------------------------------------------------
     # ComputePassEncoder methods
@@ -730,6 +757,9 @@ struct WGPULib(Movable):
 
     def compute_pass_release(self, pass_enc: WGPUComputePassEncoderHandle):
         self._wgpu.call["wgpuComputePassEncoderRelease"](pass_enc)
+
+    def compute_pass_add_ref(self, pass_enc: WGPUComputePassEncoderHandle):
+        self._wgpu.call["wgpuComputePassEncoderAddRef"](pass_enc)
 
     # ------------------------------------------------------------------
     # RenderPassEncoder methods
@@ -834,6 +864,9 @@ struct WGPULib(Movable):
     def render_pass_release(self, pass_enc: WGPURenderPassEncoderHandle):
         self._wgpu.call["wgpuRenderPassEncoderRelease"](pass_enc)
 
+    def render_pass_add_ref(self, pass_enc: WGPURenderPassEncoderHandle):
+        self._wgpu.call["wgpuRenderPassEncoderAddRef"](pass_enc)
+
     # ------------------------------------------------------------------
     # Queue methods
     # ------------------------------------------------------------------
@@ -872,6 +905,9 @@ struct WGPULib(Movable):
     def queue_release(self, queue: WGPUQueueHandle):
         self._wgpu.call["wgpuQueueRelease"](queue)
 
+    def queue_add_ref(self, queue: WGPUQueueHandle):
+        self._wgpu.call["wgpuQueueAddRef"](queue)
+
     # ------------------------------------------------------------------
     # Texture methods
     # ------------------------------------------------------------------
@@ -907,6 +943,9 @@ struct WGPULib(Movable):
     def texture_view_release(self, view: WGPUTextureViewHandle):
         self._wgpu.call["wgpuTextureViewRelease"](view)
 
+    def texture_view_add_ref(self, view: WGPUTextureViewHandle):
+        self._wgpu.call["wgpuTextureViewAddRef"](view)
+
     # ------------------------------------------------------------------
     # Sampler / BindGroup / Pipeline methods
     # ------------------------------------------------------------------
@@ -914,26 +953,50 @@ struct WGPULib(Movable):
     def sampler_release(self, sampler: WGPUSamplerHandle):
         self._wgpu.call["wgpuSamplerRelease"](sampler)
 
+    def sampler_add_ref(self, sampler: WGPUSamplerHandle):
+        self._wgpu.call["wgpuSamplerAddRef"](sampler)
+
     def bind_group_release(self, bg: WGPUBindGroupHandle):
         self._wgpu.call["wgpuBindGroupRelease"](bg)
+
+    def bind_group_add_ref(self, bg: WGPUBindGroupHandle):
+        self._wgpu.call["wgpuBindGroupAddRef"](bg)
 
     def bind_group_layout_release(self, bgl: WGPUBindGroupLayoutHandle):
         self._wgpu.call["wgpuBindGroupLayoutRelease"](bgl)
 
+    def bind_group_layout_add_ref(self, bgl: WGPUBindGroupLayoutHandle):
+        self._wgpu.call["wgpuBindGroupLayoutAddRef"](bgl)
+
     def pipeline_layout_release(self, pl: WGPUPipelineLayoutHandle):
         self._wgpu.call["wgpuPipelineLayoutRelease"](pl)
+
+    def pipeline_layout_add_ref(self, pl: WGPUPipelineLayoutHandle):
+        self._wgpu.call["wgpuPipelineLayoutAddRef"](pl)
 
     def compute_pipeline_release(self, pipeline: WGPUComputePipelineHandle):
         self._wgpu.call["wgpuComputePipelineRelease"](pipeline)
 
+    def compute_pipeline_add_ref(self, pipeline: WGPUComputePipelineHandle):
+        self._wgpu.call["wgpuComputePipelineAddRef"](pipeline)
+
     def render_pipeline_release(self, pipeline: WGPURenderPipelineHandle):
         self._wgpu.call["wgpuRenderPipelineRelease"](pipeline)
+
+    def render_pipeline_add_ref(self, pipeline: WGPURenderPipelineHandle):
+        self._wgpu.call["wgpuRenderPipelineAddRef"](pipeline)
 
     def shader_module_release(self, shader: WGPUShaderModuleHandle):
         self._wgpu.call["wgpuShaderModuleRelease"](shader)
 
+    def shader_module_add_ref(self, shader: WGPUShaderModuleHandle):
+        self._wgpu.call["wgpuShaderModuleAddRef"](shader)
+
     def query_set_release(self, qs: WGPUQuerySetHandle):
         self._wgpu.call["wgpuQuerySetRelease"](qs)
+
+    def query_set_add_ref(self, qs: WGPUQuerySetHandle):
+        self._wgpu.call["wgpuQuerySetAddRef"](qs)
 
     def compute_pipeline_get_bind_group_layout(
         self,
@@ -988,6 +1051,9 @@ struct WGPULib(Movable):
     def surface_release(self, surface: WGPUSurfaceHandle):
         self._wgpu.call["wgpuSurfaceRelease"](surface)
 
+    def surface_add_ref(self, surface: WGPUSurfaceHandle):
+        self._wgpu.call["wgpuSurfaceAddRef"](surface)
+
     # ------------------------------------------------------------------
     # wgpu-native extensions
     # ------------------------------------------------------------------
@@ -997,6 +1063,23 @@ struct WGPULib(Movable):
 
     def set_log_level(self, level: UInt32):
         self._wgpu.call["wgpuSetLogLevel"](level)
+
+    # wgpuSetLogCallback takes a stored C function pointer, which Mojo cannot
+    # produce, and wgpu-native calls it from its own threads. The C bridge owns
+    # a mutex-guarded ring buffer; these drain it. See ffi/wgpu_callbacks.c.
+    def log_install(self):
+        self._cb.call["wgpu_mojo_log_install"]()
+
+    def log_take(
+        self,
+        out_text: UnsafePointer[UInt8, MutUntrackedOrigin],
+        cap: UInt,
+        out_level: UnsafePointer[UInt32, MutUntrackedOrigin],
+    ) -> Int32:
+        return self._cb.call["wgpu_mojo_log_take", Int32](out_text, cap, out_level)
+
+    def log_dropped(self) -> UInt64:
+        return self._cb.call["wgpu_mojo_log_dropped", UInt64]()
 
     def device_poll(self, device: WGPUDeviceHandle, wait: Bool) -> UInt32:
         var w: UInt32 = WGPU_TRUE if wait else WGPU_FALSE
@@ -1229,6 +1312,12 @@ struct WGPULib(Movable):
     def texture_add_ref(self, texture: WGPUTextureHandle):
         self._wgpu.call["wgpuTextureAddRef"](texture)
 
+    def texture_get_native_metal_texture(
+        self, texture: WGPUTextureHandle
+    ) -> OpaquePointer[MutUntrackedOrigin]:
+        """Underlying MTLTexture, or null on non-Metal backends."""
+        return self._wgpu.call["wgpuTextureGetNativeMetalTexture", OpaquePointer[MutUntrackedOrigin]](texture)
+
     # ------------------------------------------------------------------
     # Missing setLabel methods on remaining objects
     # ------------------------------------------------------------------
@@ -1363,8 +1452,14 @@ struct WGPULib(Movable):
     def render_bundle_encoder_release(self, encoder: WGPURenderBundleEncoderHandle):
         self._wgpu.call["wgpuRenderBundleEncoderRelease"](encoder)
 
+    def render_bundle_encoder_add_ref(self, encoder: WGPURenderBundleEncoderHandle):
+        self._wgpu.call["wgpuRenderBundleEncoderAddRef"](encoder)
+
     def render_bundle_release(self, bundle: WGPURenderBundleHandle):
         self._wgpu.call["wgpuRenderBundleRelease"](bundle)
+
+    def render_bundle_add_ref(self, bundle: WGPURenderBundleHandle):
+        self._wgpu.call["wgpuRenderBundleAddRef"](bundle)
 
     # ------------------------------------------------------------------
     # wgpu-native extension: timestamp period

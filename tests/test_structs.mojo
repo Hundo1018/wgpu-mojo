@@ -15,6 +15,10 @@ from wgpu._ffi.structs import (
     WGPULimits, wgpu_limits_default,
     WGPUCompatibilityModeLimits, WGPUInstanceLimits,
     WGPUSupportedInstanceFeatures, WGPUSupportedWGSLLanguageFeatures,
+    WGPUShaderModuleDescriptorSpirV,
+    WGPURenderPassMaxDrawCount, WGPUSurfaceColorManagement,
+    WGPUTextureComponentSwizzle, WGPUTextureComponentSwizzleDescriptor,
+    WGPUShaderSourceGLSL, WGPUShaderDefine,
     str_to_sv,
 )
 
@@ -37,6 +41,17 @@ def test_instance_struct_layout() raises:
     assert_equal(_struct_size[WGPUSupportedWGSLLanguageFeatures](), 16)
     assert_equal(_struct_size[WGPUInstanceLimits](), 16)
     assert_equal(_struct_size[WGPUCompatibilityModeLimits](), 32)
+
+
+def test_chained_descriptor_layout() raises:
+    """Chained-descriptor byte sizes, against gcc sizeof() on the headers."""
+    assert_equal(_struct_size[WGPURenderPassMaxDrawCount](), 24)
+    assert_equal(_struct_size[WGPUSurfaceColorManagement](), 24)
+    assert_equal(_struct_size[WGPUTextureComponentSwizzle](), 16)
+    assert_equal(_struct_size[WGPUTextureComponentSwizzleDescriptor](), 32)
+    assert_equal(_struct_size[WGPUShaderSourceGLSL](), 56)
+    assert_equal(_struct_size[WGPUShaderDefine](), 32)
+    assert_equal(_struct_size[WGPUShaderModuleDescriptorSpirV](), 32)
 
 
 def test_stringview_null() raises:
@@ -115,4 +130,6 @@ def main() raises:
     print("  PASS: test_buffer_usage_value")
     test_instance_struct_layout()
     print("  PASS: test_instance_struct_layout")
-    print("All 10 tests passed!")
+    test_chained_descriptor_layout()
+    print("  PASS: test_chained_descriptor_layout")
+    print("All 11 tests passed!")

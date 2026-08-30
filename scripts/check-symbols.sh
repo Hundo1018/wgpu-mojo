@@ -81,7 +81,17 @@ fi
 #
 # Two shapes, detected two ways:
 #   named   — unimplemented!("wgpuX is not implemented"), found via `strings`
-#   generic — bare unimplemented!(), a tiny body hitting `ud2` early
+#   generic — any message at all, found structurally: a function that panics
+#             unconditionally never returns, so its body contains `ud2` and no
+#             `ret`. Real functions carry `ud2` on cold paths but always have a
+#             `ret`, so this separates the two exactly.
+#
+# An earlier version keyed on "short body reaching ud2 early" and missed
+# wgpuTextureGetTextureBindingViewDimension, whose panic message is
+# "Blocked on wgpu-core support" and whose body is 14 instructions. Widening the
+# length bound instead produced false positives on real functions
+# (wgpuBufferGetSize, wgpuTextureGetWidth, ...). The no-`ret` test needs no
+# threshold at all.
 # ---------------------------------------------------------------------------
 
 if ! command -v objdump >/dev/null 2>&1; then
@@ -97,9 +107,10 @@ strings -a "$LIB" 2>/dev/null \
   | sed 's/ is not implemented//' > "$TMP/unimpl.raw" || true
 
 objdump -d "$LIB" 2>/dev/null | awk '
-  /^[0-9a-f]+ <.*>:$/ { if (sym != "" && ud) print sym; sym=$2; gsub(/[<>:]/,"",sym); n=0; ud=0; next }
-  /^ *[0-9a-f]+:/     { n++; if ($0 ~ /ud2/ && n <= 10) ud=1 }
-  END                 { if (sym != "" && ud) print sym }
+  /^[0-9a-f]+ <.*>:$/ { if (sym != "" && ud && !rt) print sym
+                        sym=$2; gsub(/[<>:]/,"",sym); ud=0; rt=0; next }
+  /^ *[0-9a-f]+:/     { if ($0 ~ /\tud2/) ud=1; if ($0 ~ /\tret/) rt=1 }
+  END                 { if (sym != "" && ud && !rt) print sym }
 ' | grep -E '^wgpu[A-Z]' >> "$TMP/unimpl.raw" || true
 
 sort -u "$TMP/unimpl.raw" > "$TMP/unimpl"
@@ -131,5 +142,43 @@ if [ "$NEW_N" -gt 0 ]; then
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# Third check: coverage against the surface we actually intend to bind.
+#
+#   target = exported - upstream stubs - deliberate exclusions
+#
+# Anything in the target that is not bound is *unclassified*: either it should
+# be bound, or it should be listed in scripts/excluded-symbols.txt with a
+# reason. Failing on it means an upstream bump cannot silently widen the gap.
+# ---------------------------------------------------------------------------
+
+EXCLUDE="scripts/excluded-symbols.txt"
+if [ -f "$EXCLUDE" ]; then
+  sed 's/#.*//' "$EXCLUDE" | awk 'NF {print $1}' | sort -u > "$TMP/excluded" || true
+fi
+touch "$TMP/excluded"
+
+comm -23 "$TMP/exported" "$TMP/unimpl" > "$TMP/implemented"
+comm -23 "$TMP/implemented" "$TMP/excluded" > "$TMP/target"
+comm -13 "$TMP/expected" "$TMP/target" > "$TMP/unclassified"
+
+TARGET_N=$(wc -l < "$TMP/target" | tr -d ' ')
+UNCLASS_N=$(wc -l < "$TMP/unclassified" | tr -d ' ')
+BOUND_IN_TARGET=$((TARGET_N - UNCLASS_N))
+
+echo "  deliberately excluded         : $(wc -l < "$TMP/excluded" | tr -d ' ') ($EXCLUDE)"
+echo "  target surface                : $TARGET_N  (exported - stubs - excluded)"
+
+if [ "$UNCLASS_N" -gt 0 ]; then
+  echo ""
+  echo "  $UNCLASS_N symbol(s) are implemented upstream but neither bound nor excluded:"
+  sed 's/^/    - /' "$TMP/unclassified"
+  echo ""
+  echo "check-symbols: FAILED — classify each one: bind it, or add it to"
+  echo "  $EXCLUDE with a reason."
+  exit 1
+fi
+
 echo ""
-echo "check-symbols: ALL PASSED ($EXPECTED_N/$EXPECTED_N resolve)"
+echo "check-symbols: ALL PASSED"
+echo "  $EXPECTED_N/$EXPECTED_N resolve, $BOUND_IN_TARGET/$TARGET_N of the target surface bound (100%)"

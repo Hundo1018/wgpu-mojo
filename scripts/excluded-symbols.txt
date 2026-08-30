@@ -1,0 +1,31 @@
+# wgpu-native symbols this binding deliberately does NOT resolve, with the
+# reason. These are subtracted from the coverage denominator by
+# scripts/check-symbols.sh, so "100%" means "everything we intend to bind".
+#
+# This is NOT the place for upstream unimplemented!() stubs — those are detected
+# automatically and tracked in scripts/known-unimplemented.txt.
+#
+# Format: one symbol per line; text after '#' is the reason.
+
+wgpuDeviceCreateShaderModuleSpirV   # errors on Vulkan/NVIDIA even with the
+                                    # SpirvShaderPassthrough feature requested;
+                                    # the standard WGPUShaderSourceSPIRV chain
+                                    # covers SPIR-V and is tested in
+                                    # tests/test_spirv.mojo
+
+# --- Structs are not symbols and do not affect the count above, but the same
+# --- classification applies. Deliberately undefined in wgpu/_backend/.../structs.mojo:
+#
+#   WGPUExternalTextureBindingEntry     ExternalTexture's whole object API
+#   WGPUExternalTextureBindingLayout    (AddRef/Release/SetLabel) is stubs
+#   WGPUTextureBindingViewDimension     only consumer is a stub
+#   WGPURequestAdapterWebXROptions      WebXR: no meaning in a native binding
+#   WGPUSurfaceSourceWindowsHWND        no win-64 in pixi.toml
+#   WGPUSurfaceSourceAndroidNativeWindow  no android target
+#   WGPUSurfaceSourceSwapChainPanel     UWP only
+#   WGPUSurfaceSourceMetalLayer         needs macOS hardware to implement and
+#                                       verify — see docs/BINDING_ROADMAP.md Tier 1
+#   WGPUNativeDisplayHandle             display-specific adapter enumeration;
+#   WGPUXlibDisplayHandle               the bound wgpuInstanceEnumerateAdapters
+#   WGPUXcbDisplayHandle                path covers real use
+#   WGPUWaylandDisplayHandle

@@ -24,6 +24,7 @@ from wgpu._ffi.structs import (
     WGPUTextureViewDescriptor,
     WGPUSamplerDescriptor,
     WGPUShaderModuleDescriptor, WGPUShaderSourceWGSL, WGPUShaderSourceSPIRV,
+    WGPUShaderModuleDescriptorSpirV,
     WGPUBindGroupDescriptor, WGPUBindGroupLayoutDescriptor,
     WGPUBindGroupLayoutEntry, WGPUBindGroupEntry,
     WGPUPipelineLayoutDescriptor,
@@ -264,6 +265,22 @@ struct Device(Movable, Boolable):
         source_p.free()
         desc_p.free()
         return ShaderModule(self._lib, result, self._instance)
+
+    def start_graphics_debugger_capture(self) -> Bool:
+        """Begin a RenderDoc-style capture. False when no debugger is attached."""
+        return self._lib[].device_start_graphics_debugger_capture(self._handle) == WGPU_TRUE
+
+    def stop_graphics_debugger_capture(self):
+        """End a capture started with `start_graphics_debugger_capture()`."""
+        self._lib[].device_stop_graphics_debugger_capture(self._handle)
+
+    def native_metal_device(self) -> OpaquePointer[MutUntrackedOrigin]:
+        """Underlying `MTLDevice`, or null on non-Metal backends."""
+        return self._lib[].device_get_native_metal_device(self._handle)
+
+    def native_metal_command_queue(self) -> OpaquePointer[MutUntrackedOrigin]:
+        """Underlying `MTLCommandQueue`, or null on non-Metal backends."""
+        return self._lib[].queue_get_native_metal_command_queue(self._queue)
 
     def create_bind_group_layout(
         self,

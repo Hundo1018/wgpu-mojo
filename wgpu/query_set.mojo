@@ -33,6 +33,16 @@ struct QuerySet(Movable, Boolable):
         # Fix: skip Destroy and let Release + Arc drop do the full cleanup.
         self._lib[].query_set_release(self._handle)
 
+    def clone(self) -> Self:
+        """Share ownership of this GPU object via `wgpuQuerySetAddRef`.
+
+        A refcount bump, not a GPU-side copy: both wrappers refer to the same
+        object and each releases on drop, so it survives until the last one
+        goes away.
+        """
+        self._lib[].query_set_add_ref(self._handle)
+        return Self(self._lib, self._handle)
+
     def handle(self) -> QuerySetHandle:
         return QuerySetHandle(self._handle)
 
