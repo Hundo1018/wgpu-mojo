@@ -339,7 +339,7 @@ struct Device(Movable, Boolable):
         var entries_ptr = alloc[WGPUBindGroupEntry](entries_len) if entries_len > 0 else null_ptr[WGPUBindGroupEntry]()
         if entries_len > 0:
             for i in range(entries_len):
-                entries_ptr[i] = entries[i]
+                entries_ptr[unsafe_offset=i] = entries[i]
         
         # Build descriptor with our allocated entries
         var desc = WGPUBindGroupDescriptor(
@@ -475,13 +475,13 @@ struct Device(Movable, Boolable):
             UInt(0), null_ptr[WGPUVertexBufferLayout](),
         )
         var target_p = alloc[WGPUColorTargetState](1)
-        target_p[0] = WGPUColorTargetState(
+        target_p[unsafe_offset=0] = WGPUColorTargetState(
             null_opaque(), color_format,
             null_ptr[WGPUBlendState](),
             UInt64(0xF),  # ColorWriteMask.All
         )
         var fragment_p = alloc[WGPUFragmentState](1)
-        fragment_p[0] = WGPUFragmentState(
+        fragment_p[unsafe_offset=0] = WGPUFragmentState(
             null_opaque(), shader.handle().raw, fs_sv,
             UInt(0), null_ptr[WGPUConstantEntry](),
             UInt(1), target_p,
@@ -695,8 +695,8 @@ struct Device(Movable, Boolable):
             var n = result[].message_len
             var out = String()
             var i = UInt(0)
-            while i < n and p[Int(i)] != 0:
-                out += chr(Int(p[Int(i)]))
+            while i < n and p[unsafe_offset=Int(i)] != 0:
+                out += chr(Int(p[unsafe_offset=Int(i)]))
                 i += 1
             return out
 

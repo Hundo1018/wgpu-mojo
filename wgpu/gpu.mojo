@@ -38,7 +38,7 @@ from wgpu._ffi.handles import BufferHandle, SamplerHandle, TextureViewHandle
 def _elem_size[T: AnyType]() -> Int:
     """Compute sizeof(T) without requiring a real instance."""
     var p = null_ptr[T]()
-    return Int(p + 1) - Int(p)
+    return Int(p.unsafe_offset(1)) - Int(p)
 
 
 # ---------------------------------------------------------------------------

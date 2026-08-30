@@ -143,7 +143,7 @@ struct Surface(Movable):
             )
             _ = self._lib[].surface_get_capabilities(self._handle, adapter, caps_p)
             if caps_p[].format_count > 0:
-                fmt = caps_p[].formats[0]
+                fmt = caps_p[].formats[unsafe_offset=0]
             self._lib[].surface_capabilities_free(caps_p)
 
         self._format = fmt

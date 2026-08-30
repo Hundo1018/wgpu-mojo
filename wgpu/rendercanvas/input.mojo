@@ -64,13 +64,13 @@ struct InputState(Movable):
 
         # Zero-initialize all arrays
         for i in range(_MAX_KEYS):
-            (self._keys_pressed + i)[]       = False
-            (self._keys_just_pressed + i)[]  = False
-            (self._keys_just_released + i)[] = False
+            self._keys_pressed.unsafe_offset(i)[]       = False
+            self._keys_just_pressed.unsafe_offset(i)[]  = False
+            self._keys_just_released.unsafe_offset(i)[] = False
         for i in range(_MAX_MOUSE_BUTTONS):
-            (self._mouse_pressed + i)[]       = False
-            (self._mouse_just_pressed + i)[]  = False
-            (self._mouse_just_released + i)[] = False
+            self._mouse_pressed.unsafe_offset(i)[]       = False
+            self._mouse_just_pressed.unsafe_offset(i)[]  = False
+            self._mouse_just_released.unsafe_offset(i)[] = False
 
         self.mouse_x  = 0.0
         self.mouse_y  = 0.0
@@ -108,11 +108,11 @@ struct InputState(Movable):
     def begin_frame(mut self):
         """Clear per-frame transient state. Call BEFORE poll_events()."""
         for i in range(_MAX_KEYS):
-            (self._keys_just_pressed + i)[]  = False
-            (self._keys_just_released + i)[] = False
+            self._keys_just_pressed.unsafe_offset(i)[]  = False
+            self._keys_just_released.unsafe_offset(i)[] = False
         for i in range(_MAX_MOUSE_BUTTONS):
-            (self._mouse_just_pressed + i)[]  = False
-            (self._mouse_just_released + i)[] = False
+            self._mouse_just_pressed.unsafe_offset(i)[]  = False
+            self._mouse_just_released.unsafe_offset(i)[] = False
         self.mouse_dx = 0.0
         self.mouse_dy = 0.0
         self.scroll_x = 0.0
@@ -138,21 +138,21 @@ struct InputState(Movable):
         var idx = Int(key)
         if idx < 0 or idx >= _MAX_KEYS:
             return False
-        return (self._keys_pressed + idx)[]
+        return self._keys_pressed.unsafe_offset(idx)[]
 
     def is_key_just_pressed(self, key: Int32) -> Bool:
         """True if the key was pressed this frame."""
         var idx = Int(key)
         if idx < 0 or idx >= _MAX_KEYS:
             return False
-        return (self._keys_just_pressed + idx)[]
+        return self._keys_just_pressed.unsafe_offset(idx)[]
 
     def is_key_just_released(self, key: Int32) -> Bool:
         """True if the key was released this frame."""
         var idx = Int(key)
         if idx < 0 or idx >= _MAX_KEYS:
             return False
-        return (self._keys_just_released + idx)[]
+        return self._keys_just_released.unsafe_offset(idx)[]
 
     # ------------------------------------------------------------------
     # Mouse queries
@@ -162,19 +162,19 @@ struct InputState(Movable):
         var idx = Int(button)
         if idx < 0 or idx >= _MAX_MOUSE_BUTTONS:
             return False
-        return (self._mouse_pressed + idx)[]
+        return self._mouse_pressed.unsafe_offset(idx)[]
 
     def is_mouse_button_just_pressed(self, button: Int32) -> Bool:
         var idx = Int(button)
         if idx < 0 or idx >= _MAX_MOUSE_BUTTONS:
             return False
-        return (self._mouse_just_pressed + idx)[]
+        return self._mouse_just_pressed.unsafe_offset(idx)[]
 
     def is_mouse_button_just_released(self, button: Int32) -> Bool:
         var idx = Int(button)
         if idx < 0 or idx >= _MAX_MOUSE_BUTTONS:
             return False
-        return (self._mouse_just_released + idx)[]
+        return self._mouse_just_released.unsafe_offset(idx)[]
 
     # Mouse position/delta/scroll — access the public fields directly:
     #   input.mouse_x, input.mouse_y
@@ -190,21 +190,21 @@ struct InputState(Movable):
             var idx = Int(event.key_or_button)
             if idx >= 0 and idx < _MAX_KEYS:
                 if event.action == GLFW_PRESS:
-                    (self._keys_pressed + idx)[]      = True
-                    (self._keys_just_pressed + idx)[]  = True
+                    self._keys_pressed.unsafe_offset(idx)[]      = True
+                    self._keys_just_pressed.unsafe_offset(idx)[]  = True
                 elif event.action == GLFW_RELEASE:
-                    (self._keys_pressed + idx)[]       = False
-                    (self._keys_just_released + idx)[] = True
+                    self._keys_pressed.unsafe_offset(idx)[]       = False
+                    self._keys_just_released.unsafe_offset(idx)[] = True
                 # GLFW_REPEAT: keys_pressed stays True, no just_pressed
         elif event.type == InputEventType.MOUSE_BUTTON:
             var idx = Int(event.key_or_button)
             if idx >= 0 and idx < _MAX_MOUSE_BUTTONS:
                 if event.action == GLFW_PRESS:
-                    (self._mouse_pressed + idx)[]      = True
-                    (self._mouse_just_pressed + idx)[]  = True
+                    self._mouse_pressed.unsafe_offset(idx)[]      = True
+                    self._mouse_just_pressed.unsafe_offset(idx)[]  = True
                 elif event.action == GLFW_RELEASE:
-                    (self._mouse_pressed + idx)[]       = False
-                    (self._mouse_just_released + idx)[] = True
+                    self._mouse_pressed.unsafe_offset(idx)[]       = False
+                    self._mouse_just_released.unsafe_offset(idx)[] = True
         elif event.type == InputEventType.CURSOR_POS:
             var old_x = self.mouse_x
             var old_y = self.mouse_y

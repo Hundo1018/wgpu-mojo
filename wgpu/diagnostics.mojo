@@ -128,7 +128,7 @@ def drain_log() raises -> List[String]:
             break
         var text = String()
         for i in range(Int(n)):
-            text += chr(Int(buf[i]))
+            text += chr(Int(buf[unsafe_offset=i]))
         out.append(_log_level_name(lvl[]) + ": " + text)
     buf.unsafe_free()
     lvl.unsafe_free()
@@ -169,8 +169,8 @@ def _sv_to_str(sv: WGPUStringView) -> String:
         n = 2048
     var out = String()
     var i = UInt(0)
-    while i < n and p[Int(i)] != 0:
-        out += chr(Int(p[Int(i)]))
+    while i < n and p[unsafe_offset=Int(i)] != 0:
+        out += chr(Int(p[unsafe_offset=Int(i)]))
         i += 1
     return out
 
@@ -249,7 +249,7 @@ def preflight() -> String:
             WGPUStringView.null_view(), WGPUStringView.null_view(),
             0, 0, 0, 0, 0, 0,
         )
-        _ = lib.adapter_get_info(adapters[i], info_p)
+        _ = lib.adapter_get_info(adapters[unsafe_offset=i], info_p)
         var info = info_p[]
         lines += (
             "  adapter[" + String(i) + "]: "
@@ -257,7 +257,7 @@ def preflight() -> String:
             + _backend_type_name(info.backend_type) + " | "
             + _adapter_type_name(info.adapter_type) + "\n"
         )
-        lib.adapter_release(adapters[i])
+        lib.adapter_release(adapters[unsafe_offset=i])
 
     info_p.unsafe_free()
     adapters.unsafe_free()

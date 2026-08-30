@@ -38,8 +38,8 @@ def print_sv(label: String, sv: WGPUStringView):
         var cstr = sv.data.unsafe_bitcast[UInt8]()
         var i = UInt(0)
         var result = String()
-        while i < sv.length and cstr[Int(i)] != 0:
-            result += chr(Int(cstr[Int(i)]))
+        while i < sv.length and cstr[unsafe_offset=Int(i)] != 0:
+            result += chr(Int(cstr[unsafe_offset=Int(i)]))
             i += 1
         print(label + ": " + result)
     else:
@@ -82,7 +82,7 @@ def main() raises:
     _ = lib.enumerate_adapters(inst, null_opaque(), adapters)
 
     for i in range(count):
-        var adapter = adapters[i]
+        var adapter = adapters[unsafe_offset=i]
         var info_p = alloc[WGPUAdapterInfo](1)
         info_p[] = WGPUAdapterInfo(
             null_opaque(),

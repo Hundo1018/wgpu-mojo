@@ -57,10 +57,10 @@ def test_queue_write_and_map_read_buffer() raises:
 
     # Upload data
     with AllocGuard[Float32](4) as data:
-        data[0] = Float32(1.0)
-        data[1] = Float32(2.0)
-        data[2] = Float32(3.0)
-        data[3] = Float32(4.0)
+        data[unsafe_offset=0] = Float32(1.0)
+        data[unsafe_offset=1] = Float32(2.0)
+        data[unsafe_offset=2] = Float32(3.0)
+        data[unsafe_offset=3] = Float32(4.0)
         device._lib[].queue_write_buffer(
             device.queue().raw, gpu_buf.handle().raw, UInt64(0),
             data.unsafe_bitcast[NoneType](), UInt(16)
@@ -78,10 +78,10 @@ def test_queue_write_and_map_read_buffer() raises:
     # Map readback and verify
     var raw = read_buf.map_read()
     var result = raw.unsafe_bitcast[Float32]()
-    assert_equal(result[0], Float32(1.0))
-    assert_equal(result[1], Float32(2.0))
-    assert_equal(result[2], Float32(3.0))
-    assert_equal(result[3], Float32(4.0))
+    assert_equal(result[unsafe_offset=0], Float32(1.0))
+    assert_equal(result[unsafe_offset=1], Float32(2.0))
+    assert_equal(result[unsafe_offset=2], Float32(3.0))
+    assert_equal(result[unsafe_offset=3], Float32(4.0))
 
     read_buf.unmap()
     # Pin: wgpu-native may free device on release; map_read needs it alive

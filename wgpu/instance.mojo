@@ -81,10 +81,10 @@ struct Instance(Movable):
             adapters,
         )
 
-        var chosen = adapters[index]
+        var chosen = adapters[unsafe_offset=index]
         for i in range(Int(count)):
             if i != index:
-                self._owner[].lib()[].adapter_release(adapters[i])
+                self._owner[].lib()[].adapter_release(adapters[unsafe_offset=i])
         adapters.unsafe_free()
 
         return Adapter(self._owner, chosen)
