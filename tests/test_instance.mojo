@@ -64,9 +64,9 @@ def test_enumerate_adapters() raises:
     assert_true(count > UInt(0))
     var adapters = alloc[WGPUAdapterHandle](Int(count))
     _ = lib.enumerate_adapters(inst, null_opaque(), adapters)
-    assert_true(adapters[0] != null_opaque())
+    assert_true(adapters[unsafe_offset=0] != null_opaque())
     for i in range(Int(count)):
-        lib.adapter_release(adapters[i])
+        lib.adapter_release(adapters[unsafe_offset=i])
     adapters.unsafe_free()
     lib.instance_release(inst)
 

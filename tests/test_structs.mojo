@@ -26,7 +26,7 @@ from wgpu._ffi.structs import (
 def _struct_size[T: AnyType]() -> Int:
     """sizeof(T) via pointer arithmetic — mirrors wgpu.gpu._elem_size."""
     var p = null_ptr[T]()
-    return Int(p + 1) - Int(p)
+    return Int(p.unsafe_offset(1)) - Int(p)
 
 
 def test_instance_struct_layout() raises:

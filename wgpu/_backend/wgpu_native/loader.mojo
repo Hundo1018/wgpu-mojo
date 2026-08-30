@@ -165,8 +165,8 @@ def _read_env_var(name: String) raises -> String:
     var p = Pointer(raw).unsafe_bitcast[UInt8]()
     var out = String()
     var i = 0
-    while p[i] != 0:
-        out += chr(Int(p[i]))
+    while p[unsafe_offset=i] != 0:
+        out += chr(Int(p[unsafe_offset=i]))
         i += 1
     return out
 

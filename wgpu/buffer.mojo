@@ -16,7 +16,7 @@ from wgpu._ffi.handles import BufferHandle
 
 def _sizeof[T: AnyType]() -> Int:
     var p = null_ptr[T]()
-    return Int(p + 1) - Int(p)
+    return Int(p.unsafe_offset(1)) - Int(p)
 
 
 struct Buffer(Movable, Boolable):
@@ -134,7 +134,7 @@ struct Buffer(Movable, Boolable):
         var out = List[T](capacity=count)
         var src = raw.unsafe_bitcast[T]()
         for i in range(count):
-            out.append(src[i])
+            out.append(src[unsafe_offset=i])
         self.unmap()
         return out^
 

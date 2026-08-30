@@ -218,7 +218,7 @@ def render_scene(mut device: Device, name: String, shade_wgsl: String) raises:
             var src = raw.unsafe_bitcast[UInt32]()
             var bytes = List[UInt8](capacity=BYTES)
             for i in range(W * H):
-                var px = src[i]
+                var px = src[unsafe_offset=i]
                 bytes.append(UInt8(px & 0xFF))
                 bytes.append(UInt8((px >> 8) & 0xFF))
                 bytes.append(UInt8((px >> 16) & 0xFF))

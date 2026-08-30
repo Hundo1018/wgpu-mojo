@@ -107,7 +107,7 @@ struct Adapter(Movable):
         if len(required_features) > 0:
             feat_ptr = alloc[UInt32](len(required_features))
             for i in range(len(required_features)):
-                feat_ptr[i] = required_features[i]
+                feat_ptr[unsafe_offset=i] = required_features[i]
 
         var desc_p = alloc[WGPUDeviceDescriptor](1)
         desc_p[] = WGPUDeviceDescriptor(

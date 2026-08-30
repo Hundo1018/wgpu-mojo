@@ -129,11 +129,11 @@ def test_vec_add_compute() raises:
 
     var raw = buf_r.map_read(UInt64(0), UInt64(16))
     var result = raw.unsafe_bitcast[Float32]()
-    assert_equal(result[0], Float32(11.0))
-    assert_equal(result[1], Float32(22.0))
-    assert_equal(result[2], Float32(33.0))
-    assert_equal(result[3], Float32(44.0))
-    print("GPU vector add result:", result[0], result[1], result[2], result[3])
+    assert_equal(result[unsafe_offset=0], Float32(11.0))
+    assert_equal(result[unsafe_offset=1], Float32(22.0))
+    assert_equal(result[unsafe_offset=2], Float32(33.0))
+    assert_equal(result[unsafe_offset=3], Float32(44.0))
+    print("GPU vector add result:", result[unsafe_offset=0], result[unsafe_offset=1], result[unsafe_offset=2], result[unsafe_offset=3])
 
     buf_r.unmap()
     # Pin: wgpu-native may free device on release; map_read needs it alive

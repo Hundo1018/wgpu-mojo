@@ -166,16 +166,16 @@ def main() raises:
     # ----------------------------------------------------------------
     var raw    = buf_r.map_read()
     var result = raw.unsafe_bitcast[Float32]()
-    print("Result[0]:", result[0], "expected:", Float32(0.0))
-    print("Result[1]:", result[1], "expected:", Float32(3.0))
-    print("Result[N-1]:", result[N - 1], "expected:", Float32(Float32(N - 1) * Float32(3.0)))
+    print("Result[0]:", result[unsafe_offset=0], "expected:", Float32(0.0))
+    print("Result[1]:", result[unsafe_offset=1], "expected:", Float32(3.0))
+    print("Result[N-1]:", result[unsafe_offset=N - 1], "expected:", Float32(Float32(N - 1) * Float32(3.0)))
 
     # Validate
     var ok = True
     for i in range(N):
         var expected = Float32(i) * Float32(3.0)
-        if result[i] != expected:
-            print("MISMATCH at", i, "got", result[i], "expected", expected)
+        if result[unsafe_offset=i] != expected:
+            print("MISMATCH at", i, "got", result[unsafe_offset=i], "expected", expected)
             ok = False
             break
     if ok:

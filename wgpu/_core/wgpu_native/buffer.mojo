@@ -22,7 +22,7 @@ from wgpu._backend.wgpu_native.handles import BufferHandle
 
 def _sizeof[T: AnyType]() -> Int:
     var p = null_ptr[T]()
-    return Int(p + 1) - Int(p)
+    return Int(p.unsafe_offset(1)) - Int(p)
 
 
 struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):

@@ -62,13 +62,13 @@ def test_render_pass_debug_groups() raises:
 
     var enc = device.create_command_encoder()
     var color_att_p = alloc[WGPURenderPassColorAttachment](1)
-    color_att_p[0] = WGPURenderPassColorAttachment(
+    color_att_p[unsafe_offset=0] = WGPURenderPassColorAttachment(
         null_opaque(), view.handle().raw, UInt32(0xFFFFFFFF), null_opaque(),
         UInt32(1), UInt32(1),  # Clear, Store
         WGPUColor(Float64(0.0), Float64(0.0), Float64(0.0), Float64(1.0)),
     )
     var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
-    rp_desc_p[0] = WGPURenderPassDescriptor(
+    rp_desc_p[unsafe_offset=0] = WGPURenderPassDescriptor(
         null_opaque(), WGPUStringView.null_view(),
         UInt(1), color_att_p,
         null_ptr[WGPURenderPassDepthStencilAttachment](),

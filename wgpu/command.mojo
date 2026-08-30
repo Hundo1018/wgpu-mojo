@@ -135,7 +135,7 @@ struct CommandEncoder(Movable, Deinitable where False):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
 
         var color_att_p = alloc[WGPURenderPassColorAttachment](1)
-        color_att_p[0] = WGPURenderPassColorAttachment(
+        color_att_p[unsafe_offset=0] = WGPURenderPassColorAttachment(
             null_opaque(),
             view.handle().raw,
             UInt32(0xFFFFFFFF),
@@ -146,7 +146,7 @@ struct CommandEncoder(Movable, Deinitable where False):
         )
 
         var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
-        rp_desc_p[0] = WGPURenderPassDescriptor(
+        rp_desc_p[unsafe_offset=0] = WGPURenderPassDescriptor(
             null_opaque(),
             label_sv,
             UInt(1),
@@ -239,19 +239,19 @@ struct CommandEncoder(Movable, Deinitable where False):
         aspect: UInt32 = 0,
     ):
         var src_p = alloc[WGPUTexelCopyBufferInfo](1)
-        src_p[0] = WGPUTexelCopyBufferInfo(
+        src_p[unsafe_offset=0] = WGPUTexelCopyBufferInfo(
             WGPUTexelCopyBufferLayout(src_offset, bytes_per_row, rows_per_image),
             src.handle().raw,
         )
         var dst_p = alloc[WGPUTexelCopyTextureInfo](1)
-        dst_p[0] = WGPUTexelCopyTextureInfo(
+        dst_p[unsafe_offset=0] = WGPUTexelCopyTextureInfo(
             dst.handle().raw,
             mip_level,
             origin,
             aspect,
         )
         var size_p = alloc[WGPUExtent3D](1)
-        size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
+        size_p[unsafe_offset=0] = WGPUExtent3D(width, height, depth_or_array_layers)
         self._lib[].command_encoder_copy_buffer_to_texture(self._handle, src_p, dst_p, size_p)
         src_p.unsafe_free()
         dst_p.unsafe_free()
@@ -272,19 +272,19 @@ struct CommandEncoder(Movable, Deinitable where False):
         aspect: UInt32 = 0,
     ):
         var src_p = alloc[WGPUTexelCopyTextureInfo](1)
-        src_p[0] = WGPUTexelCopyTextureInfo(
+        src_p[unsafe_offset=0] = WGPUTexelCopyTextureInfo(
             src.handle().raw,
             mip_level,
             origin,
             aspect,
         )
         var dst_p = alloc[WGPUTexelCopyBufferInfo](1)
-        dst_p[0] = WGPUTexelCopyBufferInfo(
+        dst_p[unsafe_offset=0] = WGPUTexelCopyBufferInfo(
             WGPUTexelCopyBufferLayout(dst_offset, bytes_per_row, rows_per_image),
             dst.handle().raw,
         )
         var size_p = alloc[WGPUExtent3D](1)
-        size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
+        size_p[unsafe_offset=0] = WGPUExtent3D(width, height, depth_or_array_layers)
         self._lib[].command_encoder_copy_texture_to_buffer(self._handle, src_p, dst_p, size_p)
         src_p.unsafe_free()
         dst_p.unsafe_free()

@@ -6,17 +6,17 @@ from wgpu._ffi.alloc_guard import AllocGuard
 
 def test_alloc_guard_basic() raises:
     with AllocGuard[Int](3) as p:
-        p[0] = 11
-        p[1] = 22
-        p[2] = 33
-        assert_equal(p[0], 11)
-        assert_equal(p[1], 22)
-        assert_equal(p[2], 33)
+        p[unsafe_offset=0] = 11
+        p[unsafe_offset=1] = 22
+        p[unsafe_offset=2] = 33
+        assert_equal(p[unsafe_offset=0], 11)
+        assert_equal(p[unsafe_offset=1], 22)
+        assert_equal(p[unsafe_offset=2], 33)
 
 
 def _raise_inside_guard() raises:
     with AllocGuard[Int](1) as p:
-        p[0] = 7
+        p[unsafe_offset=0] = 7
         raise Error("expected alloc_guard test error")
 
 
