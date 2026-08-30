@@ -1,5 +1,5 @@
 """
-Tests/test_spirv.mojo — SPIR-V shader modules, both entry points.
+SPIR-V shader modules, both entry points.
 
 Shader modules are built from SPIR-V by chaining a WGPUShaderSourceSPIRV onto
 the standard descriptor. wgpu-native also exports a wgpuDeviceCreateShaderModuleSpirV
@@ -43,7 +43,7 @@ def minimal_spirv() -> List[UInt32]:
 
 
 def test_spirv_standard_path() raises:
-    """create_shader_module_spirv() chains WGPUShaderSourceSPIRV."""
+    """Create_shader_module_spirv() chains WGPUShaderSourceSPIRV."""
     var device = create_test_device()
     var words = minimal_spirv()
     assert_equal(len(words), 35)

@@ -1,5 +1,5 @@
 """
-Tests/test_sampler.mojo — Tests for Sampler creation.
+Tests for Sampler creation.
 Requires GPU hardware.
 """
 

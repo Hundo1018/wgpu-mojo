@@ -1,5 +1,5 @@
 """
-Tests/test_device.mojo — Integration tests for Device creation and queries.
+Integration tests for Device creation and queries.
 Requires GPU hardware.
 """
 

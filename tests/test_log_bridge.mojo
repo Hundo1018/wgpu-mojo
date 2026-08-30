@@ -1,5 +1,5 @@
 """
-Tests/test_log_bridge.mojo — wgpu-native log routed into Mojo.
+Wgpu-native log routed into Mojo.
 
 wgpuSetLogCallback needs a stored C function pointer, which Mojo cannot produce,
 and wgpu-native calls it from its own threads. ffi/wgpu_callbacks.c owns a

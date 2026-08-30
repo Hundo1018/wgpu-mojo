@@ -1,5 +1,5 @@
 """
-Tests/test_preflight.mojo — Verify wgpu.preflight() returns a usable diagnostic string.
+Verify wgpu.preflight() returns a usable diagnostic string.
 
 Requires: GPU hardware + built callback libraries (pixi run build-callbacks).
 Run:
@@ -11,7 +11,7 @@ from wgpu.diagnostics import check_symbols, critical_symbols, preflight
 
 
 def test_preflight_returns_string() raises:
-    """preflight() must return a non-empty string without raising."""
+    """Preflight() must return a non-empty string without raising."""
     var result = preflight()
     assert_true(result.byte_length() > 0, "preflight() returned empty string")
 
@@ -45,14 +45,14 @@ def test_critical_symbols_present() raises:
 
 
 def test_preflight_reports_symbol_check() raises:
-    """preflight() must surface the symbol-check result."""
+    """Preflight() must surface the symbol-check result."""
     var result = preflight()
     var ok = "symbol check: OK" in result or "FAILED" in result
     assert_true(ok, "preflight() output missing symbol check:\n" + result)
 
 
 def test_preflight_no_raise() raises:
-    """preflight() must never raise — errors go into the returned string."""
+    """Preflight() must never raise — errors go into the returned string."""
     # This test simply confirms the function is callable from a raises context.
     var result = preflight()
     _ = result

@@ -1,5 +1,5 @@
 """
-examples/fire_simulation.mojo — GPU-compute fire simulation.
+GPU-compute fire simulation.
 
 Demonstrates a full wgpu-mojo compute → render pipeline:
   1. A Doom-style cellular automaton runs each frame inside a WGSL

@@ -1,5 +1,5 @@
 """
-Tests/test_error_scope.mojo — Tests for Device push/pop_error_scope.
+Tests for Device push/pop_error_scope.
 Requires GPU hardware.
 """
 

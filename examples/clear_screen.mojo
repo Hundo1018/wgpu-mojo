@@ -1,5 +1,5 @@
 """
-Examples/clear_screen.mojo — Minimal on-screen rendering verification.
+Minimal on-screen rendering verification.
 
 Renders a solid cornflower-blue background to a GLFW window.
 If you see a blue window, the full pipeline works:

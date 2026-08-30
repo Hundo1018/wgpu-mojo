@@ -1,5 +1,5 @@
 """
-Examples/input_demo.mojo — Interactive input demo.
+Interactive input demo.
 
 Opens a window and prints keyboard/mouse events in real-time.
 Press ESC to quit.

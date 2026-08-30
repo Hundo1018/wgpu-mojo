@@ -1,5 +1,5 @@
 """
-Tests/test_debug_groups.mojo — Tests for debug group/marker methods on encoders.
+Tests for debug group/marker methods on encoders.
 Requires GPU hardware.
 """
 

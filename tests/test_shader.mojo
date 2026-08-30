@@ -1,5 +1,5 @@
 """
-Tests/test_shader.mojo — Tests for shader module creation (WGSL).
+Tests for shader module creation (WGSL).
 Requires GPU hardware.
 """
 

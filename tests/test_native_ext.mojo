@@ -1,5 +1,5 @@
 """
-tests/test_native_ext.mojo — Unit tests for wgpu-native extension types.
+Unit tests for wgpu-native extension types.
 No GPU required.
 """
 

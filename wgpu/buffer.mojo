@@ -127,7 +127,7 @@ struct Buffer(Movable, Boolable):
     # Convenience typed read/write helpers
     # ------------------------------------------------------------------
 
-    def read_data[T: ImplicitlyCopyable & Movable](self, offset: UInt64 = 0) raises -> List[T]:
+    def read_data[T: ImplicitlyCopyable](self, offset: UInt64 = 0) raises -> List[T]:
         """Map, copy data into a List[T], then unmap."""
         var count = Int(self._size - offset) // _sizeof[T]()
         var raw = self.map_read(offset)
@@ -138,7 +138,7 @@ struct Buffer(Movable, Boolable):
         self.unmap()
         return out^
 
-    def write_data[T: ImplicitlyCopyable & Movable](self, data: List[T], offset: UInt64 = 0) raises:
+    def write_data[T: ImplicitlyCopyable](self, data: List[T], offset: UInt64 = 0) raises:
         """Map for write, copy List[T] data, then unmap."""
         var byte_size = UInt64(len(data) * _sizeof[T]())
         var raw = self.map_write(offset, byte_size)

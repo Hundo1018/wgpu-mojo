@@ -1,5 +1,5 @@
 """
-Tests/test_command_encoder.mojo — Tests for CommandEncoder operations.
+Tests for CommandEncoder operations.
 Requires GPU hardware.
 """
 

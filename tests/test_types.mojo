@@ -1,5 +1,5 @@
 """
-tests/test_types.mojo — Unit tests for FFI type definitions.
+Unit tests for FFI type definitions.
 No GPU required.
 """
 

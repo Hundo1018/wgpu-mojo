@@ -1,5 +1,5 @@
 """
-Tests/test_pipeline_layout.mojo — Tests for PipelineLayout creation.
+Tests for PipelineLayout creation.
 Requires GPU hardware.
 """
 

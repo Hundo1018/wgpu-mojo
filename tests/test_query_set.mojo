@@ -1,5 +1,5 @@
 """
-Tests/test_query_set.mojo — Tests for QuerySet creation and properties.
+Tests for QuerySet creation and properties.
 Requires GPU hardware.
 """
 

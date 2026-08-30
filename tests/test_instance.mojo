@@ -1,5 +1,5 @@
 """
-Tests/test_instance.mojo — Integration tests for Instance creation.
+Integration tests for Instance creation.
 Requires: libwgpu_native.so, libwgpu_mojo_cb.so, GPU hardware.
 """
 
@@ -98,7 +98,7 @@ def test_get_version_via_instance() raises:
 
 
 def test_instance_limits() raises:
-    """wgpuGetInstanceLimits round-trips without an Instance.
+    """WgpuGetInstanceLimits round-trips without an Instance.
 
     One of the three instance-global queries in webgpu.h that wgpu-native v29
     actually implements — GetInstanceFeatures and HasInstanceFeature are

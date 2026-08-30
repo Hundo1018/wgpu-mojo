@@ -584,7 +584,7 @@ struct Device(Movable, Boolable):
         return self._lib[].queue_get_timestamp_period(self._queue)
 
     def queue_write_data[
-        T: Copyable & Movable
+        T: Copyable
     ](
         self,
         buffer: Buffer,

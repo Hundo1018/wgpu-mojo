@@ -123,7 +123,7 @@ struct GPU(Movable):
     # Data transfer
     # ------------------------------------------------------------------
 
-    def write[T: Copyable & Movable](
+    def write[T: Copyable](
         mut self,
         buffer: Buffer,
         data: List[T],
@@ -132,7 +132,7 @@ struct GPU(Movable):
         """Upload host data to a GPU buffer."""
         self._device.queue_write_data(buffer, offset, data)
 
-    def read[T: ImplicitlyCopyable & Movable](
+    def read[T: ImplicitlyCopyable](
         mut self,
         buffer: Buffer,
         offset: UInt64 = 0,

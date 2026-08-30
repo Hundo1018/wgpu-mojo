@@ -1,5 +1,5 @@
 """
-tools/render_shader_gif.mojo — headless, deterministic frame renderer.
+Headless, deterministic frame renderer.
 
 Renders the plasma and metaballs fragment effects entirely on the GPU via a
 compute shader (one pixel per invocation, written into a storage buffer) and

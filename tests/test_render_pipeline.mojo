@@ -1,5 +1,5 @@
 """
-Tests/test_render_pipeline.mojo — Tests for RenderPipeline creation and headless render pass.
+Tests for RenderPipeline creation and headless render pass.
 Requires GPU hardware.
 """
 

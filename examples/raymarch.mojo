@@ -1,5 +1,5 @@
 """
-examples/raymarch.mojo — an animated raymarched 3D scene (fragment shader).
+An animated raymarched 3D scene (fragment shader).
 
 Same fullscreen fragment-shader host as examples/plasma.mojo (resolution / time /
 mouse / frame uniforms, a single `shade` function), but `shade` now raymarches a

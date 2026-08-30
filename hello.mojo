@@ -1,5 +1,5 @@
 """
-hello.mojo — Hello Triangle quickstart.
+Hello Triangle quickstart.
 
 Renders a coloured triangle (RGB vertices) in a window.
 If a triangle appears, the full stack works:
