@@ -215,8 +215,8 @@ struct GLFWLib(Movable):
     def get_framebuffer_size(
         self,
         window: OpaquePointer[MutUntrackedOrigin],
-        out_w: UnsafePointer[Int32, MutUntrackedOrigin],
-        out_h: UnsafePointer[Int32, MutUntrackedOrigin],
+        out_w: Pointer[Int32, MutUntrackedOrigin],
+        out_h: Pointer[Int32, MutUntrackedOrigin],
     ):
         """Write framebuffer width/height into the provided pointers."""
         self._lib.call["glfwGetFramebufferSize"](window, out_w, out_h)
@@ -259,8 +259,8 @@ struct GLFWLib(Movable):
     def get_cursor_pos(
         self,
         window: OpaquePointer[MutUntrackedOrigin],
-        out_x: UnsafePointer[Float64, MutUntrackedOrigin],
-        out_y: UnsafePointer[Float64, MutUntrackedOrigin],
+        out_x: Pointer[Float64, MutUntrackedOrigin],
+        out_y: Pointer[Float64, MutUntrackedOrigin],
     ):
         """Write cursor position into the provided pointers."""
         self._lib.call["glfwGetCursorPos"](window, out_x, out_y)
@@ -292,7 +292,7 @@ struct GLFWLib(Movable):
         """Remove all GLFW input callbacks (set to NULL)."""
         self._input_cb.call["mojo_glfw_remove_input_callbacks"](window)
 
-    def poll_input_event(self, out_ptr: UnsafePointer[MojoInputEvent, MutUntrackedOrigin]) -> Int32:
+    def poll_input_event(self, out_ptr: Pointer[MojoInputEvent, MutUntrackedOrigin]) -> Int32:
         """Pop one event from the C-side ring buffer.
 
         Returns 1 if an event was written to out_ptr, 0 if queue empty.

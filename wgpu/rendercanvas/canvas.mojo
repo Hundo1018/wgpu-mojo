@@ -65,7 +65,7 @@ struct RenderCanvas(Movable):
 
         # Pass null-terminated title; String internal buffer is null-terminated.
         var title_bytes = title.as_bytes()
-        var raw         = UnsafePointer(title_bytes.unsafe_ptr()).unsafe_bitcast[NoneType]()
+        var raw         = Pointer(title_bytes.unsafe_ptr()).unsafe_bitcast[NoneType]()
         var title_ptr   = rebind[OpaquePointer[MutUntrackedOrigin]](raw)
         var window = glfw.create_window(width, height, title_ptr)
         _ = title_bytes  # keep alive past glfwCreateWindow

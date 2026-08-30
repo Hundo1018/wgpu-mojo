@@ -60,7 +60,7 @@ struct ComputePassEncoder(Movable, Deinitable where False):
         bind_group: WGPUBindGroupHandle,
         offsets: List[UInt32],
     ):
-        var ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
+        var ptr = rebind[Pointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
         self._lib[].compute_pass_set_bind_group(
             self._handle, index, bind_group,
             ptr.unsafe_bitcast[NoneType](), UInt(len(offsets))
@@ -73,7 +73,7 @@ struct ComputePassEncoder(Movable, Deinitable where False):
         offsets: List[UInt32],
     ):
         """Wrapper-first overload — accepts RAII BindGroup directly."""
-        var ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
+        var ptr = rebind[Pointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
         self._lib[].compute_pass_set_bind_group(
             self._handle, index, bind_group.handle().raw,
             ptr.unsafe_bitcast[NoneType](), UInt(len(offsets))

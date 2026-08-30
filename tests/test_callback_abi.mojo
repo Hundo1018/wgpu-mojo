@@ -33,7 +33,7 @@ def mojo_scalar_adapter_cb(
     ud2: OpaquePointer[MutUntrackedOrigin],
 ):
     """Scalar-only callback: receive StringView as two separate args."""
-    var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutUntrackedOrigin]](ud1)
+    var result_p = rebind[Pointer[_ProbeAdapterResult, MutUntrackedOrigin]](ud1)
     result_p[] = _ProbeAdapterResult(UInt64(Int(adapter)), status)
 
 
@@ -52,7 +52,7 @@ def mojo_struct_adapter_cb(
     ud2: OpaquePointer[MutUntrackedOrigin],
 ):
     """Struct-by-value callback: receive 16-byte StringView as single param."""
-    var result_p = rebind[UnsafePointer[_ProbeAdapterResult, MutUntrackedOrigin]](ud1)
+    var result_p = rebind[Pointer[_ProbeAdapterResult, MutUntrackedOrigin]](ud1)
     result_p[] = _ProbeAdapterResult(UInt64(Int(adapter)), status)
 
 

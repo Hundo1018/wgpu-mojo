@@ -22,7 +22,7 @@ struct _CallbackInfo40(TrivialRegisterPassable):
 
 def _ptr(addr: Int) -> OpaquePointer[MutUntrackedOrigin]:
     return rebind[OpaquePointer[MutUntrackedOrigin]](
-        UnsafePointer[NoneType, MutUntrackedOrigin](unsafe_from_address=addr)
+        Pointer[NoneType, MutUntrackedOrigin](unsafe_from_address=addr)
     )
 
 
