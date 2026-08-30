@@ -9,6 +9,7 @@ Run from project root:
 """
 
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.types import WGPUAdapterType, WGPUBackendType
 from wgpu._ffi.structs import WGPUInstanceDescriptor, WGPUAdapterInfo, WGPUStringView
@@ -53,7 +54,7 @@ def main() raises:
     print("wgpu-native version:", lib.get_version())
 
     # Create instance
-    var desc_p = alloc[WGPUInstanceDescriptor](1)
+    var desc_p = raw_alloc[WGPUInstanceDescriptor](1)
     desc_p[] = WGPUInstanceDescriptor(
         null_opaque(), UInt(0),
         null_ptr[UInt32](),
@@ -78,12 +79,12 @@ def main() raises:
         return
 
     # Fill adapter list
-    var adapters = alloc[OpaquePointer[MutUntrackedOrigin]](Int(count))
+    var adapters = raw_alloc[OpaquePointer[MutUntrackedOrigin]](Int(count))
     _ = lib.enumerate_adapters(inst, null_opaque(), adapters)
 
     for i in range(count):
         var adapter = adapters[unsafe_offset=i]
-        var info_p = alloc[WGPUAdapterInfo](1)
+        var info_p = raw_alloc[WGPUAdapterInfo](1)
         info_p[] = WGPUAdapterInfo(
             null_opaque(),
             WGPUStringView.null_view(), WGPUStringView.null_view(),

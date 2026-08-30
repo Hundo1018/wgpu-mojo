@@ -7,6 +7,7 @@ device creation, adapter info queries, and surface creation.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPUAdapterHandle, WGPUDeviceHandle, WGPUInstanceHandle, WGPURequestDeviceStatus,
@@ -43,7 +44,7 @@ struct Adapter(Movable):
         self._lib = owner[].lib()
         self._inst = owner[].handle()
         self._handle = handle
-        var info_p = alloc[WGPUAdapterInfo](1)
+        var info_p = raw_alloc[WGPUAdapterInfo](1)
         info_p[] = WGPUAdapterInfo(
             null_opaque(),
             WGPUStringView.null_view(),
@@ -105,11 +106,11 @@ struct Adapter(Movable):
 
         var feat_ptr = null_ptr[UInt32]()
         if len(required_features) > 0:
-            feat_ptr = alloc[UInt32](len(required_features))
+            feat_ptr = raw_alloc[UInt32](len(required_features))
             for i in range(len(required_features)):
                 feat_ptr[unsafe_offset=i] = required_features[i]
 
-        var desc_p = alloc[WGPUDeviceDescriptor](1)
+        var desc_p = raw_alloc[WGPUDeviceDescriptor](1)
         desc_p[] = WGPUDeviceDescriptor(
             null_opaque(),
             label_sv,

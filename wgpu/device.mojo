@@ -4,6 +4,7 @@ wgpu.device — High-level Device + Queue RAII wrapper.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPU_TRUE,
@@ -107,7 +108,7 @@ struct Device(Movable, Boolable):
     # ------------------------------------------------------------------
 
     def get_limits(self) -> WGPULimits:
-        var limits_p = alloc[WGPULimits](1)
+        var limits_p = raw_alloc[WGPULimits](1)
         limits_p[] = wgpu_limits_default()
         _ = self._lib[].device_get_limits(self._handle, limits_p)
         var result = limits_p[]
@@ -133,7 +134,7 @@ struct Device(Movable, Boolable):
     ) raises -> Buffer:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var mapped: UInt32 = UInt32(1) if mapped_at_creation else UInt32(0)
-        var desc_p = alloc[WGPUBufferDescriptor](1)
+        var desc_p = raw_alloc[WGPUBufferDescriptor](1)
         desc_p[] = WGPUBufferDescriptor(
             null_opaque(),
             label_sv,
@@ -159,7 +160,7 @@ struct Device(Movable, Boolable):
     ) raises -> Texture:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var size = WGPUExtent3D(width, height, depth_or_layers)
-        var desc_p = alloc[WGPUTextureDescriptor](1)
+        var desc_p = raw_alloc[WGPUTextureDescriptor](1)
         desc_p[] = WGPUTextureDescriptor(
             null_opaque(),
             label_sv,
@@ -203,7 +204,7 @@ struct Device(Movable, Boolable):
         label: String = "",
     ) raises -> Sampler:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var desc_p = alloc[WGPUSamplerDescriptor](1)
+        var desc_p = raw_alloc[WGPUSamplerDescriptor](1)
         desc_p[] = WGPUSamplerDescriptor(
             null_opaque(),
             label_sv,
@@ -230,9 +231,9 @@ struct Device(Movable, Boolable):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var code_sv  = str_to_sv(code)
         var chain_val = WGPUChainedStruct(null_opaque(), WGPUSType.ShaderSourceWGSL)
-        var source_p = alloc[WGPUShaderSourceWGSL](1)
+        var source_p = raw_alloc[WGPUShaderSourceWGSL](1)
         source_p[] = WGPUShaderSourceWGSL(chain_val, code_sv)
-        var desc_p = alloc[WGPUShaderModuleDescriptor](1)
+        var desc_p = raw_alloc[WGPUShaderModuleDescriptor](1)
         desc_p[] = WGPUShaderModuleDescriptor(
             source_p.unsafe_bitcast[NoneType](),
             label_sv,
@@ -250,13 +251,13 @@ struct Device(Movable, Boolable):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var code_ptr = rebind[Pointer[UInt32, MutUntrackedOrigin]](code.unsafe_ptr())
         var chain_val = WGPUChainedStruct(null_opaque(), WGPUSType.ShaderSourceSPIRV)
-        var source_p = alloc[WGPUShaderSourceSPIRV](1)
+        var source_p = raw_alloc[WGPUShaderSourceSPIRV](1)
         source_p[] = WGPUShaderSourceSPIRV(
             chain_val,
             UInt32(len(code)),
             code_ptr,
         )
-        var desc_p = alloc[WGPUShaderModuleDescriptor](1)
+        var desc_p = raw_alloc[WGPUShaderModuleDescriptor](1)
         desc_p[] = WGPUShaderModuleDescriptor(
             source_p.unsafe_bitcast[NoneType](),
             label_sv,
@@ -286,7 +287,7 @@ struct Device(Movable, Boolable):
         self,
         desc: WGPUBindGroupLayoutDescriptor,
     ) raises -> BindGroupLayout:
-        var desc_p = alloc[WGPUBindGroupLayoutDescriptor](1)
+        var desc_p = raw_alloc[WGPUBindGroupLayoutDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_bind_group_layout(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -314,7 +315,7 @@ struct Device(Movable, Boolable):
         self,
         desc: WGPUBindGroupDescriptor,
     ) raises -> BindGroup:
-        var desc_p = alloc[WGPUBindGroupDescriptor](1)
+        var desc_p = raw_alloc[WGPUBindGroupDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_bind_group(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -336,7 +337,7 @@ struct Device(Movable, Boolable):
         var entries_len = len(entries)
         
         # Allocate and copy entries into our own buffer
-        var entries_ptr = alloc[WGPUBindGroupEntry](entries_len) if entries_len > 0 else null_ptr[WGPUBindGroupEntry]()
+        var entries_ptr = raw_alloc[WGPUBindGroupEntry](entries_len) if entries_len > 0 else null_ptr[WGPUBindGroupEntry]()
         if entries_len > 0:
             for i in range(entries_len):
                 entries_ptr[unsafe_offset=i] = entries[i]
@@ -351,7 +352,7 @@ struct Device(Movable, Boolable):
         )
         
         # Allocate descriptor and call FFI
-        var desc_p = alloc[WGPUBindGroupDescriptor](1)
+        var desc_p = raw_alloc[WGPUBindGroupDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_bind_group(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -369,7 +370,7 @@ struct Device(Movable, Boolable):
     ) raises -> PipelineLayout:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var layouts_ptr = rebind[Pointer[WGPUBindGroupLayoutHandle, MutUntrackedOrigin]](bind_group_layouts.unsafe_ptr())
-        var desc_p = alloc[WGPUPipelineLayoutDescriptor](1)
+        var desc_p = raw_alloc[WGPUPipelineLayoutDescriptor](1)
         desc_p[] = WGPUPipelineLayoutDescriptor(
             null_opaque(),
             label_sv,
@@ -398,7 +399,7 @@ struct Device(Movable, Boolable):
         self,
         desc: WGPUComputePipelineDescriptor,
     ) raises -> ComputePipeline:
-        var desc_p = alloc[WGPUComputePipelineDescriptor](1)
+        var desc_p = raw_alloc[WGPUComputePipelineDescriptor](1)
         desc_p[] = desc
         var result = self._lib[].device_create_compute_pipeline(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -434,7 +435,7 @@ struct Device(Movable, Boolable):
         self,
         var desc: WGPURenderPipelineDescriptor,
     ) raises -> RenderPipeline:
-        var desc_p = alloc[WGPURenderPipelineDescriptor](1)
+        var desc_p = raw_alloc[WGPURenderPipelineDescriptor](1)
         desc_p[] = desc^
         var result = self._lib[].device_create_render_pipeline(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -474,13 +475,13 @@ struct Device(Movable, Boolable):
             UInt(0), null_ptr[WGPUConstantEntry](),
             UInt(0), null_ptr[WGPUVertexBufferLayout](),
         )
-        var target_p = alloc[WGPUColorTargetState](1)
+        var target_p = raw_alloc[WGPUColorTargetState](1)
         target_p[unsafe_offset=0] = WGPUColorTargetState(
             null_opaque(), color_format,
             null_ptr[WGPUBlendState](),
             UInt64(0xF),  # ColorWriteMask.All
         )
-        var fragment_p = alloc[WGPUFragmentState](1)
+        var fragment_p = raw_alloc[WGPUFragmentState](1)
         fragment_p[unsafe_offset=0] = WGPUFragmentState(
             null_opaque(), shader.handle().raw, fs_sv,
             UInt(0), null_ptr[WGPUConstantEntry](),
@@ -505,7 +506,7 @@ struct Device(Movable, Boolable):
 
     def create_command_encoder(self, label: String = "") raises -> CommandEncoder:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var desc_p = alloc[WGPUCommandEncoderDescriptor](1)
+        var desc_p = raw_alloc[WGPUCommandEncoderDescriptor](1)
         desc_p[] = WGPUCommandEncoderDescriptor(null_opaque(), label_sv)
         var result = self._lib[].device_create_command_encoder(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -518,7 +519,7 @@ struct Device(Movable, Boolable):
         label: String = "",
     ) raises -> QuerySet:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var desc_p = alloc[WGPUQuerySetDescriptor](1)
+        var desc_p = raw_alloc[WGPUQuerySetDescriptor](1)
         desc_p[] = WGPUQuerySetDescriptor(
             null_opaque(), label_sv, query_type, count
         )
@@ -542,7 +543,7 @@ struct Device(Movable, Boolable):
         """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var fmt_ptr = rebind[Pointer[UInt32, MutUntrackedOrigin]](color_formats.unsafe_ptr())
-        var desc_p = alloc[WGPURenderBundleEncoderDescriptor](1)
+        var desc_p = raw_alloc[WGPURenderBundleEncoderDescriptor](1)
         desc_p[] = WGPURenderBundleEncoderDescriptor(
             null_opaque(),
             label_sv,
@@ -572,7 +573,7 @@ struct Device(Movable, Boolable):
         returns, the CommandBuffer destructor calls wgpuCommandBufferRelease.
         """
         var handle = cmd.raw()
-        var handle_p = alloc[WGPUCommandBufferHandle](1)
+        var handle_p = raw_alloc[WGPUCommandBufferHandle](1)
         handle_p[] = handle
         var arr = rebind[Pointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
         self._lib[].queue_submit(self._queue, UInt(1), arr)

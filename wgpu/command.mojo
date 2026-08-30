@@ -4,6 +4,7 @@ wgpu.command — CommandEncoder RAII wrapper.
 
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._ffi.types import (
     WGPUCommandEncoderHandle, WGPUCommandBufferHandle,
@@ -109,7 +110,7 @@ struct CommandEncoder(Movable, Deinitable where False):
         self, label: String = ""
     ) -> ComputePassEncoder:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var desc_p = alloc[WGPUComputePassDescriptor](1)
+        var desc_p = raw_alloc[WGPUComputePassDescriptor](1)
         desc_p[] = WGPUComputePassDescriptor(null_opaque(), label_sv, null_opaque())
         var result = self._lib[].command_encoder_begin_compute_pass(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -134,7 +135,7 @@ struct CommandEncoder(Movable, Deinitable where False):
         """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
 
-        var color_att_p = alloc[WGPURenderPassColorAttachment](1)
+        var color_att_p = raw_alloc[WGPURenderPassColorAttachment](1)
         color_att_p[unsafe_offset=0] = WGPURenderPassColorAttachment(
             null_opaque(),
             view.handle().raw,
@@ -145,7 +146,7 @@ struct CommandEncoder(Movable, Deinitable where False):
             clear_color,
         )
 
-        var rp_desc_p = alloc[WGPURenderPassDescriptor](1)
+        var rp_desc_p = raw_alloc[WGPURenderPassDescriptor](1)
         rp_desc_p[unsafe_offset=0] = WGPURenderPassDescriptor(
             null_opaque(),
             label_sv,
@@ -238,19 +239,19 @@ struct CommandEncoder(Movable, Deinitable where False):
         origin: WGPUOrigin3D = WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
         aspect: UInt32 = 0,
     ):
-        var src_p = alloc[WGPUTexelCopyBufferInfo](1)
+        var src_p = raw_alloc[WGPUTexelCopyBufferInfo](1)
         src_p[unsafe_offset=0] = WGPUTexelCopyBufferInfo(
             WGPUTexelCopyBufferLayout(src_offset, bytes_per_row, rows_per_image),
             src.handle().raw,
         )
-        var dst_p = alloc[WGPUTexelCopyTextureInfo](1)
+        var dst_p = raw_alloc[WGPUTexelCopyTextureInfo](1)
         dst_p[unsafe_offset=0] = WGPUTexelCopyTextureInfo(
             dst.handle().raw,
             mip_level,
             origin,
             aspect,
         )
-        var size_p = alloc[WGPUExtent3D](1)
+        var size_p = raw_alloc[WGPUExtent3D](1)
         size_p[unsafe_offset=0] = WGPUExtent3D(width, height, depth_or_array_layers)
         self._lib[].command_encoder_copy_buffer_to_texture(self._handle, src_p, dst_p, size_p)
         src_p.unsafe_free()
@@ -271,19 +272,19 @@ struct CommandEncoder(Movable, Deinitable where False):
         origin: WGPUOrigin3D = WGPUOrigin3D(UInt32(0), UInt32(0), UInt32(0)),
         aspect: UInt32 = 0,
     ):
-        var src_p = alloc[WGPUTexelCopyTextureInfo](1)
+        var src_p = raw_alloc[WGPUTexelCopyTextureInfo](1)
         src_p[unsafe_offset=0] = WGPUTexelCopyTextureInfo(
             src.handle().raw,
             mip_level,
             origin,
             aspect,
         )
-        var dst_p = alloc[WGPUTexelCopyBufferInfo](1)
+        var dst_p = raw_alloc[WGPUTexelCopyBufferInfo](1)
         dst_p[unsafe_offset=0] = WGPUTexelCopyBufferInfo(
             WGPUTexelCopyBufferLayout(dst_offset, bytes_per_row, rows_per_image),
             dst.handle().raw,
         )
-        var size_p = alloc[WGPUExtent3D](1)
+        var size_p = raw_alloc[WGPUExtent3D](1)
         size_p[unsafe_offset=0] = WGPUExtent3D(width, height, depth_or_array_layers)
         self._lib[].command_encoder_copy_texture_to_buffer(self._handle, src_p, dst_p, size_p)
         src_p.unsafe_free()
@@ -367,7 +368,7 @@ struct CommandEncoder(Movable, Deinitable where False):
         Consumes the encoder (linear-type obligation fulfilled).
         """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var desc_p = alloc[WGPUCommandBufferDescriptor](1)
+        var desc_p = raw_alloc[WGPUCommandBufferDescriptor](1)
         desc_p[] = WGPUCommandBufferDescriptor(null_opaque(), label_sv)
         var result = self._lib[].command_encoder_finish(self._handle, desc_p)
         desc_p.unsafe_free()

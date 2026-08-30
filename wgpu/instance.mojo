@@ -14,6 +14,7 @@ from wgpu._ffi.structs import (
     WGPUInstanceLimits,
 )
 from wgpu.instance_owner import InstanceOwner
+from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 
 
 struct Instance(Movable):
@@ -28,15 +29,15 @@ struct Instance(Movable):
 
     def __init__(out self) raises:
         var lib = WGPULib()
-        var desc_p = alloc[WGPUInstanceDescriptor](1)
-        desc_p[] = WGPUInstanceDescriptor(
-            null_opaque(),
-            UInt(0),
-            null_ptr[UInt32](),
-            null_opaque(),
-        )
-        var inst = lib.create_instance(desc_p)
-        desc_p.unsafe_free()
+        var inst: WGPUInstanceHandle
+        with AllocGuard[WGPUInstanceDescriptor](1) as desc_p:
+            desc_p[] = WGPUInstanceDescriptor(
+                null_opaque(),
+                UInt(0),
+                null_ptr[UInt32](),
+                null_opaque(),
+            )
+            inst = lib.create_instance(desc_p)
         if inst == null_opaque():
             raise Error("wgpuCreateInstance returned null")
 
@@ -74,18 +75,17 @@ struct Instance(Movable):
         if index < 0 or index >= Int(count):
             raise Error("Adapter index out of range: " + String(index))
 
-        var adapters = alloc[WGPUAdapterHandle](Int(count))
-        _ = self._owner[].lib()[].enumerate_adapters(
-            self._owner[].handle(),
-            null_opaque(),
-            adapters,
-        )
-
-        var chosen = adapters[unsafe_offset=index]
-        for i in range(Int(count)):
-            if i != index:
-                self._owner[].lib()[].adapter_release(adapters[unsafe_offset=i])
-        adapters.unsafe_free()
+        var chosen: WGPUAdapterHandle
+        with AllocGuard[WGPUAdapterHandle](Int(count)) as adapters:
+            _ = self._owner[].lib()[].enumerate_adapters(
+                self._owner[].handle(),
+                null_opaque(),
+                adapters,
+            )
+            chosen = adapters[unsafe_offset=index]
+            for i in range(Int(count)):
+                if i != index:
+                    self._owner[].lib()[].adapter_release(adapters[unsafe_offset=i])
 
         return Adapter(self._owner, chosen)
 
@@ -110,11 +110,12 @@ def instance_limits() raises -> WGPUInstanceLimits:
     Raises if wgpu-native reports anything other than `WGPUStatus.Success`.
     """
     var lib = WGPULib()
-    var p = alloc[WGPUInstanceLimits](1)
-    p[] = WGPUInstanceLimits(null_opaque(), UInt(0))
-    var status = lib.get_instance_limits(p)
-    var limits = p[]
-    p.unsafe_free()
+    var status: UInt32
+    var limits: WGPUInstanceLimits
+    with AllocGuard[WGPUInstanceLimits](1) as p:
+        p[] = WGPUInstanceLimits(null_opaque(), UInt(0))
+        status = lib.get_instance_limits(p)
+        limits = p[]
     if status != WGPUStatus.Success:
         raise Error(
             "wgpuGetInstanceLimits failed with status " + String(status)
