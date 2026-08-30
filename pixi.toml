@@ -85,6 +85,9 @@ build-callback-probe = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libmojo
 # and all examples. No GPU or libwgpu_native.so required; catches API drift at
 # compile time. Run via: pixi run check-compile
 check-compile = { cmd = "bash scripts/check-compile.sh", depends-on = ["build-callbacks", "build-callback-probe"] }
+# Verify every wgpu-native symbol the binding resolves is exported by the .so.
+# Catches ABI drift that check-compile cannot see (symbols resolve lazily).
+check-symbols = { cmd = "bash scripts/check-symbols.sh" }
 
 # Run all non-GPU tests
 test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
@@ -110,6 +113,7 @@ test-sampler     = { cmd = "mojo run -I . tests/test_sampler.mojo", depends-on =
 test-command     = { cmd = "mojo run -I . tests/test_command_encoder.mojo", depends-on = ["build-callbacks"] }
 test-pipeline-layout = { cmd = "mojo run -I . tests/test_pipeline_layout.mojo", depends-on = ["build-callbacks"] }
 test-error-scope    = { cmd = "mojo run -I . tests/test_error_scope.mojo",   depends-on = ["build-callbacks"] }
+test-preflight      = { cmd = "mojo run -I . tests/test_preflight.mojo",     depends-on = ["build-callbacks"] }
 test-render-bundle  = { cmd = "mojo run -I . tests/test_render_bundle.mojo", depends-on = ["build-callbacks"] }
 
 # Callback ABI test (non-GPU)

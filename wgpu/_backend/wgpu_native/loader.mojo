@@ -287,6 +287,18 @@ struct WGPULib(Movable):
         self._render_pipeline_async_cb_ptr  = move._render_pipeline_async_cb_ptr
 
     # ------------------------------------------------------------------
+    # Symbol introspection (ABI drift detection)
+    # ------------------------------------------------------------------
+
+    def has_symbol(self, name: StringSlice) -> Bool:
+        """True if `name` is exported by the loaded libwgpu_native."""
+        # Symbols are resolved lazily at each call site, so naming a symbol
+        # upstream has renamed still compiles and only fails once that path
+        # first runs. This is the null-safe probe used to catch that early;
+        # see wgpu.diagnostics and scripts/check-symbols.sh.
+        return Bool(self._wgpu.get_symbol[NoneType](name))
+
+    # ------------------------------------------------------------------
     # Global functions
     # ------------------------------------------------------------------
 
@@ -1592,33 +1604,6 @@ struct WGPULib(Movable):
         commands: UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin],
     ) -> UInt64:
         return self._wgpu.call["wgpuQueueSubmitForIndex", UInt64](queue, count, commands)
-
-    # ------------------------------------------------------------------
-    # wgpu-native extension: push constants
-    # ------------------------------------------------------------------
-
-    def render_pass_set_push_constants(
-        self,
-        pass_enc: WGPURenderPassEncoderHandle,
-        stages: UInt64,   # WGPUShaderStage
-        offset: UInt32,
-        size_bytes: UInt32,
-        data: OpaquePointer[MutUntrackedOrigin],
-    ):
-        self._wgpu.call["wgpuRenderPassEncoderSetPushConstants"](
-            pass_enc, stages, offset, size_bytes, data
-        )
-
-    def compute_pass_set_push_constants(
-        self,
-        pass_enc: WGPUComputePassEncoderHandle,
-        offset: UInt32,
-        size_bytes: UInt32,
-        data: OpaquePointer[MutUntrackedOrigin],
-    ):
-        self._wgpu.call["wgpuComputePassEncoderSetPushConstants"](
-            pass_enc, offset, size_bytes, data
-        )
 
     # ------------------------------------------------------------------
     # wgpu-native extension: multi-draw indirect

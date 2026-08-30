@@ -283,13 +283,6 @@ struct RenderPassEncoder(Movable, ImplicitlyDeletable where False):
     # wgpu-native extensions
     # ------------------------------------------------------------------
 
-    def set_push_constants(
-        self, stages: UInt64, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]
-    ):
-        self._lib[].render_pass_set_push_constants(
-            self._handle, stages, offset, size_bytes, data
-        )
-
     def set_immediates(
         self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]
     ):
