@@ -13,8 +13,30 @@ from wgpu._ffi.structs import (
     WGPUStringView, WGPUChainedStruct, WGPUFuture,
     WGPUExtent3D, WGPUOrigin3D, WGPUColor, WGPUBlendComponent, WGPUBlendState,
     WGPULimits, wgpu_limits_default,
+    WGPUCompatibilityModeLimits, WGPUInstanceLimits,
+    WGPUSupportedInstanceFeatures, WGPUSupportedWGSLLanguageFeatures,
     str_to_sv,
 )
+
+
+def _struct_size[T: AnyType]() -> Int:
+    """sizeof(T) via pointer arithmetic — mirrors wgpu.gpu._elem_size."""
+    var p = null_ptr[T]()
+    return Int(p + 1) - Int(p)
+
+
+def test_instance_struct_layout() raises:
+    """Byte sizes must match webgpu.h — a mismatch silently corrupts every read.
+
+    Reference values are gcc `sizeof()` against ffi/include/webgpu/webgpu.h.
+    WGPUSupportedInstanceFeatures previously carried a spurious nextInChain
+    field and WGPUInstanceLimits was missing timedWaitAnyMaxCount; both were
+    16 bytes off / short until these assertions existed.
+    """
+    assert_equal(_struct_size[WGPUSupportedInstanceFeatures](), 16)
+    assert_equal(_struct_size[WGPUSupportedWGSLLanguageFeatures](), 16)
+    assert_equal(_struct_size[WGPUInstanceLimits](), 16)
+    assert_equal(_struct_size[WGPUCompatibilityModeLimits](), 32)
 
 
 def test_stringview_null() raises:
@@ -91,4 +113,6 @@ def main() raises:
     print("  PASS: test_limits_default")
     test_buffer_usage_value()
     print("  PASS: test_buffer_usage_value")
-    print("All 9 tests passed!")
+    test_instance_struct_layout()
+    print("  PASS: test_instance_struct_layout")
+    print("All 10 tests passed!")

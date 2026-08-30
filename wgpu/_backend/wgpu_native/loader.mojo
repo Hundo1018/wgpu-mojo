@@ -44,6 +44,7 @@ from wgpu._backend.wgpu_native.structs import (
     WGPUTextureDescriptor, WGPUTextureViewDescriptor,
     WGPULimits, WGPUSupportedFeatures,
     WGPUSupportedWGSLLanguageFeatures,
+    WGPUSupportedInstanceFeatures, WGPUInstanceLimits,
     WGPUCompilationInfoCallbackInfo,
     WGPUCreateComputePipelineAsyncCallbackInfo,
     WGPUCreateRenderPipelineAsyncCallbackInfo,
@@ -1106,6 +1107,12 @@ struct WGPULib(Movable):
     # ------------------------------------------------------------------
     # Missing standard WebGPU functions — Instance / global
     # ------------------------------------------------------------------
+
+    def get_instance_limits(
+        self,
+        limits: UnsafePointer[WGPUInstanceLimits, MutUntrackedOrigin],
+    ) -> UInt32:   # WGPUStatus
+        return self._wgpu.call["wgpuGetInstanceLimits", UInt32](limits)
 
     def instance_get_wgsl_language_features(
         self,

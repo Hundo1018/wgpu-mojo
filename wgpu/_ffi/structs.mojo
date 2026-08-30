@@ -4,6 +4,8 @@ from wgpu._backend.wgpu_native.structs import (
     WGPUStringView, WGPUChainedStruct, WGPUFuture, WGPUFutureWaitInfo,
     WGPUAdapterInfo, WGPUBlendComponent, WGPUBlendState, WGPUColor,
     WGPUExtent3D, WGPUOrigin3D, WGPULimits, WGPUSupportedFeatures,
+    WGPUSupportedInstanceFeatures, WGPUSupportedWGSLLanguageFeatures,
+    WGPUInstanceLimits, WGPUCompatibilityModeLimits,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout, WGPUTextureBindingLayout,
     WGPUStorageTextureBindingLayout, WGPUBindGroupLayoutEntry,
     WGPUBindGroupLayoutDescriptor, WGPUBindGroupEntry, WGPUBindGroupDescriptor,
