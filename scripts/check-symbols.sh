@@ -69,5 +69,64 @@ if [ "$MISSING_N" -gt 0 ]; then
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# Second check: symbols that resolve but are unimplemented stubs.
+#
+# wgpu-native exports `unimplemented!()` stubs for parts of webgpu.h it has not
+# built yet. They link fine, so the resolution check above cannot see them —
+# but calling one panics in Rust across the FFI boundary and *aborts the
+# process*. A binding that names one is a landmine with no Mojo-level error.
+#
+# Two shapes, detected two ways:
+#   named   — unimplemented!("wgpuX is not implemented"), found via `strings`
+#   generic — bare unimplemented!(), a tiny body hitting `ud2` early
+# ---------------------------------------------------------------------------
+
+if ! command -v objdump >/dev/null 2>&1; then
+  echo ""
+  echo "  note: objdump not found, skipping the unimplemented-stub check"
+  echo ""
+  echo "check-symbols: ALL PASSED ($EXPECTED_N/$EXPECTED_N resolve)"
+  exit 0
+fi
+
+strings -a "$LIB" 2>/dev/null \
+  | grep -oE 'wgpu[A-Za-z0-9_]+ is not implemented' \
+  | sed 's/ is not implemented//' > "$TMP/unimpl.raw"
+
+objdump -d "$LIB" 2>/dev/null | awk '
+  /^[0-9a-f]+ <.*>:$/ { if (sym != "" && ud) print sym; sym=$2; gsub(/[<>:]/,"",sym); n=0; ud=0; next }
+  /^ *[0-9a-f]+:/     { n++; if ($0 ~ /ud2/ && n <= 10) ud=1 }
+  END                 { if (sym != "" && ud) print sym }
+' | grep -E '^wgpu[A-Z]' >> "$TMP/unimpl.raw"
+
+sort -u "$TMP/unimpl.raw" > "$TMP/unimpl"
+comm -12 "$TMP/expected" "$TMP/unimpl" > "$TMP/bound_unimpl"
+
+ALLOW="scripts/known-unimplemented.txt"
+if [ -f "$ALLOW" ]; then
+  grep -vE '^[[:space:]]*(#|$)' "$ALLOW" | awk '{print $1}' | sort -u > "$TMP/allow"
+else
+  : > "$TMP/allow"
+fi
+
+comm -23 "$TMP/bound_unimpl" "$TMP/allow" > "$TMP/new_unimpl"
+KNOWN_N=$(wc -l < "$TMP/bound_unimpl" | tr -d ' ')
+NEW_N=$(wc -l < "$TMP/new_unimpl" | tr -d ' ')
+
+echo "  unimplemented stubs in library: $(wc -l < "$TMP/unimpl" | tr -d ' ')"
+echo "  ...of those, bound here       : $KNOWN_N ($ALLOW records them)"
+
+if [ "$NEW_N" -gt 0 ]; then
+  echo ""
+  echo "  $NEW_N newly-bound symbol(s) are unimplemented stubs:"
+  sed 's/^/    - /' "$TMP/new_unimpl"
+  echo ""
+  echo "check-symbols: FAILED — calling any of these aborts the process."
+  echo "  Remove the binding, or add it to $ALLOW with a reason if it is"
+  echo "  bound deliberately and guarded from callers."
+  exit 1
+fi
+
 echo ""
 echo "check-symbols: ALL PASSED ($EXPECTED_N/$EXPECTED_N resolve)"

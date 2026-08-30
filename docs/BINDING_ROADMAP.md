@@ -15,8 +15,9 @@ Last measured: 2026-08-30, against `ffi/lib/libwgpu_native.so` (226 exported `wg
 
 | Category | Bound | Total | Coverage |
 |---|---:|---:|---:|
-| C functions (distinct `wgpu*`) | 190 | 226 | 84.1% |
-| ↳ excluding `AddRef` (18) + `FreeMembers` (2) | 190 | 206 | 92.2% |
+| C functions (distinct `wgpu*`) | 191 | 226 | 84.5% |
+| ↳ excluding `AddRef` (18) + `FreeMembers` (2) | 191 | 206 | 92.7% |
+| ↳ of those bound, **usable** (not upstream stubs) | 162 | 191 | 84.8% |
 | Structs | 93 | 113 | 82.3% |
 | Enum groups | 59 + 5 bitflags | 56 header enums | substantially complete |
 | Handle newtypes | 22 | all WebGPU objects | 100% |
@@ -34,10 +35,56 @@ every `"wgpu*"` string literal in `wgpu/` and `wgpu_max/`, plus every `wgpuXxx(`
 in `ffi/*.c` — and diffs it against `nm` output for the library. Nothing is
 hand-maintained, so the number moves on its own as bindings are added.
 
-Note this measures *resolvability*, not correctness: it proves every symbol the
-binding names exists, not that the signature or struct layout is right. Struct
-layout is still guarded only by `tests/test_structs.mojo` and the C bridge layout
-contract described in `CLAUDE.md`.
+The script runs a second check: wgpu-native exports `unimplemented!()` stubs for
+parts of `webgpu.h` it has not built. They link, so the resolution check cannot
+see them — but calling one panics in Rust across the FFI boundary and **aborts
+the process**, with no Mojo-level error to catch. 39 of the 226 exported symbols
+are such stubs. `scripts/known-unimplemented.txt` records the ones already bound
+so the gate fails on any new one.
+
+Note what is still *not* measured: signatures and struct layout. A binding can
+resolve, be implemented, and still be wrong if the argument types or struct
+layout disagree with the header — as `WGPUSupportedInstanceFeatures` did, with a
+spurious `nextInChain` shifting every field by 8 bytes. Layout is guarded only by
+`tests/test_structs.mojo` (now with byte-size assertions for the instance
+structs) and the C bridge layout contract in `CLAUDE.md`.
+
+## Tier 0 — 29 bound symbols abort the process when called
+
+**Found while implementing Tier 2; this outranks everything below it.**
+
+wgpu-native v29 exports `unimplemented!()` stubs that link cleanly and panic on
+call. 29 of them are bound here and reachable through the public API:
+
+| Group | Symbols | Exposed as |
+|---|---:|---|
+| `*SetLabel` — every object type | 18 | `set_label()` on ~18 wrapper types |
+| Buffer mapped-range access | 3 | `wgpuBufferGetMapState`, `Read`/`WriteMappedRange` |
+| Async pipeline creation | 2 | `Device.create_*_pipeline_async()` |
+| Device / instance queries | 5 | incl. `wgpuDeviceGetAdapterInfo`, `wgpuInstanceWaitAny` |
+| Shader compilation info | 1 | `ShaderModule.get_compilation_info()` |
+
+Note that `BINDING_STATUS.md` lists the async-pipeline and compilation-info
+entries under "✅ 全部完成". They are bound; the implementation behind them does
+not exist. `tests/test_debug_groups.mojo` already carries a commented-out
+`test_encoder_set_label()` with the note that the symbol is not implemented — so
+one instance of this was known, but not generalised.
+
+None of these have test coverage, which is why they stayed green.
+
+**This needs a decision before it needs code.** Options, in rough order of honesty:
+
+- **Remove the wrappers.** Cleanest; breaks any caller relying on a method that
+  could only ever have crashed them.
+- **Keep the wrappers but raise.** Have each check a known-unimplemented list and
+  `raise Error(...)` instead of calling through. Callers get a catchable Mojo
+  error instead of SIGABRT, and the methods start working automatically if the
+  binding is later pointed at a wgpu-native that implements them — but the raise
+  has to be driven by a hand-maintained list.
+- **Leave them and document.** Cheapest, keeps the landmine.
+
+The gate is already in place either way: `scripts/known-unimplemented.txt` is a
+ratchet, so no *new* stub can be bound without a deliberate entry.
 
 ## Tier 1 — macOS cannot open a window
 
@@ -73,15 +120,15 @@ compute-only.
 
 Small, self-contained, and worth doing before any new feature surface.
 
-### 2a. Latent leak: WGSL language features
+### 2a. WGSL language features — VOID, not a leak
 
-`wgpuInstanceGetWGSLLanguageFeatures` is bound (`loader.mojo:1110`) but its
-counterpart `wgpuSupportedWGSLLanguageFeaturesFreeMembers` is not. The call
-allocates an array the caller must free. There is no high-level wrapper yet, so
-nothing leaks today — but the raw loader method is reachable and leaks if used.
+Superseded by Tier 0. `wgpuInstanceGetWGSLLanguageFeatures` is an unimplemented
+stub, so it never returns an array and there is nothing to leak. The real defect
+is worse: the bound loader method aborts the process if called.
 
-**Cost: S.** Bind the `FreeMembers` call; add a wrapper that frees in `__del__`,
-or drop the getter until the pair is complete.
+Binding its `FreeMembers` counterpart would have been pointless. The getter and
+`wgpuInstanceHasWGSLLanguageFeature` are recorded in
+`scripts/known-unimplemented.txt`; removing them is part of the Tier 0 decision.
 
 ### 2b. `AddRef` parity — a decision, not just a binding
 
@@ -108,8 +155,19 @@ Pick one and write it down. Leaving it at 5/23 is the worst of both.
 | `wgpuSupportedInstanceFeaturesFreeMembers` | pairs with `GetInstanceFeatures` |
 | `WGPUCompatibilityModeLimits` | struct for the above |
 
-Today you must construct an instance to learn anything about the environment.
-**Cost: S.** Bind all four together so the alloc/free pair never splits.
+**Status: partially done.** Only `wgpuGetInstanceLimits` is implemented upstream
+and it is now bound and exposed as `wgpu.instance.instance_limits()`, covered by
+`tests/test_instance.mojo`. `wgpuGetInstanceFeatures`, `wgpuHasInstanceFeature`
+and `wgpuSupportedInstanceFeaturesFreeMembers` are unimplemented stubs and are
+deliberately **not** bound.
+
+Two struct layout bugs were fixed on the way, both latent because nothing used
+them: `WGPUSupportedInstanceFeatures` carried a `nextInChain` the header does not
+have, and `WGPUInstanceLimits` was missing `timedWaitAnyMaxCount`.
+`WGPUCompatibilityModeLimits` was added. All four now have byte-size assertions
+in `tests/test_structs.mojo`.
+
+Remaining here: nothing actionable until upstream implements the other three.
 
 ## Tier 3 — developer experience
 
@@ -186,9 +244,13 @@ for settling 2b explicitly rather than leaving it at 5/23.
 
 ## Suggested order
 
-1. **2a** (leak) and **2c** (instance query) — small, self-contained, no decisions.
-2. **2b** — decide `AddRef` semantics and write it down; it gates Tier 4 external textures.
-3. **Tier 3 `wgpuSetLogCallback`** — biggest debuggability win per unit of work.
-4. **Allowlist + coverage reporting** — makes the remaining gap legible.
-5. **Tier 1 macOS** — largest and highest-value, but needs macOS hardware; start with the probe.
-6. **Tier 4** — on demand.
+1. ~~**2a** and **2c**~~ — done as far as upstream allows: `instance_limits()`
+   shipped, two struct layouts fixed, the rest blocked by Tier 0 stubs.
+2. **Tier 0** — decide what to do with the 29 abort-on-call symbols. Highest
+   priority: it is the only item where the binding actively hands users a
+   process crash.
+3. **2b** — decide `AddRef` semantics and write it down; it gates Tier 4 external textures.
+4. **Tier 3 `wgpuSetLogCallback`** — biggest debuggability win per unit of work.
+5. **Allowlist + coverage reporting** — makes the remaining gap legible.
+6. **Tier 1 macOS** — largest and highest-value, but needs macOS hardware; start with the probe.
+7. **Tier 4** — on demand.
