@@ -86,7 +86,7 @@ struct Buffer(Movable, Boolable):
     # Mapping
     # ------------------------------------------------------------------
 
-    def map_read(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> UnsafePointer[NoneType, MutUntrackedOrigin]:
+    def map_read(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> Pointer[NoneType, MutUntrackedOrigin]:
         """Block until mapped for reading, return raw pointer."""
         var byte_size = UInt(size) if size != WGPU_WHOLE_SIZE else UInt(self._size - offset)
         var status = self._lib[].buffer_map_async(
@@ -99,11 +99,11 @@ struct Buffer(Movable, Boolable):
         )
         if status != WGPUMapAsyncStatus.Success:
             raise Error("Buffer map (read) failed, status=" + String(status))
-        return UnsafePointer(self._lib[].buffer_get_const_mapped_range(
+        return Pointer(self._lib[].buffer_get_const_mapped_range(
             self._handle, UInt(offset), byte_size
         ))
 
-    def map_write(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> UnsafePointer[NoneType, MutUntrackedOrigin]:
+    def map_write(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> Pointer[NoneType, MutUntrackedOrigin]:
         """Block until mapped for writing, return raw pointer."""
         var byte_size = UInt(size) if size != WGPU_WHOLE_SIZE else UInt(self._size - offset)
         var status = self._lib[].buffer_map_async(
@@ -116,7 +116,7 @@ struct Buffer(Movable, Boolable):
         )
         if status != WGPUMapAsyncStatus.Success:
             raise Error("Buffer map (write) failed, status=" + String(status))
-        return UnsafePointer(self._lib[].buffer_get_mapped_range(
+        return Pointer(self._lib[].buffer_get_mapped_range(
             self._handle, UInt(offset), byte_size
         ))
 

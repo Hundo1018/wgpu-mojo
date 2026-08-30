@@ -142,7 +142,7 @@ struct Session(Movable):
         var handle = cmd.raw()
         var handle_p = alloc[WGPUCommandBufferHandle](1)
         handle_p[] = handle
-        var arr = rebind[UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
+        var arr = rebind[Pointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
         self._lib[].queue_submit(self._queue_handle, UInt(1), arr)
         handle_p.unsafe_free()
 

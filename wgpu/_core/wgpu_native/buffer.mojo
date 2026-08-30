@@ -5,7 +5,7 @@ Key improvement over the old wgpu/buffer.mojo:
 - map_read() / map_write() return MappedBuffer[T] (typed, RAII)
   instead of raw OpaquePointer[MutUntrackedOrigin]
 - Automatic unmap on MappedBuffer destruction — no manual unmap() needed
-- No UnsafePointer in any public method signature
+- No Pointer in any public method signature
 """
 
 from std.memory import ArcPointer
@@ -41,7 +41,7 @@ struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):
 
     var _lib:    ArcPointer[WGPULib]
     var _handle: WGPUBufferHandle
-    var _data:   UnsafePointer[Self.T, MutUntrackedOrigin]
+    var _data:   Pointer[Self.T, MutUntrackedOrigin]
     var _count:  Int
 
     def __init__(
@@ -53,7 +53,7 @@ struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):
     ):
         self._lib    = lib
         self._handle = handle
-        self._data   = UnsafePointer(raw).unsafe_bitcast[Self.T]()
+        self._data   = Pointer(raw).unsafe_bitcast[Self.T]()
         self._count  = count
 
     def __init__(out self, *, deinit move: Self):
@@ -83,7 +83,7 @@ struct Buffer(Movable, Boolable):
     """
     RAII wrapper around a WGPUBuffer.
 
-    No UnsafePointer in any public method.
+    No Pointer in any public method.
     map_read[T]() / map_write[T]() return MappedBuffer[T], which auto-unmaps.
     """
 

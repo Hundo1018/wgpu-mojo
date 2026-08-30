@@ -116,7 +116,7 @@ struct CommandEncoder(Movable, Deinitable where False):
         return ComputePassEncoder(self._lib, result)
 
     def begin_render_pass(
-        self, desc: UnsafePointer[WGPURenderPassDescriptor, MutUntrackedOrigin]
+        self, desc: Pointer[WGPURenderPassDescriptor, MutUntrackedOrigin]
     ) -> RenderPassEncoder:
         var result = self._lib[].command_encoder_begin_render_pass(self._handle, desc)
         return RenderPassEncoder(self._lib, result)
@@ -210,17 +210,17 @@ struct CommandEncoder(Movable, Deinitable where False):
 
     def copy_buffer_to_texture(
         self,
-        src: UnsafePointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
-        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
+        src: Pointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
+        dst: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        size: Pointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._lib[].command_encoder_copy_buffer_to_texture(self._handle, src, dst, size)
 
     def copy_texture_to_buffer(
         self,
-        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        dst: UnsafePointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
+        src: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        dst: Pointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
+        size: Pointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._lib[].command_encoder_copy_texture_to_buffer(self._handle, src, dst, size)
 
@@ -292,9 +292,9 @@ struct CommandEncoder(Movable, Deinitable where False):
 
     def copy_texture_to_texture(
         self,
-        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
+        src: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        dst: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        size: Pointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._lib[].command_encoder_copy_texture_to_texture(self._handle, src, dst, size)
 

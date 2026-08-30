@@ -9,12 +9,12 @@ from wgpu._ffi.types import WGPUCallbackMode
 
 def _dummy_ptr(addr: Int) -> OpaquePointer[MutUntrackedOrigin]:
     return rebind[OpaquePointer[MutUntrackedOrigin]](
-        UnsafePointer[NoneType, MutUntrackedOrigin](unsafe_from_address=addr)
+        Pointer[NoneType, MutUntrackedOrigin](unsafe_from_address=addr)
     )
 
 
 def main() raises:
-    # OpaquePointer/UnsafePointer are non-nullable in current Mojo nightly;
+    # OpaquePointer/Pointer are non-nullable in current Mojo nightly;
     # this probe only validates struct construction, so a non-null dummy is fine.
     var p = _dummy_ptr(1)
     var info = WGPURequestAdapterCallbackInfo(

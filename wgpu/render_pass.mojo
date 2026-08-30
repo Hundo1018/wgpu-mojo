@@ -125,7 +125,7 @@ struct RenderPassEncoder(Movable, Deinitable where False):
         bind_group: WGPUBindGroupHandle,
         offsets: List[UInt32],
     ):
-        var ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
+        var ptr = rebind[Pointer[UInt32, MutUntrackedOrigin]](offsets.unsafe_ptr())
         self._lib[].render_pass_set_bind_group(
             self._handle, index, bind_group, UInt(len(offsets)), ptr.unsafe_bitcast[NoneType]()
         )
@@ -219,7 +219,7 @@ struct RenderPassEncoder(Movable, Deinitable where False):
     def set_scissor_rect(self, x: UInt32, y: UInt32, width: UInt32, height: UInt32):
         self._lib[].render_pass_set_scissor_rect(self._handle, x, y, width, height)
 
-    def set_blend_constant(self, color: UnsafePointer[WGPUColor, MutUntrackedOrigin]):
+    def set_blend_constant(self, color: Pointer[WGPUColor, MutUntrackedOrigin]):
         self._lib[].render_pass_set_blend_constant(self._handle, color.unsafe_bitcast[NoneType]())
 
     def set_stencil_reference(self, reference: UInt32):
@@ -232,7 +232,7 @@ struct RenderPassEncoder(Movable, Deinitable where False):
         self._lib[].render_pass_end_occlusion_query(self._handle)
 
     def execute_bundles(self, bundles: List[WGPURenderBundleHandle]):
-        var ptr = rebind[UnsafePointer[WGPURenderBundleHandle, MutUntrackedOrigin]](bundles.unsafe_ptr())
+        var ptr = rebind[Pointer[WGPURenderBundleHandle, MutUntrackedOrigin]](bundles.unsafe_ptr())
         self._lib[].render_pass_execute_bundles(self._handle, UInt(len(bundles)), ptr)
 
     def execute_bundles(self, bundles: List[RenderBundle]):
@@ -240,7 +240,7 @@ struct RenderPassEncoder(Movable, Deinitable where False):
         var handles = List[WGPURenderBundleHandle](capacity=len(bundles))
         for i in range(len(bundles)):
             handles.append(bundles[i].handle().raw)
-        var ptr = rebind[UnsafePointer[WGPURenderBundleHandle, MutUntrackedOrigin]](handles.unsafe_ptr())
+        var ptr = rebind[Pointer[WGPURenderBundleHandle, MutUntrackedOrigin]](handles.unsafe_ptr())
         self._lib[].render_pass_execute_bundles(self._handle, UInt(len(handles)), ptr)
         _ = handles^
 

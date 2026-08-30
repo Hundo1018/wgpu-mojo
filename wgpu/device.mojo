@@ -248,7 +248,7 @@ struct Device(Movable, Boolable):
         label: String = "",
     ) raises -> ShaderModule:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var code_ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](code.unsafe_ptr())
+        var code_ptr = rebind[Pointer[UInt32, MutUntrackedOrigin]](code.unsafe_ptr())
         var chain_val = WGPUChainedStruct(null_opaque(), WGPUSType.ShaderSourceSPIRV)
         var source_p = alloc[WGPUShaderSourceSPIRV](1)
         source_p[] = WGPUShaderSourceSPIRV(
@@ -301,7 +301,7 @@ struct Device(Movable, Boolable):
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var entries_ptr = null_ptr[WGPUBindGroupLayoutEntry]()
         if len(entries) > 0:
-            entries_ptr = rebind[UnsafePointer[WGPUBindGroupLayoutEntry, MutUntrackedOrigin]](entries.unsafe_ptr())
+            entries_ptr = rebind[Pointer[WGPUBindGroupLayoutEntry, MutUntrackedOrigin]](entries.unsafe_ptr())
         var desc = WGPUBindGroupLayoutDescriptor(
             null_opaque(),
             label_sv,
@@ -368,7 +368,7 @@ struct Device(Movable, Boolable):
         label: String = "",
     ) raises -> PipelineLayout:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var layouts_ptr = rebind[UnsafePointer[WGPUBindGroupLayoutHandle, MutUntrackedOrigin]](bind_group_layouts.unsafe_ptr())
+        var layouts_ptr = rebind[Pointer[WGPUBindGroupLayoutHandle, MutUntrackedOrigin]](bind_group_layouts.unsafe_ptr())
         var desc_p = alloc[WGPUPipelineLayoutDescriptor](1)
         desc_p[] = WGPUPipelineLayoutDescriptor(
             null_opaque(),
@@ -541,7 +541,7 @@ struct Device(Movable, Boolable):
         depth_stencil_format: WGPUTextureFormat for depth/stencil (0 = none).
         """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var fmt_ptr = rebind[UnsafePointer[UInt32, MutUntrackedOrigin]](color_formats.unsafe_ptr())
+        var fmt_ptr = rebind[Pointer[UInt32, MutUntrackedOrigin]](color_formats.unsafe_ptr())
         var desc_p = alloc[WGPURenderBundleEncoderDescriptor](1)
         desc_p[] = WGPURenderBundleEncoderDescriptor(
             null_opaque(),
@@ -562,7 +562,7 @@ struct Device(Movable, Boolable):
     # ------------------------------------------------------------------
 
     def queue_submit(self, commands: List[WGPUCommandBufferHandle]):
-        var arr = rebind[UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](commands.unsafe_ptr())
+        var arr = rebind[Pointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](commands.unsafe_ptr())
         self._lib[].queue_submit(self._queue, UInt(len(commands)), arr)
 
     def queue_submit(self, cmd: CommandBuffer):
@@ -574,7 +574,7 @@ struct Device(Movable, Boolable):
         var handle = cmd.raw()
         var handle_p = alloc[WGPUCommandBufferHandle](1)
         handle_p[] = handle
-        var arr = rebind[UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
+        var arr = rebind[Pointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
         self._lib[].queue_submit(self._queue, UInt(1), arr)
         handle_p.unsafe_free()
 
@@ -596,7 +596,7 @@ struct Device(Movable, Boolable):
         eliminating manual `_ = data^` / `_ = buffer^` pins.
         """
         var byte_count = UInt(len(data)) * UInt(_sizeof[T]())
-        var ptr = rebind[UnsafePointer[T, MutUntrackedOrigin]](data.unsafe_ptr())
+        var ptr = rebind[Pointer[T, MutUntrackedOrigin]](data.unsafe_ptr())
         self._lib[].queue_write_buffer(
             self._queue,
             buffer.handle().raw,
@@ -691,7 +691,7 @@ struct Device(Movable, Boolable):
                 raise Error("pop_error_scope failed, status=" + String(status))
             if err_type == WGPUErrorType.NoError:
                 return String("")
-            var p = UnsafePointer(result[].message_data).unsafe_bitcast[UInt8]()
+            var p = Pointer(result[].message_data).unsafe_bitcast[UInt8]()
             var n = result[].message_len
             var out = String()
             var i = UInt(0)
