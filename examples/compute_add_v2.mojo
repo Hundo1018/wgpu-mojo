@@ -1,5 +1,5 @@
 """
-compute_add_v2.mojo — GPU vector addition using the new Layer 3 API.
+GPU vector addition using the new Layer 3 API.
 
 Compare with examples/compute_add.mojo (old API):
 - No `_ = resource^` lifetime pins

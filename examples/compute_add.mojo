@@ -1,5 +1,5 @@
 """
-Examples/compute_add.mojo — GPU vector addition using high-level wgpu RAII wrappers.
+GPU vector addition using high-level wgpu RAII wrappers.
 
 Demonstrates:
     1. Instance + Adapter + Device creation

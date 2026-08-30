@@ -1,5 +1,5 @@
 """
-Tests/test_texture.mojo — Tests for Texture and TextureView creation.
+Tests for Texture and TextureView creation.
 Requires GPU hardware.
 """
 

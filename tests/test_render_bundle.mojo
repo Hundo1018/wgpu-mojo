@@ -1,5 +1,5 @@
 """
-Tests/test_render_bundle.mojo — Tests for RenderBundleEncoder / RenderBundle.
+Tests for RenderBundleEncoder / RenderBundle.
 Requires GPU hardware.
 """
 
@@ -28,7 +28,7 @@ def test_create_render_bundle_encoder() raises:
 
 
 def test_render_bundle_encoder_finish_abandon() raises:
-    """finish() must return a non-null RenderBundle; abandon() must not crash."""
+    """Finish() must return a non-null RenderBundle; abandon() must not crash."""
     var device = create_test_device()
     var formats = List[UInt32]()
     formats.append(WGPUTextureFormat.BGRA8Unorm)

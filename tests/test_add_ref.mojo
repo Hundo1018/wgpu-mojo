@@ -1,5 +1,5 @@
 """
-Tests/test_add_ref.mojo — Shared ownership via clone() (wgpu*AddRef).
+Shared ownership via clone() (wgpu*AddRef).
 
 clone() bumps the wgpu-native refcount instead of copying the GPU object, so a
 clone must stay usable after the original is dropped. If AddRef were missing,
@@ -64,7 +64,7 @@ def test_shader_module_outlives_original() raises:
 
 
 def test_clone_shares_handle() raises:
-    """clone() shares the handle rather than creating a second GPU object."""
+    """Clone() shares the handle rather than creating a second GPU object."""
     var device = create_test_device()
     var sampler = device.create_sampler(label="clone_sampler")
     var copy = sampler.clone()

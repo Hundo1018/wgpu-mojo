@@ -1,5 +1,5 @@
 """
-examples/metaballs.mojo — animated 2D signed-distance-field (SDF) metaballs.
+Animated 2D signed-distance-field (SDF) metaballs.
 
 Same fullscreen fragment-shader host as examples/plasma.mojo (resolution / time /
 mouse / frame uniforms, a single `shade` function), but the WGSL now uses the 2D

@@ -1,5 +1,5 @@
 """
-Examples/enumerate_adapters.mojo — List all available GPU adapters.
+List all available GPU adapters.
 
 Uses the high-level wgpu API for instance creation, then the native
 wgpuInstanceEnumerateAdapters extension to list all backends.

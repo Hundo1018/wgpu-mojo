@@ -1,5 +1,5 @@
 """
-Examples/triangle_window.mojo — Hello Triangle in a real window.
+Hello Triangle in a real window.
 
 Renders a coloured triangle (RGB vertices) on a black background.
 This is the classical first rendering test: if the triangle appears,

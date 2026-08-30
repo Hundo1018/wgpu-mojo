@@ -1,5 +1,5 @@
 """
-Examples/texture_sample.mojo — Textured quad example with a sampled 2×2 texture.
+Textured quad example with a sampled 2×2 texture.
 
 Demonstrates:
   * creating an on-GPU texture and sampler

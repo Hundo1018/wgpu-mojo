@@ -1,5 +1,5 @@
 """
-Examples/native_extensions.mojo — Query native wgpu-native feature support.
+Query native wgpu-native feature support.
 
 Demonstrates:
   * requesting a device

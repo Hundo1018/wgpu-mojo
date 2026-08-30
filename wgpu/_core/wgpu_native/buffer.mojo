@@ -25,7 +25,7 @@ def _sizeof[T: AnyType]() -> Int:
     return Int(p.unsafe_offset(1)) - Int(p)
 
 
-struct MappedBuffer[T: ImplicitlyCopyable & Movable](Movable):
+struct MappedBuffer[T: ImplicitlyCopyable](Movable):
     """
     RAII typed view into a mapped GPU buffer.
 
@@ -141,7 +141,7 @@ struct Buffer(Movable, Boolable):
     # Typed mapping (no raw pointers in public API)
     # ------------------------------------------------------------------
 
-    def map_read[T: ImplicitlyCopyable & Movable](
+    def map_read[T: ImplicitlyCopyable](
         self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE
     ) raises -> MappedBuffer[T]:
         """Map buffer for reading. Returns a RAII MappedBuffer[T] that auto-unmaps."""
@@ -161,7 +161,7 @@ struct Buffer(Movable, Boolable):
         )
         return MappedBuffer[T](self._lib, self._handle, raw, Int(byte_size) // _sizeof[T]())
 
-    def map_write[T: ImplicitlyCopyable & Movable](
+    def map_write[T: ImplicitlyCopyable](
         self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE
     ) raises -> MappedBuffer[T]:
         """Map buffer for writing. Returns a RAII MappedBuffer[T] that auto-unmaps."""
@@ -185,12 +185,12 @@ struct Buffer(Movable, Boolable):
     # Convenience helpers (higher level, still no raw pointers)
     # ------------------------------------------------------------------
 
-    def read_data[T: ImplicitlyCopyable & Movable](self, offset: UInt64 = 0) raises -> List[T]:
+    def read_data[T: ImplicitlyCopyable](self, offset: UInt64 = 0) raises -> List[T]:
         """Map, copy all data into a List[T], return it (auto-unmaps on scope exit)."""
         var mapped = self.map_read[T](offset)
         return mapped.to_list()
 
-    def write_data[T: ImplicitlyCopyable & Movable](
+    def write_data[T: ImplicitlyCopyable](
         self, data: List[T], offset: UInt64 = 0
     ) raises:
         """Map for writing, copy List[T] data into GPU buffer (auto-unmaps)."""

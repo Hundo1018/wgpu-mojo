@@ -1,5 +1,5 @@
 """
-Tests/test_texture_sample.mojo — validate sampled texture bind group and render pipeline creation.
+Validate sampled texture bind group and render pipeline creation.
 Requires GPU hardware.
 """
 

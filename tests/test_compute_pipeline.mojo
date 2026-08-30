@@ -1,5 +1,5 @@
 """
-Tests/test_compute_pipeline.mojo — Tests for compute pipeline creation and dispatch.
+Tests for compute pipeline creation and dispatch.
 Requires GPU hardware.
 """
 

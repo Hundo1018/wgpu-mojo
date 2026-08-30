@@ -1,5 +1,5 @@
 """
-Tests/test_buffer.mojo — Integration tests for Buffer creation, write, map, read.
+Integration tests for Buffer creation, write, map, read.
 Requires GPU hardware.
 """
 

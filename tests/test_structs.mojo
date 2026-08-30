@@ -1,5 +1,5 @@
 """
-tests/test_structs.mojo — Unit tests for FFI struct construction and layout.
+Unit tests for FFI struct construction and layout.
 No GPU required.
 """
 

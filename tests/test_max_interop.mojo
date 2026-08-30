@@ -1,5 +1,5 @@
 """
-Tests/test_max_interop.mojo — round trips across the wgpu <-> MAX bridge.
+tests/test_max_interop.mojo — round trips across the wgpu <-> MAX bridge.
 
 Requires GPU hardware AND the opt-in `max` dependency. Run via:
     pixi run -e maxinterop test-max-interop

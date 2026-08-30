@@ -1,5 +1,5 @@
 """
-Tests/test_bind_group.mojo — Tests for BindGroupLayout and BindGroup creation.
+Tests for BindGroupLayout and BindGroup creation.
 Requires GPU hardware.
 """
 
