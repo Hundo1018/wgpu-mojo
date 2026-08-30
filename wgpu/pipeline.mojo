@@ -39,11 +39,6 @@ struct ComputePipeline(Movable, Boolable):
         var h = self._lib[].compute_pipeline_get_bind_group_layout(self._handle, index)
         return BindGroupLayout(self._lib, h)
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].compute_pipeline_set_label(self._handle, sv)
-
-
 struct RenderPipeline(Movable, Boolable):
     """RAII wrapper around a WGPURenderPipeline."""
 
@@ -71,6 +66,3 @@ struct RenderPipeline(Movable, Boolable):
         var h = self._lib[].render_pipeline_get_bind_group_layout(self._handle, index)
         return BindGroupLayout(self._lib, h)
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].render_pipeline_set_label(self._handle, sv)

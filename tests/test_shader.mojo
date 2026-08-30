@@ -68,19 +68,18 @@ def test_compilation_info_clean_shader() raises:
     var device = create_test_device()
     var shader = device.create_shader_module_wgsl(NOOP_WGSL, "noop_info")
     assert_true(shader)
-    # SKIP get_compilation_info(): wgpuShaderModuleGetCompilationInfo is
-    # unimplemented in wgpu-native v29 (panics "not implemented" in
-    # src/unimplemented.rs, aborting across the C ABI — uncatchable from Mojo).
-    # Re-enable the assertion below when wgpu-native implements it:
-    #   assert_equal(len(shader.get_compilation_info()), 0)
-    print("  SKIP: get_compilation_info (unimplemented in wgpu-native v29)")
+    # ShaderModule.get_compilation_info() no longer exists: the underlying
+    # wgpuShaderModuleGetCompilationInfo is an unimplemented!() stub in
+    # wgpu-native v29 that aborts across the C ABI, so the wrapper was removed
+    # rather than left as a landmine. Only shader creation is asserted here.
+    # See docs/BINDING_ROADMAP.md "Tier 0".
     _ = device^
 
 
 def test_compilation_info_bad_shader() raises:
     """An invalid shader should return at least one Error message."""
     var device = create_test_device()
-    # get_compilation_info() is unimplemented in wgpu-native v29 (aborts), so we
+    # get_compilation_info() was removed (unimplemented upstream, aborts), so we
     # instead verify the bad shader is rejected via the error-scope mechanism.
     # NOTE: creating a bad shader WITHOUT an active error scope routes the error
     # to wgpu-native's default sink, which panics and aborts the process — the

@@ -15,18 +15,23 @@ Last measured: 2026-08-30, against `ffi/lib/libwgpu_native.so` (226 exported `wg
 
 | Category | Bound | Total | Coverage |
 |---|---:|---:|---:|
-| C functions (distinct `wgpu*`) | 191 | 226 | 84.5% |
-| ↳ excluding `AddRef` (18) + `FreeMembers` (2) | 191 | 206 | 92.7% |
-| ↳ of those bound, **usable** (not upstream stubs) | 162 | 191 | 84.8% |
+| C functions, vs. everything exported | 162 | 226 | 71.7% |
+| **C functions, vs. what upstream implements** | **162** | **187** | **86.6%** |
+| ↳ of those bound, usable (no upstream stubs bound) | 162 | 162 | **100%** |
 | Structs | 93 | 113 | 82.3% |
 | Enum groups | 59 + 5 bitflags | 56 header enums | substantially complete |
 | Handle newtypes | 22 | all WebGPU objects | 100% |
 
 The headers and the shipped library agree exactly: `webgpu.h` (199) ∪ `wgpu.h` (27)
-= 226 distinct symbols, and the `.so` exports exactly those 226. That makes 226 a
-hard denominator rather than a guess.
+= 226 distinct symbols, and the `.so` exports exactly those 226.
 
-The 36 unbound symbols are 18 `*AddRef`, 2 `*FreeMembers`, and 16 others.
+But 226 is the wrong denominator, because **39 of those 226 are `unimplemented!()`
+stubs** that abort the process when called (see "How coverage is measured"). The
+real bindable surface is 187, and no stub is bound any more — so every symbol
+this binding names both resolves *and* works.
+
+The 25 unbound-but-implemented symbols are 17 `*AddRef` (a design decision, see
+2b) and 8 others.
 
 ## How coverage is measured
 
@@ -49,9 +54,9 @@ spurious `nextInChain` shifting every field by 8 bytes. Layout is guarded only b
 `tests/test_structs.mojo` (now with byte-size assertions for the instance
 structs) and the C bridge layout contract in `CLAUDE.md`.
 
-## Tier 0 — 29 bound symbols abort the process when called
+## Tier 0 — RESOLVED: 29 abort-on-call symbols removed
 
-**Found while implementing Tier 2; this outranks everything below it.**
+**Found while implementing Tier 2, and since fixed by removing every one.**
 
 wgpu-native v29 exports `unimplemented!()` stubs that link cleanly and panic on
 call. 29 of them are bound here and reachable through the public API:
@@ -72,19 +77,24 @@ one instance of this was known, but not generalised.
 
 None of these have test coverage, which is why they stayed green.
 
-**This needs a decision before it needs code.** Options, in rough order of honesty:
+**Resolution: removed outright.** All 29 are gone — public wrappers, loader
+methods, the three C bridge paths (`wgpu_mojo_shader_get_compilation_info`,
+`..._create_compute_pipeline_async`, `..._create_render_pipeline_async`) with
+their callbacks and cached function pointers, the dead result structs, and the
+`set_label` requirement on the `GpuResource` trait.
 
-- **Remove the wrappers.** Cleanest; breaks any caller relying on a method that
-  could only ever have crashed them.
-- **Keep the wrappers but raise.** Have each check a known-unimplemented list and
-  `raise Error(...)` instead of calling through. Callers get a catchable Mojo
-  error instead of SIGABRT, and the methods start working automatically if the
-  binding is later pointed at a wgpu-native that implements them — but the raise
-  has to be driven by a hand-maintained list.
-- **Leave them and document.** Cheapest, keeps the landmine.
+This is a breaking API change: `set_label()` is gone from ~18 wrapper types, as
+are `Buffer.map_state()`, `Device.create_*_pipeline_async()` and
+`ShaderModule.get_compilation_info()`. Nothing is lost in practice — every one
+of them could only ever have aborted the caller.
 
-The gate is already in place either way: `scripts/known-unimplemented.txt` is a
-ratchet, so no *new* stub can be bound without a deliberate entry.
+`scripts/known-unimplemented.txt` is now empty and stays as the ratchet:
+`check-symbols` fails if any binding resolves a stub not listed there, so
+re-introducing one has to be deliberate. Verified by re-adding a stub symbol and
+confirming the gate exits 1 and names it.
+
+If upstream implements these later, re-adding them is mechanical — and the gate
+will stop complaining on its own once the stubs become real code.
 
 ## Tier 1 — macOS cannot open a window
 
@@ -175,7 +185,10 @@ Remaining here: nothing actionable until upstream implements the other three.
 |---|---|---|
 | `wgpuSetLogCallback` | route wgpu-native logs into Mojo instead of raw stderr; only `set_log_level` exists today | M — needs a C bridge callback, same pattern as `wgpu_callbacks.c` |
 | `wgpuDeviceStartGraphicsDebuggerCapture` / `...Stop...` | RenderDoc capture from Mojo | S — two `void` calls, no structs |
-| `wgpuCommandBufferSetLabel`, `wgpuSurfaceSetLabel` | label parity; every other object has `set_label` | S |
+
+`wgpuCommandBufferSetLabel` and `wgpuSurfaceSetLabel` were previously listed here
+as "label parity". They are stubs too, as is every other `*SetLabel` — labelling
+simply does not exist in wgpu-native v29, so there is no parity to reach.
 
 `wgpuSetLogCallback` is the one with real payoff — wgpu-native validation errors
 currently surface as raw status codes with no context, which `BINDING_STATUS.md`
@@ -209,48 +222,44 @@ These should be recorded as out of scope rather than counted as debt.
 
 ## Making "100%" mean something
 
-Raw 190/226 will never reach 100%, because Tier 5 should never be bound. The
-honest target is **coverage against a declared surface**, not against the whole
-header.
+Raw 162/226 will never reach 100%: 39 of those symbols are upstream stubs that
+should never be bound, and a handful more (`wgpuGetProcAddress`, WebXR, UWP) are
+meaningless in a native binding. The honest denominator is **what upstream
+actually implements, minus what we deliberately exclude**.
 
-Proposal: add an explicit `scripts/unbound-allowlist.txt` holding the deliberately
-unbound symbols with a one-line reason each, and extend `check-symbols.sh` to
-report `bound / (exported − allowlisted)`. Then:
-
-- the number can legitimately reach 100%;
-- anything newly exported by an upstream bump shows up as *unclassified* rather
-  than silently widening the gap — which is the same failure mode the
-  `SetPushConstants` bug came from.
-
-Where the 36 unbound symbols land:
+That number already exists and is enforced. `scripts/known-unimplemented.txt`
+keeps stubs out; the remaining question is only the 25 unbound-but-implemented
+symbols:
 
 | Bucket | Count | Disposition |
 |---|---:|---|
-| The 16 "other" symbols | 15 | bind (Tiers 1–4) |
-| | 1 | allowlist — `wgpuGetProcAddress` |
-| `*FreeMembers` | 2 | bind (2a, 2c) |
-| `*AddRef` | 18 | depends on the 2b decision |
+| `*AddRef` | 17 | depends on the 2b decision |
+| Metal native-handle getters | 3 | bind with Tier 1 |
+| `wgpuSetLogCallback` | 1 | Tier 3 |
+| Graphics-debugger capture | 2 | Tier 3 |
+| SPIR-V shader modules | 1 | Tier 4 |
+| `wgpuTextureGetTextureBindingViewDimension` | 1 | Tier 4 |
 
-Most of the Tier 5 table is structs, which do not appear in the symbol
-denominator — only `wgpuGetProcAddress` is an allowlisted *symbol*.
+So 187/187 is reachable, under either 2b outcome:
 
-So 100% is reachable under either 2b outcome:
-
-- **bind all `AddRef`**: 190 + 15 + 2 + 18 = 225 bound, 1 allowlisted → **225/225**
-- **drop the 5 bound `AddRef`**: 202 bound, 24 allowlisted → **202/202**
+- **bind all `AddRef`**: 162 + 8 + 17 = **187/187**
+- **drop the 5 already bound**: 157 + 8 = 165 bound, denominator 165 → **165/165**
 
 The choice changes the denominator, not the achievability — which is the argument
-for settling 2b explicitly rather than leaving it at 5/23.
+for settling 2b explicitly rather than leaving it at 5/22 implemented.
+
+Worth adding when someone next touches the gate: report `bound / (implemented −
+deliberately-excluded)` directly in `check-symbols` output, so an upstream bump
+surfaces newly-exported symbols as *unclassified* rather than silently widening
+the gap. That is the same failure mode the `SetPushConstants` bug came from.
 
 ## Suggested order
 
 1. ~~**2a** and **2c**~~ — done as far as upstream allows: `instance_limits()`
-   shipped, two struct layouts fixed, the rest blocked by Tier 0 stubs.
-2. **Tier 0** — decide what to do with the 29 abort-on-call symbols. Highest
-   priority: it is the only item where the binding actively hands users a
-   process crash.
-3. **2b** — decide `AddRef` semantics and write it down; it gates Tier 4 external textures.
+   shipped, two struct layouts fixed, the rest blocked by upstream stubs.
+2. ~~**Tier 0**~~ — done: all 29 abort-on-call symbols removed, ratchet in place.
+3. **2b** — decide `AddRef` semantics and write it down. Now the single largest
+   remaining item: 17 of the 25 unbound-but-implemented symbols are `AddRef`.
 4. **Tier 3 `wgpuSetLogCallback`** — biggest debuggability win per unit of work.
-5. **Allowlist + coverage reporting** — makes the remaining gap legible.
-6. **Tier 1 macOS** — largest and highest-value, but needs macOS hardware; start with the probe.
-7. **Tier 4** — on demand.
+5. **Tier 1 macOS** — largest and highest-value, but needs macOS hardware; start with the probe.
+6. **Tier 4** — on demand.

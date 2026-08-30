@@ -36,10 +36,12 @@ trap 'rm -rf "$TMP"' EXIT
 #   - the C bridge calls them directly, e.g. wgpuXxx(...)
 # The `wgpu[A-Z]` shape matches the C API only: it skips WGPU* type names and
 # the bridge's own wgpu_mojo_* exports.
+# `|| true` throughout: grep exits 1 on no matches, which under `set -e`
+# would kill the script instead of reporting an empty set.
 grep -rhoE '"wgpu[A-Z][A-Za-z0-9_]*"' wgpu/ wgpu_max/ 2>/dev/null \
-  | tr -d '"' > "$TMP/expected.raw"
+  | tr -d '"' > "$TMP/expected.raw" || true
 grep -ohE '\bwgpu[A-Z][A-Za-z0-9_]*[[:space:]]*\(' ffi/*.c 2>/dev/null \
-  | sed 's/[[:space:]]*($//; s/($//' | tr -d '(' >> "$TMP/expected.raw"
+  | sed 's/[[:space:]]*($//; s/($//' | tr -d '(' >> "$TMP/expected.raw" || true
 sort -u "$TMP/expected.raw" > "$TMP/expected"
 
 # Symbols the library actually exports (macOS nm prefixes a leading underscore).
@@ -92,20 +94,21 @@ fi
 
 strings -a "$LIB" 2>/dev/null \
   | grep -oE 'wgpu[A-Za-z0-9_]+ is not implemented' \
-  | sed 's/ is not implemented//' > "$TMP/unimpl.raw"
+  | sed 's/ is not implemented//' > "$TMP/unimpl.raw" || true
 
 objdump -d "$LIB" 2>/dev/null | awk '
   /^[0-9a-f]+ <.*>:$/ { if (sym != "" && ud) print sym; sym=$2; gsub(/[<>:]/,"",sym); n=0; ud=0; next }
   /^ *[0-9a-f]+:/     { n++; if ($0 ~ /ud2/ && n <= 10) ud=1 }
   END                 { if (sym != "" && ud) print sym }
-' | grep -E '^wgpu[A-Z]' >> "$TMP/unimpl.raw"
+' | grep -E '^wgpu[A-Z]' >> "$TMP/unimpl.raw" || true
 
 sort -u "$TMP/unimpl.raw" > "$TMP/unimpl"
 comm -12 "$TMP/expected" "$TMP/unimpl" > "$TMP/bound_unimpl"
 
 ALLOW="scripts/known-unimplemented.txt"
 if [ -f "$ALLOW" ]; then
-  grep -vE '^[[:space:]]*(#|$)' "$ALLOW" | awk '{print $1}' | sort -u > "$TMP/allow"
+  grep -vE '^[[:space:]]*(#|$)' "$ALLOW" | awk '{print $1}' | sort -u > "$TMP/allow" || true
+  touch "$TMP/allow"
 else
   : > "$TMP/allow"
 fi

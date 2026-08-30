@@ -32,6 +32,3 @@ struct Sampler(Movable, Boolable):
     def __bool__(self) -> Bool:
         return Int(self._handle) != 0
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].sampler_set_label(self._handle, sv)

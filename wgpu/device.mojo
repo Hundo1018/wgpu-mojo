@@ -39,14 +39,12 @@ from wgpu._ffi.structs import (
     WGPUOrigin3D,
     WGPUChainedStruct,
     WGPUPopErrorScopeCallbackInfo,
-    WGPUCreateComputePipelineAsyncCallbackInfo,
-    WGPUCreateRenderPipelineAsyncCallbackInfo,
     str_to_sv,
 )
 from wgpu._ffi.types import WGPUCallbackMode, WGPUErrorFilter, WGPUErrorType
 from wgpu._ffi.alloc_guard import AllocGuard
 from wgpu._backend.wgpu_native.loader import (
-    _PopErrorResult, _ComputePipelineAsyncResult, _RenderPipelineAsyncResult,
+    _PopErrorResult,
 )
 from wgpu._ffi.types import WGPUSType
 from wgpu.buffer import Buffer, _sizeof
@@ -488,74 +486,6 @@ struct Device(Movable, Boolable):
         fragment_p.free()
         return result^
 
-    def create_compute_pipeline_async(
-        self,
-        desc: WGPUComputePipelineDescriptor,
-    ) raises -> ComputePipeline:
-        """Create a compute pipeline asynchronously (internally polls until done)."""
-        with AllocGuard[_ComputePipelineAsyncResult](1) as res_p:
-            res_p[] = _ComputePipelineAsyncResult(UInt32(0), null_opaque())
-            with AllocGuard[WGPUCreateComputePipelineAsyncCallbackInfo](1) as cb_p:
-                cb_p[] = WGPUCreateComputePipelineAsyncCallbackInfo(
-                    null_opaque(), WGPUCallbackMode.AllowSpontaneous,
-                    self._lib[]._compute_pipeline_async_cb_ptr,
-                    res_p.bitcast[NoneType](), null_opaque(),
-                )
-                with AllocGuard[WGPUComputePipelineDescriptor](1) as desc_p:
-                    desc_p[] = desc
-                    self._lib[].device_create_compute_pipeline_async(
-                        self._handle, desc_p, cb_p
-                    )
-            self._lib[].instance_process_events(self._instance)
-            var status = res_p[].status
-            if status != UInt32(1):
-                raise Error("create_compute_pipeline_async failed, status=" + String(status))
-            return ComputePipeline(self._lib, res_p[].pipeline)
-
-    def create_compute_pipeline_async(
-        self,
-        shader: ShaderModule,
-        entry_point: String,
-        layout: PipelineLayout,
-        label: String = "",
-    ) raises -> ComputePipeline:
-        var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        var entry_sv = str_to_sv(entry_point)
-        var cs = WGPUComputeState(
-            null_opaque(),
-            shader.handle().raw,
-            entry_sv,
-            UInt(0), null_ptr[WGPUConstantEntry](),
-        )
-        var desc = WGPUComputePipelineDescriptor(
-            null_opaque(), label_sv, layout.handle().raw, cs,
-        )
-        return self.create_compute_pipeline_async(desc)
-
-    def create_render_pipeline_async(
-        self,
-        var desc: WGPURenderPipelineDescriptor,
-    ) raises -> RenderPipeline:
-        """Create a render pipeline asynchronously (internally polls until done)."""
-        with AllocGuard[_RenderPipelineAsyncResult](1) as res_p:
-            res_p[] = _RenderPipelineAsyncResult(UInt32(0), null_opaque())
-            with AllocGuard[WGPUCreateRenderPipelineAsyncCallbackInfo](1) as cb_p:
-                cb_p[] = WGPUCreateRenderPipelineAsyncCallbackInfo(
-                    null_opaque(), WGPUCallbackMode.AllowSpontaneous,
-                    self._lib[]._render_pipeline_async_cb_ptr,
-                    res_p.bitcast[NoneType](), null_opaque(),
-                )
-                with AllocGuard[WGPURenderPipelineDescriptor](1) as desc_p:
-                    desc_p[] = desc^
-                    self._lib[].device_create_render_pipeline_async(
-                        self._handle, desc_p, cb_p
-                    )
-            self._lib[].instance_process_events(self._instance)
-            var status = res_p[].status
-            if status != UInt32(1):
-                raise Error("create_render_pipeline_async failed, status=" + String(status))
-            return RenderPipeline(self._lib, res_p[].pipeline)
-
     def create_command_encoder(self, label: String = "") raises -> CommandEncoder:
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var desc_p = alloc[WGPUCommandEncoderDescriptor](1)
@@ -756,14 +686,6 @@ struct Device(Movable, Boolable):
     # ------------------------------------------------------------------
     # Labels
     # ------------------------------------------------------------------
-
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].device_set_label(self._handle, sv)
-
-    def queue_set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].queue_set_label(self._queue, sv)
 
     # ------------------------------------------------------------------
     # Raw handle access

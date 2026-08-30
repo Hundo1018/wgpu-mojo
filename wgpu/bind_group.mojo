@@ -34,11 +34,6 @@ struct BindGroupLayout(Movable, Boolable):
     def __bool__(self) -> Bool:
         return Int(self._handle) != 0
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].bind_group_layout_set_label(self._handle, sv)
-
-
 struct BindGroup(Movable, Boolable):
     """RAII wrapper around a WGPUBindGroup."""
 
@@ -62,6 +57,3 @@ struct BindGroup(Movable, Boolable):
     def __bool__(self) -> Bool:
         return Int(self._handle) != 0
 
-    def set_label(self, label: String):
-        var sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
-        self._lib[].bind_group_set_label(self._handle, sv)
