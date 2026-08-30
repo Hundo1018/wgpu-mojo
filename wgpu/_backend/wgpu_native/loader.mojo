@@ -157,12 +157,12 @@ def _read_env_var(name: String) raises -> String:
     var libc = OwnedDLHandle("libc.so.6")
     var name_bytes = name.as_bytes()
     var raw = libc.call["getenv", OpaquePointer[MutUntrackedOrigin]](
-        UnsafePointer(name_bytes.unsafe_ptr())
+        Pointer(name_bytes.unsafe_ptr())
     )
     var null_ptr = null_opaque()
     if raw == null_ptr:
         return String("")
-    var p = UnsafePointer(raw).unsafe_bitcast[UInt8]()
+    var p = Pointer(raw).unsafe_bitcast[UInt8]()
     var out = String()
     var i = 0
     while p[i] != 0:
@@ -286,7 +286,7 @@ struct WGPULib(Movable):
     def get_version(self) -> UInt32:
         return self._wgpu.call["wgpuGetVersion", UInt32]()
 
-    def create_instance(self, desc: UnsafePointer[WGPUInstanceDescriptor, MutUntrackedOrigin]) -> WGPUInstanceHandle:
+    def create_instance(self, desc: Pointer[WGPUInstanceDescriptor, MutUntrackedOrigin]) -> WGPUInstanceHandle:
         return self._wgpu.call["wgpuCreateInstance", WGPUInstanceHandle](desc)
 
     # ------------------------------------------------------------------
@@ -297,7 +297,7 @@ struct WGPULib(Movable):
         self,
         instance: WGPUInstanceHandle,
         options: OpaquePointer[MutUntrackedOrigin],
-        adapters: UnsafePointer[WGPUAdapterHandle, MutUntrackedOrigin],
+        adapters: Pointer[WGPUAdapterHandle, MutUntrackedOrigin],
     ) -> UInt:
         return self._wgpu.call["wgpuInstanceEnumerateAdapters", UInt](
             instance, options, adapters
@@ -306,7 +306,7 @@ struct WGPULib(Movable):
     def instance_request_adapter_sync(
         self,
         instance: WGPUInstanceHandle,
-        options: UnsafePointer[WGPURequestAdapterOptions, MutUntrackedOrigin],
+        options: Pointer[WGPURequestAdapterOptions, MutUntrackedOrigin],
     ) raises -> _AdapterResult:
         """Synchronously request an adapter via AllowSpontaneous callback."""
         with AllocGuard[_AdapterResult](1) as result:
@@ -333,7 +333,7 @@ struct WGPULib(Movable):
     def instance_create_surface(
         self,
         instance: WGPUInstanceHandle,
-        desc: UnsafePointer[WGPUSurfaceDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUSurfaceDescriptor, MutUntrackedOrigin],
     ) -> WGPUSurfaceHandle:
         return self._wgpu.call["wgpuInstanceCreateSurface", WGPUSurfaceHandle](
             instance, desc
@@ -353,7 +353,7 @@ struct WGPULib(Movable):
         self,
         instance: WGPUInstanceHandle,
         adapter: WGPUAdapterHandle,
-        desc: UnsafePointer[WGPUDeviceDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUDeviceDescriptor, MutUntrackedOrigin],
     ) raises -> _DeviceResult:
         """Synchronously request a device via AllowSpontaneous callback."""
         with AllocGuard[_DeviceResult](1) as result:
@@ -377,21 +377,21 @@ struct WGPULib(Movable):
     def adapter_get_info(
         self,
         adapter: WGPUAdapterHandle,
-        info: UnsafePointer[WGPUAdapterInfo, MutUntrackedOrigin],
+        info: Pointer[WGPUAdapterInfo, MutUntrackedOrigin],
     ) -> UInt32:
         return self._wgpu.call["wgpuAdapterGetInfo", UInt32](adapter, info)
 
     def adapter_get_limits(
         self,
         adapter: WGPUAdapterHandle,
-        limits: UnsafePointer[WGPULimits, MutUntrackedOrigin],
+        limits: Pointer[WGPULimits, MutUntrackedOrigin],
     ) -> UInt32:
         return self._wgpu.call["wgpuAdapterGetLimits", UInt32](adapter, limits)
 
     def adapter_get_features(
         self,
         adapter: WGPUAdapterHandle,
-        features: UnsafePointer[WGPUSupportedFeatures, MutUntrackedOrigin],
+        features: Pointer[WGPUSupportedFeatures, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuAdapterGetFeatures"](adapter, features)
 
@@ -414,14 +414,14 @@ struct WGPULib(Movable):
     def device_create_buffer(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUBufferDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUBufferDescriptor, MutUntrackedOrigin],
     ) -> WGPUBufferHandle:
         return self._wgpu.call["wgpuDeviceCreateBuffer", WGPUBufferHandle](device, desc)
 
     def device_create_command_encoder(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUCommandEncoderDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUCommandEncoderDescriptor, MutUntrackedOrigin],
     ) -> WGPUCommandEncoderHandle:
         return self._wgpu.call["wgpuDeviceCreateCommandEncoder", WGPUCommandEncoderHandle](
             device, desc
@@ -430,7 +430,7 @@ struct WGPULib(Movable):
     def device_create_compute_pipeline(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUComputePipelineDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUComputePipelineDescriptor, MutUntrackedOrigin],
     ) -> WGPUComputePipelineHandle:
         return self._wgpu.call["wgpuDeviceCreateComputePipeline", WGPUComputePipelineHandle](
             device, desc
@@ -439,7 +439,7 @@ struct WGPULib(Movable):
     def device_create_render_pipeline(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPURenderPipelineDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPURenderPipelineDescriptor, MutUntrackedOrigin],
     ) -> WGPURenderPipelineHandle:
         return self._wgpu.call["wgpuDeviceCreateRenderPipeline", WGPURenderPipelineHandle](
             device, desc
@@ -448,7 +448,7 @@ struct WGPULib(Movable):
     def device_create_shader_module(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUShaderModuleDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUShaderModuleDescriptor, MutUntrackedOrigin],
     ) -> WGPUShaderModuleHandle:
         return self._wgpu.call["wgpuDeviceCreateShaderModule", WGPUShaderModuleHandle](
             device, desc
@@ -457,14 +457,14 @@ struct WGPULib(Movable):
     def device_create_bind_group(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUBindGroupDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUBindGroupDescriptor, MutUntrackedOrigin],
     ) -> WGPUBindGroupHandle:
         return self._wgpu.call["wgpuDeviceCreateBindGroup", WGPUBindGroupHandle](device, desc)
 
     def device_create_bind_group_layout(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUBindGroupLayoutDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUBindGroupLayoutDescriptor, MutUntrackedOrigin],
     ) -> WGPUBindGroupLayoutHandle:
         return self._wgpu.call["wgpuDeviceCreateBindGroupLayout", WGPUBindGroupLayoutHandle](
             device, desc
@@ -473,7 +473,7 @@ struct WGPULib(Movable):
     def device_create_pipeline_layout(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUPipelineLayoutDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUPipelineLayoutDescriptor, MutUntrackedOrigin],
     ) -> WGPUPipelineLayoutHandle:
         return self._wgpu.call["wgpuDeviceCreatePipelineLayout", WGPUPipelineLayoutHandle](
             device, desc
@@ -482,21 +482,21 @@ struct WGPULib(Movable):
     def device_create_sampler(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUSamplerDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUSamplerDescriptor, MutUntrackedOrigin],
     ) -> WGPUSamplerHandle:
         return self._wgpu.call["wgpuDeviceCreateSampler", WGPUSamplerHandle](device, desc)
 
     def device_create_texture(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUTextureDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUTextureDescriptor, MutUntrackedOrigin],
     ) -> WGPUTextureHandle:
         return self._wgpu.call["wgpuDeviceCreateTexture", WGPUTextureHandle](device, desc)
 
     def device_create_query_set(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPUQuerySetDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUQuerySetDescriptor, MutUntrackedOrigin],
     ) -> WGPUQuerySetHandle:
         return self._wgpu.call["wgpuDeviceCreateQuerySet", WGPUQuerySetHandle](device, desc)
 
@@ -506,7 +506,7 @@ struct WGPULib(Movable):
     def device_get_limits(
         self,
         device: WGPUDeviceHandle,
-        limits: UnsafePointer[WGPULimits, MutUntrackedOrigin],
+        limits: Pointer[WGPULimits, MutUntrackedOrigin],
     ) -> UInt32:
         return self._wgpu.call["wgpuDeviceGetLimits", UInt32](device, limits)
 
@@ -621,7 +621,7 @@ struct WGPULib(Movable):
     def command_encoder_begin_compute_pass(
         self,
         encoder: WGPUCommandEncoderHandle,
-        desc: UnsafePointer[WGPUComputePassDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUComputePassDescriptor, MutUntrackedOrigin],
     ) -> WGPUComputePassEncoderHandle:
         return self._wgpu.call["wgpuCommandEncoderBeginComputePass", WGPUComputePassEncoderHandle](
             encoder, desc
@@ -630,7 +630,7 @@ struct WGPULib(Movable):
     def command_encoder_begin_render_pass(
         self,
         encoder: WGPUCommandEncoderHandle,
-        desc: UnsafePointer[WGPURenderPassDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPURenderPassDescriptor, MutUntrackedOrigin],
     ) -> WGPURenderPassEncoderHandle:
         return self._wgpu.call["wgpuCommandEncoderBeginRenderPass", WGPURenderPassEncoderHandle](
             encoder, desc
@@ -652,18 +652,18 @@ struct WGPULib(Movable):
     def command_encoder_copy_buffer_to_texture(
         self,
         encoder: WGPUCommandEncoderHandle,
-        src: UnsafePointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
-        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
+        src: Pointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
+        dst: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        size: Pointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuCommandEncoderCopyBufferToTexture"](encoder, src, dst, size)
 
     def command_encoder_copy_texture_to_buffer(
         self,
         encoder: WGPUCommandEncoderHandle,
-        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        dst: UnsafePointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
+        src: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        dst: Pointer[WGPUTexelCopyBufferInfo, MutUntrackedOrigin],
+        size: Pointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuCommandEncoderCopyTextureToBuffer"](encoder, src, dst, size)
 
@@ -692,7 +692,7 @@ struct WGPULib(Movable):
     def command_encoder_finish(
         self,
         encoder: WGPUCommandEncoderHandle,
-        desc: UnsafePointer[WGPUCommandBufferDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUCommandBufferDescriptor, MutUntrackedOrigin],
     ) -> WGPUCommandBufferHandle:
         return self._wgpu.call["wgpuCommandEncoderFinish", WGPUCommandBufferHandle](
             encoder, desc
@@ -875,7 +875,7 @@ struct WGPULib(Movable):
         self,
         queue: WGPUQueueHandle,
         count: UInt,
-        commands: UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin],
+        commands: Pointer[WGPUCommandBufferHandle, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuQueueSubmit"](queue, count, commands)
 
@@ -915,7 +915,7 @@ struct WGPULib(Movable):
     def texture_create_view(
         self,
         texture: WGPUTextureHandle,
-        desc: UnsafePointer[WGPUTextureViewDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPUTextureViewDescriptor, MutUntrackedOrigin],
     ) -> WGPUTextureViewHandle:
         return self._wgpu.call["wgpuTextureCreateView", WGPUTextureViewHandle](texture, desc)
 
@@ -1024,21 +1024,21 @@ struct WGPULib(Movable):
         self,
         surface: WGPUSurfaceHandle,
         adapter: WGPUAdapterHandle,
-        caps: UnsafePointer[WGPUSurfaceCapabilities, MutUntrackedOrigin],
+        caps: Pointer[WGPUSurfaceCapabilities, MutUntrackedOrigin],
     ) -> UInt32:
         return self._wgpu.call["wgpuSurfaceGetCapabilities", UInt32](surface, adapter, caps)
 
     def surface_configure(
         self,
         surface: WGPUSurfaceHandle,
-        config: UnsafePointer[WGPUSurfaceConfiguration, MutUntrackedOrigin],
+        config: Pointer[WGPUSurfaceConfiguration, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuSurfaceConfigure"](surface, config)
 
     def surface_get_current_texture(
         self,
         surface: WGPUSurfaceHandle,
-        surface_texture: UnsafePointer[WGPUSurfaceTexture, MutUntrackedOrigin],
+        surface_texture: Pointer[WGPUSurfaceTexture, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuSurfaceGetCurrentTexture"](surface, surface_texture)
 
@@ -1072,9 +1072,9 @@ struct WGPULib(Movable):
 
     def log_take(
         self,
-        out_text: UnsafePointer[UInt8, MutUntrackedOrigin],
+        out_text: Pointer[UInt8, MutUntrackedOrigin],
         cap: UInt,
-        out_level: UnsafePointer[UInt32, MutUntrackedOrigin],
+        out_level: Pointer[UInt32, MutUntrackedOrigin],
     ) -> Int32:
         return self._cb.call["wgpu_mojo_log_take", Int32](out_text, cap, out_level)
 
@@ -1089,7 +1089,7 @@ struct WGPULib(Movable):
         self,
         instance: WGPUInstanceHandle,
         options: OpaquePointer[MutUntrackedOrigin],  # nullable WGPUInstanceEnumerateAdapterOptions*
-        out_adapters: UnsafePointer[WGPUAdapterHandle, MutUntrackedOrigin],
+        out_adapters: Pointer[WGPUAdapterHandle, MutUntrackedOrigin],
     ) -> UInt:
         return self._wgpu.call["wgpuInstanceEnumerateAdapters", UInt](
             instance, options, out_adapters
@@ -1097,13 +1097,13 @@ struct WGPULib(Movable):
 
     def supported_features_free(
         self,
-        features: UnsafePointer[WGPUSupportedFeatures, MutUntrackedOrigin],
+        features: Pointer[WGPUSupportedFeatures, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuSupportedFeaturesFreeMembers"](features[])
 
     def surface_capabilities_free(
         self,
-        caps: UnsafePointer[WGPUSurfaceCapabilities, MutUntrackedOrigin],
+        caps: Pointer[WGPUSurfaceCapabilities, MutUntrackedOrigin],
     ):
         # wgpuSurfaceCapabilitiesFreeMembers takes struct by value; Mojo FFI
         # cannot safely pass non-TrivialRegisterPassable structs by value, so we
@@ -1116,7 +1116,7 @@ struct WGPULib(Movable):
 
     def get_instance_limits(
         self,
-        limits: UnsafePointer[WGPUInstanceLimits, MutUntrackedOrigin],
+        limits: Pointer[WGPUInstanceLimits, MutUntrackedOrigin],
     ) -> UInt32:   # WGPUStatus
         return self._wgpu.call["wgpuGetInstanceLimits", UInt32](limits)
 
@@ -1127,21 +1127,21 @@ struct WGPULib(Movable):
     def device_get_features(
         self,
         device: WGPUDeviceHandle,
-        features: UnsafePointer[WGPUSupportedFeatures, MutUntrackedOrigin],
+        features: Pointer[WGPUSupportedFeatures, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuDeviceGetFeatures"](device, features)
 
     def device_pop_error_scope(
         self,
         device: WGPUDeviceHandle,
-        callback_info_ptr: UnsafePointer[WGPUPopErrorScopeCallbackInfo, MutUntrackedOrigin],
+        callback_info_ptr: Pointer[WGPUPopErrorScopeCallbackInfo, MutUntrackedOrigin],
     ):
         self._cb.call["wgpu_mojo_device_pop_error_scope"](device, callback_info_ptr)
 
     def device_create_render_bundle_encoder(
         self,
         device: WGPUDeviceHandle,
-        desc: UnsafePointer[WGPURenderBundleEncoderDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPURenderBundleEncoderDescriptor, MutUntrackedOrigin],
     ) -> WGPURenderBundleEncoderHandle:
         return self._wgpu.call["wgpuDeviceCreateRenderBundleEncoder", WGPURenderBundleEncoderHandle](
             device, desc
@@ -1158,9 +1158,9 @@ struct WGPULib(Movable):
     def command_encoder_copy_texture_to_texture(
         self,
         encoder: WGPUCommandEncoderHandle,
-        src: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        dst: UnsafePointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
-        size: UnsafePointer[WGPUExtent3D, MutUntrackedOrigin],
+        src: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        dst: Pointer[WGPUTexelCopyTextureInfo, MutUntrackedOrigin],
+        size: Pointer[WGPUExtent3D, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuCommandEncoderCopyTextureToTexture"](encoder, src, dst, size)
 
@@ -1244,7 +1244,7 @@ struct WGPULib(Movable):
         self,
         pass_enc: WGPURenderPassEncoderHandle,
         bundle_count: UInt,
-        bundles: UnsafePointer[WGPURenderBundleHandle, MutUntrackedOrigin],
+        bundles: Pointer[WGPURenderBundleHandle, MutUntrackedOrigin],
     ):
         self._wgpu.call["wgpuRenderPassEncoderExecuteBundles"](pass_enc, bundle_count, bundles)
 
@@ -1443,7 +1443,7 @@ struct WGPULib(Movable):
     def render_bundle_encoder_finish(
         self,
         encoder: WGPURenderBundleEncoderHandle,
-        desc: UnsafePointer[WGPURenderBundleDescriptor, MutUntrackedOrigin],
+        desc: Pointer[WGPURenderBundleDescriptor, MutUntrackedOrigin],
     ) -> WGPURenderBundleHandle:
         return self._wgpu.call["wgpuRenderBundleEncoderFinish", WGPURenderBundleHandle](
             encoder, desc
@@ -1525,7 +1525,7 @@ struct WGPULib(Movable):
         self,
         queue: WGPUQueueHandle,
         count: UInt,
-        commands: UnsafePointer[WGPUCommandBufferHandle, MutUntrackedOrigin],
+        commands: Pointer[WGPUCommandBufferHandle, MutUntrackedOrigin],
     ) -> UInt64:
         return self._wgpu.call["wgpuQueueSubmitForIndex", UInt64](queue, count, commands)
 
