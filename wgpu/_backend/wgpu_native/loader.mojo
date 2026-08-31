@@ -577,7 +577,10 @@ struct WGPULib(Movable):
                     buffer, mode, offset, size, cb_info_p
                 )
 
-            self._wgpu.call["wgpuDevicePoll"](device, WGPU_TRUE, null_opaque())
+            # Blocking poll: the WGPUBool it returns reports whether the queue
+            # drained, which is not what decides the outcome here — the map
+            # callback's status is. Discarded deliberately.
+            _ = self._wgpu.call["wgpuDevicePoll", UInt32](device, WGPU_TRUE, null_opaque())
             return result[].status
 
     def buffer_get_mapped_range(
@@ -1042,8 +1045,8 @@ struct WGPULib(Movable):
     ):
         self._wgpu.call["wgpuSurfaceGetCurrentTexture"](surface, surface_texture)
 
-    def surface_present(self, surface: WGPUSurfaceHandle):
-        self._wgpu.call["wgpuSurfacePresent"](surface)
+    def surface_present(self, surface: WGPUSurfaceHandle) -> UInt32:   # WGPUStatus
+        return self._wgpu.call["wgpuSurfacePresent", UInt32](surface)
 
     def surface_unconfigure(self, surface: WGPUSurfaceHandle):
         self._wgpu.call["wgpuSurfaceUnconfigure"](surface)

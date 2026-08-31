@@ -71,6 +71,9 @@ jobs:
       - name: Check FFI struct layouts against the C headers
         run: pixi run check-struct-layout
 
+      - name: Check FFI call signatures against the C headers
+        run: pixi run check-signatures
+
   # ---------------------------------------------------------------------------
   # Headless GPU tests on a free runner via Mesa lavapipe (software Vulkan).
   # No physical GPU and no display server are needed — only the compute/headless
