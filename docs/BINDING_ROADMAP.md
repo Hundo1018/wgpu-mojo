@@ -20,6 +20,7 @@ Last measured: 2026-08-30, against `ffi/lib/libwgpu_native.so`.
 | Structs, vs. the target surface | 101 | 101 | **100%** |
 | Structs, vs. every struct in the headers | 101 | 113 | 89.4% |
 | Struct layouts verified against `gcc sizeof()` | 88 | 88 | **100%** |
+| FFI call sites with arity + void-ness checked | 185 | 185 | **100%** |
 | Enum groups | 59 + 5 bitflags | 56 header enums | substantially complete |
 | Handle newtypes | 22 | all WebGPU objects | 100% |
 
@@ -58,12 +59,22 @@ the header's field list. Size alone would miss two same-size fields merged into
 one; field count alone would miss a wrong field type. Both failure modes are
 verified by mutation.
 
-What is still *not* measured: **function signatures**, and **field order** where
-sizes happen to match. Checking field order needs per-field offsets on the Mojo
-side, which needs a constructed instance of each of the 88 structs. Signatures
-have no cheap check at all — a wrong argument type compiles, resolves, and
-corrupts the call. The C bridge layout contract in `CLAUDE.md` remains
-hand-maintained.
+`scripts/check_signatures.py` (`pixi run check-signatures`) covers the call side:
+all 185 `self._wgpu.call` sites are checked against their header declaration for
+argument count and for void-ness (whether the call expects a return value when
+the C function has one). Both failure modes are verified by mutation. It found
+two dropped return values — `wgpuSurfacePresent`'s `WGPUStatus` and the blocking
+`wgpuDevicePoll` inside `buffer_map_async`.
+
+What is still *not* measured:
+
+- **Argument types.** Arity is checked, types are not; that needs a Mojo-to-C
+  type map which would itself need maintaining. A same-arity call with a wrong
+  parameter type still compiles, resolves, and corrupts.
+- **Struct field order** where sizes happen to coincide. Checking it needs
+  per-field offsets on the Mojo side, which needs a constructed instance of each
+  of the 88 structs.
+- **The C bridge layout contract** in `CLAUDE.md`, still hand-maintained.
 
 ## Deliberate exclusions
 
