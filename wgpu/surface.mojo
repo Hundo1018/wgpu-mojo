@@ -184,8 +184,15 @@ struct Surface(Movable):
             return SurfaceFrame(st_p[].texture, st_p[].status)
 
     def present(self):
-        """Present the rendered frame."""
-        self._lib[].surface_present(self._handle)
+        """Present the rendered frame.
+
+        wgpuSurfacePresent returns a WGPUStatus. It is discarded here rather
+        than raised: a non-success status is normal when the surface is
+        outdated (a resize, typically), and a render loop should respond by
+        reconfiguring, not by unwinding. Callers that need it can read the
+        status through the loader directly.
+        """
+        _ = self._lib[].surface_present(self._handle)
 
 # ------------------------------------------------------------------
 # Factory functions — platform-specific surface creation

@@ -92,6 +92,9 @@ check-symbols = { cmd = "bash scripts/check-symbols.sh" }
 # The one correctness hole no other gate can see — a wrong layout silently
 # corrupts every read through that struct.
 check-struct-layout = { cmd = "python3 scripts/check_struct_layout.py" }
+# Verify each FFI call's arity and void-ness against the header declaration.
+# The last unmeasured surface: a wrong-arity call compiles, links, and corrupts.
+check-signatures = { cmd = "python3 scripts/check_signatures.py" }
 
 # Run all non-GPU tests
 test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
