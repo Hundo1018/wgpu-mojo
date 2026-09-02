@@ -1,5 +1,5 @@
 """
-wgpu.texture — Texture and TextureView RAII wrappers.
+Texture and TextureView RAII wrappers.
 """
 
 from std.memory import ArcPointer

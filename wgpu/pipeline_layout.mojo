@@ -1,5 +1,5 @@
 """
-wgpu.pipeline_layout — PipelineLayout RAII wrapper.
+PipelineLayout RAII wrapper.
 """
 
 from std.memory import ArcPointer

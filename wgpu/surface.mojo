@@ -1,5 +1,5 @@
 """
-wgpu.surface — Surface RAII wrapper for on-screen rendering.
+Surface RAII wrapper for on-screen rendering.
 
 A Surface represents a platform window surface (Wayland/X11) that wgpu can
 render into.  The normal flow is:

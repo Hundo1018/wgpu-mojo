@@ -1,5 +1,5 @@
 """
-wgpu.compute_pass — ComputePassEncoder RAII wrapper.
+ComputePassEncoder RAII wrapper.
 """
 
 from std.memory import ArcPointer

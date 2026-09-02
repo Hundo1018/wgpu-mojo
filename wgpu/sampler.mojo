@@ -1,5 +1,5 @@
 """
-wgpu.sampler — Sampler RAII wrapper.
+Sampler RAII wrapper.
 """
 
 from std.memory import ArcPointer

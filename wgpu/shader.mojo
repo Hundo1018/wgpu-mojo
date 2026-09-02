@@ -1,5 +1,5 @@
 """
-wgpu.shader — ShaderModule RAII wrapper.
+ShaderModule RAII wrapper.
 """
 
 from std.memory import ArcPointer

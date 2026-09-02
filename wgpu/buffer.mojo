@@ -1,5 +1,5 @@
 """
-wgpu.buffer — Buffer RAII wrapper with map/read/write helpers.
+Buffer RAII wrapper with map/read/write helpers.
 """
 
 from std.memory import ArcPointer
@@ -144,7 +144,7 @@ struct Buffer(Movable, Boolable):
         var raw = self.map_write(offset, byte_size)
         var dst = raw.unsafe_bitcast[T]()
         for i in range(len(data)):
-            (dst + i).init_pointee_copy(data[i])
+            dst.unsafe_offset(i).unsafe_write(data[i])
         self.unmap()
 
     # ------------------------------------------------------------------

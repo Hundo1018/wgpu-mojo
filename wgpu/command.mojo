@@ -1,5 +1,5 @@
 """
-wgpu.command — CommandEncoder RAII wrapper.
+CommandEncoder RAII wrapper.
 """
 
 from std.memory import ArcPointer

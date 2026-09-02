@@ -25,8 +25,8 @@ def set_log_level(level: UInt32) raises:
 
 
 def critical_symbols() -> List[String]:
-    """wgpu-native symbols whose absence means the loaded library does not
-    match the ABI this binding targets (see `_WGPU_NATIVE_VERSION`).
+    """Symbols whose absence means the loaded wgpu-native does not match the
+    ABI this binding targets (see `_WGPU_NATIVE_VERSION`).
 
     Deliberately not exhaustive: it covers the core object-lifecycle path
     plus the entry points upstream has renamed across recent releases, which

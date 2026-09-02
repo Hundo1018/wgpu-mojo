@@ -15,6 +15,8 @@ trait GpuResource:
     scripts/known-unimplemented.txt.
     """
 
+    pass
+
 
 trait GpuBuffer(GpuResource):
     """A GPU buffer with a known byte size."""

@@ -1,5 +1,5 @@
 """
-wgpu.device — High-level Device + Queue RAII wrapper.
+High-level Device + Queue RAII wrapper.
 """
 
 from std.memory import ArcPointer
@@ -619,23 +619,23 @@ struct Device(Movable, Boolable):
         height: UInt32,
         depth_or_array_layers: UInt32,
     ):
-        var layout_p = alloc[WGPUTexelCopyBufferLayout](1)
-        layout_p[0] = WGPUTexelCopyBufferLayout(
+        var layout_p = raw_alloc[WGPUTexelCopyBufferLayout](1)
+        layout_p[unsafe_offset=0] = WGPUTexelCopyBufferLayout(
             UInt64(0),
             bytes_per_row,
             rows_per_image,
         )
 
-        var dst_p = alloc[WGPUTexelCopyTextureInfo](1)
-        dst_p[0] = WGPUTexelCopyTextureInfo(
+        var dst_p = raw_alloc[WGPUTexelCopyTextureInfo](1)
+        dst_p[unsafe_offset=0] = WGPUTexelCopyTextureInfo(
             texture.handle().raw,
             mip_level,
             origin,
             aspect,
         )
 
-        var size_p = alloc[WGPUExtent3D](1)
-        size_p[0] = WGPUExtent3D(width, height, depth_or_array_layers)
+        var size_p = raw_alloc[WGPUExtent3D](1)
+        size_p[unsafe_offset=0] = WGPUExtent3D(width, height, depth_or_array_layers)
 
         var data_ptr = OpaquePointer[MutUntrackedOrigin](unsafe_from_address=Int(data.unsafe_ptr()))
         var dst_ptr = OpaquePointer[MutUntrackedOrigin](unsafe_from_address=Int(dst_p))

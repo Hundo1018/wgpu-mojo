@@ -1,5 +1,5 @@
 """
-wgpu.bind_group — BindGroupLayout and BindGroup RAII wrappers.
+BindGroupLayout and BindGroup RAII wrappers.
 """
 
 from std.memory import ArcPointer
