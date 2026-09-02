@@ -72,12 +72,22 @@ def main() raises:
         ADD_WGSL,
         entry_point="main",
         n_storage_buffers=3,
+        # buf_a and buf_b are `var<storage, read>` in the WGSL above, so the
+        # layout must declare them read-only too or wgpu rejects the pipeline.
+        read_only_bindings=[0, 1],
         label="vec_add",
     )
     print("Shader compiled")
 
-    # Dispatch — no `_ = resource^` needed, Session handles lifetimes
+    # Dispatch. `dispatch` takes handles, not the Buffer wrappers, so that you
+    # keep ownership and can read the result back afterwards — but that means
+    # nothing here borrows buf_a/buf_b, and Mojo is free to drop them the moment
+    # `.handle()` has been evaluated. The pins below keep them alive until the
+    # dispatch has actually used them; without them wgpu aborts inside
+    # wgpuDeviceCreateBindGroup on a released buffer.
     gpu.dispatch(prog^, [buf_a.handle(), buf_b.handle(), buf_c.handle()], N // WORKGROUP_SIZE, 1, 1, "vec_add_dispatch")
+    _ = buf_a
+    _ = buf_b
     print("Dispatch complete")
 
     # Read back (gpu.read() calls poll() internally)

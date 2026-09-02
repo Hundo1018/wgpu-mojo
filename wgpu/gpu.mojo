@@ -137,9 +137,35 @@ struct GPU(Movable):
         buffer: Buffer,
         offset: UInt64 = 0,
     ) raises -> List[T]:
-        """Download GPU buffer data to host. Blocks until GPU finishes."""
+        """Download GPU buffer data to host. Blocks until the GPU finishes.
+
+        Only a MAP_READ buffer can be mapped, and WebGPU forbids combining
+        MAP_READ with STORAGE — so a compute shader's output buffer never has
+        it. When the buffer cannot be mapped, this stages the data through a
+        MAP_READ|COPY_DST buffer first. That is what makes `read()` work on a
+        shader output, which is the whole point of the facade.
+        """
+        if (buffer.usage().value & WGPUBufferUsage.MAP_READ.value) != 0:
+            _ = self._device.poll(True)
+            return buffer.read_data[T](offset)
+
+        var nbytes = buffer.size()
+        var staging = self._device.create_buffer(
+            nbytes,
+            WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST,
+            False,
+            "gpu_read_staging",
+        )
+        var enc = self._device.create_command_encoder("gpu_read_enc")
+        enc.copy_buffer_to_buffer(
+            buffer.handle().raw, UInt64(0), staging.handle().raw, UInt64(0), nbytes
+        )
+        var cmd = enc^.finish("gpu_read_cmd")
+        self._device.queue_submit(cmd)
         _ = self._device.poll(True)
-        return buffer.read_data[T](offset)
+        var out = staging.read_data[T](offset)
+        _ = buffer       # pin: the copy above borrows its handle
+        return out^
 
     # ------------------------------------------------------------------
     # Shader compilation
@@ -151,17 +177,29 @@ struct GPU(Movable):
         entry_point: String = "main",
         n_storage_buffers: Int = 3,
         label: String = "",
+        read_only_bindings: List[Int] = [],
     ) raises -> WgpuComputeProgram:
         """
         Compile a WGSL compute shader.
 
-        Automatically builds a BindGroupLayout with `n_storage_buffers`
-        read-write storage buffer bindings at group 0.
+        Builds a BindGroupLayout with `n_storage_buffers` storage bindings at
+        group 0. Bindings listed in `read_only_bindings` are declared read-only
+        storage, matching `var<storage, read>` in the shader; every other
+        binding is read-write, matching `var<storage, read_write>`.
+
+        The layout has to agree with what the shader declares — wgpu rejects the
+        pipeline outright if it does not, with a "doesn't match the shader"
+        error. Idiomatic WGSL marks inputs `read`, so a typical
+        two-inputs-one-output kernel wants `read_only_bindings=[0, 1]`.
         """
         var shader = self._device.create_shader_module_wgsl(wgsl, label + "_shader")
         var entries = List[WGPUBindGroupLayoutEntry]()
         for i in range(n_storage_buffers):
-            entries.append(BGL.buffer_storage(binding=UInt32(i)))
+            var read_only = False
+            for b in read_only_bindings:
+                if b == i:
+                    read_only = True
+            entries.append(BGL.buffer_storage(binding=UInt32(i), read_only=read_only))
         var bgl    = self._device.create_bind_group_layout(entries, label + "_bgl")
         var layout = self._device.create_pipeline_layout(bgl, label + "_layout")
         var pipeline = self._device.create_compute_pipeline(shader, entry_point, layout, label)

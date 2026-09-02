@@ -137,6 +137,16 @@ jobs:
           pixi run test-query-set
           pixi run test-render-pipeline
 
+      # The documented examples, not just the tests. These are headless, so
+      # lavapipe can run them. check-compile only ever compiled them, which is
+      # how the README's headline example (compute_add_v2) came to be broken in
+      # three separate ways while CI stayed green.
+      - name: Run the headless examples the docs point newcomers at
+        run: |
+          pixi run example-enumerate
+          pixi run example-compute
+          pixi run example-compute-v2
+
   # ---------------------------------------------------------------------------
   # Opt-in wgpu <-> MAX bridge (wgpu_max/).
   #
