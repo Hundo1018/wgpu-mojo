@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -48,7 +48,7 @@ jobs:
             --color "b60205" 2>/dev/null || true
 
       - name: Setup Pixi (without locked env — we're about to update)
-        uses: prefix-dev/setup-pixi@v0.8.0
+        uses: prefix-dev/setup-pixi@v0.10.2
         with:
           run-install: false
 

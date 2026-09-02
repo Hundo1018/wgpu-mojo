@@ -51,14 +51,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout wgpu-mojo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Branch tip = the freshly pushed auto-commit (the run's head_sha is the
           # pre-bump commit). Empty for push/PR → checkout's default ref. See ci.yml.
           ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Setup Pixi (CLI only — the consumer env is built in a scratch dir)
-        uses: prefix-dev/setup-pixi@v0.8.0
+        uses: prefix-dev/setup-pixi@v0.10.2
         with:
           # pixi-build-mojo needs a `pixi-build-api-version` virtual package that
           # the action's default pixi does not provide at all, so the build
@@ -126,7 +126,7 @@ jobs:
         pixi-version: [v0.70.2, v0.73.0]
     steps:
       - name: Setup Pixi (CLI only)
-        uses: prefix-dev/setup-pixi@v0.8.0
+        uses: prefix-dev/setup-pixi@v0.10.2
         with:
           pixi-version: ${{ matrix.pixi-version }}
           run-install: false

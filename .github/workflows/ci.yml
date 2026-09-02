@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # For workflow_run, checkout defaults to the workflow file's ref, NOT the
           # triggering run's commit — and the run's head_sha is the PRE-bump commit
@@ -51,7 +51,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Setup Pixi
-        uses: prefix-dev/setup-pixi@v0.8.0
+        uses: prefix-dev/setup-pixi@v0.10.2
         with:
           cache: true
           activate-environment: true   # exports CONDA_PREFIX/PATH so setup-native.sh works
@@ -92,7 +92,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.workflow_run.head_branch }}   # branch tip = auto-commit; see `test` job
 
@@ -117,7 +117,7 @@ jobs:
         run: vulkaninfo --summary || true
 
       - name: Setup Pixi
-        uses: prefix-dev/setup-pixi@v0.8.0
+        uses: prefix-dev/setup-pixi@v0.10.2
         with:
           cache: true
           activate-environment: true
@@ -176,12 +176,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.workflow_run.head_branch }}   # branch tip = auto-commit; see `test` job
 
       - name: Setup Pixi
-        uses: prefix-dev/setup-pixi@v0.8.0
+        uses: prefix-dev/setup-pixi@v0.10.2
         with:
           cache: true
           environments: maxinterop
