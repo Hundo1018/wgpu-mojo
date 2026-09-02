@@ -21,6 +21,8 @@ Last measured: 2026-08-30, against `ffi/lib/libwgpu_native.so`.
 | Structs, vs. every struct in the headers | 101 | 113 | 89.4% |
 | Struct layouts verified against `gcc sizeof()` | 88 | 88 | **100%** |
 | FFI call sites with arity + void-ness checked | 185 | 185 | **100%** |
+| ↳ also checked for argument sizes | 175 | 185 | 94.6% |
+| C bridge result-struct pairs verified | 5 | 5 | **100%** |
 | Enum groups | 59 + 5 bitflags | 56 header enums | substantially complete |
 | Handle newtypes | 22 | all WebGPU objects | 100% |
 
@@ -53,28 +55,47 @@ Everything this binding names both resolves *and* works.
    therefore cannot silently widen the gap.
 
 `scripts/check_struct_layout.py` (`pixi run check-struct-layout`) covers the
-struct side: for all 88 FFI structs that exist in both the Mojo layer and the
-headers, it compares byte size against `gcc sizeof()` and field count against
-the header's field list. Size alone would miss two same-size fields merged into
-one; field count alone would miss a wrong field type. Both failure modes are
+struct side. For all 88 FFI structs present in both the Mojo layer and the
+headers it compares byte size against `gcc sizeof()`, field count against the
+header's field list, and **field order** by matching each field's name
+positionally (normalised, so `next_in_chain` matches `nextInChain` and `stype`
+matches `sType`, with no alias table). The three are complementary: size alone
+misses two same-size fields merged into one, count alone misses a wrong field
+type, and neither sees a reordering — comparing offsets would not either, since
+swapping two same-sized fields leaves every offset unchanged. All three failure
+modes are verified by mutation.
+
+It also checks the **C callback bridge contract**: the five `_*Result` structs in
+`loader.mojo` against the `Mojo*Result` typedefs the callbacks in
+`ffi/wgpu_callbacks.c` write through, measured by compiling the bridge itself.
+`CLAUDE.md` flags breaking this as silently corrupting the result, and nothing
+verified it before.
+
+`scripts/check_signatures.py` (`pixi run check-signatures`) covers the call side.
+All 185 `self._wgpu.call` sites are checked against their header declaration for
+argument count and void-ness, and 175 of them additionally for **argument
+sizes** — each argument's byte width against its C parameter's. Sizes are
+measured on both sides (`gcc sizeof()`, and pointer arithmetic in Mojo) rather
+than mapped through a type table, so there is nothing to drift. That catches the
+confusion a name map would miss anyway: a `UInt32` passed where the C API takes
+`uint64_t`, a live risk with the bitflag parameters. All three checks are
 verified by mutation.
 
-`scripts/check_signatures.py` (`pixi run check-signatures`) covers the call side:
-all 185 `self._wgpu.call` sites are checked against their header declaration for
-argument count and for void-ness (whether the call expects a return value when
-the C function has one). Both failure modes are verified by mutation. It found
-two dropped return values — `wgpuSurfacePresent`'s `WGPUStatus` and the blocking
-`wgpuDevicePoll` inside `buffer_map_async`.
+The other 10 call sites transform or reorder their arguments — adding a null,
+converting a `Bool`, or matching C's parameter order rather than the method's —
+so their argument types cannot be read off the enclosing signature. They are
+still arity- and void-checked, and the count is reported.
+
+It found two dropped return values: `wgpuSurfacePresent`'s `WGPUStatus` and the
+blocking `wgpuDevicePoll` inside `buffer_map_async`.
 
 What is still *not* measured:
 
-- **Argument types.** Arity is checked, types are not; that needs a Mojo-to-C
-  type map which would itself need maintaining. A same-arity call with a wrong
-  parameter type still compiles, resolves, and corrupts.
-- **Struct field order** where sizes happen to coincide. Checking it needs
-  per-field offsets on the Mojo side, which needs a constructed instance of each
-  of the 88 structs.
-- **The C bridge layout contract** in `CLAUDE.md`, still hand-maintained.
+- **Argument types beyond their width.** Two distinct 8-byte types are
+  interchangeable as far as this gate is concerned — a `WGPUBufferHandle` passed
+  where a `WGPUTextureHandle` belongs would pass. The handle newtypes make that
+  hard to do accidentally in Mojo, which is why width was the check worth having.
+- **The 10 argument-transforming call sites**, listed above.
 
 ## Deliberate exclusions
 

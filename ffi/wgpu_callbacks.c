@@ -14,7 +14,8 @@
 #include <string.h>
 #include <pthread.h>
 
-/* Struct mirrors: must match layout in wgpu/_ffi/lib.mojo */
+/* Struct mirrors: must match the _*Result structs in
+   wgpu/_backend/wgpu_native/loader.mojo. Verified by pixi run check-struct-layout. */
 typedef struct { void* adapter; uint32_t status; } MojoAdapterResult;
 typedef struct { void* device;  uint32_t status; } MojoDeviceResult;
 typedef struct { uint32_t status; }               MojoMapResult;

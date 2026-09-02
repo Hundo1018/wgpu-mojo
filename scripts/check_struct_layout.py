@@ -12,6 +12,17 @@ Checks, for every struct declared in structs.mojo that also exists in the
 headers:
   * byte size, against `gcc sizeof()` on the real headers
   * field count, against the header's field list
+  * field order, by matching each field's name positionally against the
+    header's. Names are normalised (lowercased, underscores dropped) so
+    next_in_chain matches nextInChain and stype matches sType, with no alias
+    table to maintain. This is what catches a reordering: comparing offsets
+    would not, since swapping two same-sized fields leaves every offset
+    unchanged.
+
+Also checks the C callback bridge contract: the `_*Result` structs in
+loader.mojo must match the `Mojo*Result` typedefs in ffi/wgpu_callbacks.c, which
+the callbacks write through. CLAUDE.md calls this out as silently corrupting the
+result if broken, and until now nothing verified it.
 
 Size alone would miss two same-size fields merged into one; field count alone
 would miss a wrong field type. Together they catch both.
@@ -24,6 +35,8 @@ import os, re, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STRUCTS = os.path.join(ROOT, "wgpu/_backend/wgpu_native/structs.mojo")
+LOADER = os.path.join(ROOT, "wgpu/_backend/wgpu_native/loader.mojo")
+BRIDGE = os.path.join(ROOT, "ffi/wgpu_callbacks.c")
 HEADERS = [os.path.join(ROOT, "ffi/include/webgpu/webgpu.h"),
            os.path.join(ROOT, "ffi/include/webgpu/wgpu.h")]
 
@@ -102,9 +115,75 @@ def main():
                 bad.append((n, "unparsed", mf and len(mf), cf and len(cf)))
             elif len(mf) != len(cf):
                 bad.append((n, "fields", len(mf), len(cf)))
+            else:
+                def norm(x):
+                    return x.replace("_", "").lower()
+                for k, (a, b) in enumerate(zip(mf, cf)):
+                    if norm(a) != norm(b):
+                        bad.append((n, "order", f"#{k+1} {a}", f"#{k+1} {b}"))
+                        break
 
-    print("check-struct-layout: %d structs checked against %s" %
-          (len(names), " + ".join(os.path.basename(h) for h in HEADERS)))
+    # --- C callback bridge contract: Mojo*Result <-> _*Result ---
+    bridge_src = read(BRIDGE)
+    loader_src = read(LOADER)
+    pairs = []
+    for m in re.finditer(r"typedef struct \{([^}]*)\}\s*Mojo(\w+)Result\s*;", bridge_src):
+        cfields = [f for f in m.group(1).split(";") if f.strip()]
+        pairs.append((f"Mojo{m.group(2)}Result", f"_{m.group(2)}Result", len(cfields)))
+
+    if pairs:
+        csrc2 = os.path.join(tmp, "bz.c")
+        with open(csrc2, "w") as f:
+            # include the bridge itself so the real typedefs are measured
+            f.write('#include <stdio.h>\n#include "wgpu_callbacks.c"\n')
+            f.write("int main(void){\n")
+            for cname, _, _ in pairs:
+                f.write('  printf("%s %%zu\\n", sizeof(%s));\n' % (cname, cname))
+            f.write("  return 0;\n}\n")
+        exe2 = os.path.join(tmp, "bz")
+        r = subprocess.run(["gcc", "-I", os.path.join(ROOT, "ffi"),
+                            "-I", os.path.join(ROOT, "ffi/include"),
+                            csrc2, "-o", exe2,
+                            "-L", os.path.join(ROOT, "ffi/lib"), "-lwgpu_native"],
+                           capture_output=True, text=True)
+        if r.returncode:
+            print("check-struct-layout: bridge probe failed to build:\n" + r.stderr[-1500:],
+                  file=sys.stderr)
+            return 1
+        cb_sizes = dict(l.split() for l in
+                        subprocess.run([exe2], capture_output=True, text=True).stdout.split("\n") if l)
+
+        msrc2 = os.path.join(tmp, "bz.mojo")
+        with open(msrc2, "w") as f:
+            f.write("from wgpu._ffi.nulls import null_ptr\nfrom wgpu._backend.wgpu_native.loader import (\n")
+            for _, mname, _ in pairs:
+                f.write("    %s,\n" % mname)
+            f.write(")\n\ndef _sz[T: AnyType]() -> Int:\n    var p = null_ptr[T]()\n    return Int(p.unsafe_offset(1)) - Int(p)\n\ndef main() raises:\n")
+            for _, mname, _ in pairs:
+                f.write('    print("%s", _sz[%s]())\n' % (mname, mname))
+        r = subprocess.run(["mojo", "run", "-I", ".", msrc2], cwd=ROOT, capture_output=True, text=True)
+        mb_sizes = dict(l.split() for l in r.stdout.split("\n")
+                        if l.startswith("_") and len(l.split()) == 2)
+        if not mb_sizes:
+            print("check-struct-layout: bridge Mojo probe produced nothing:\n" + r.stderr[-1500:],
+                  file=sys.stderr)
+            return 1
+
+        for cname, mname, cfc in pairs:
+            cs, ms = cb_sizes.get(cname), mb_sizes.get(mname)
+            mm = re.search(r"^struct %s\b[^\n]*:\n((?:(?:    [^\n]*)?\n)*?)(?=\S|\Z)" % mname,
+                           loader_src, re.M)
+            mfc = len(re.findall(r"^    var \w+\s*:", mm.group(1), re.M)) if mm else None
+            if cs is None or ms is None:
+                bad.append((f"{mname}/{cname}", "missing", ms, cs))
+            elif cs != ms:
+                bad.append((f"{mname}/{cname}", "size", ms, cs))
+            elif mfc != cfc:
+                bad.append((f"{mname}/{cname}", "fields", mfc, cfc))
+
+    print("check-struct-layout: %d structs vs %s, %d bridge pairs vs %s" %
+          (len(names), " + ".join(os.path.basename(h) for h in HEADERS),
+           len(pairs), os.path.basename(BRIDGE)))
     if bad:
         print("")
         for n, kind, mv, cv in bad:
@@ -112,7 +191,8 @@ def main():
         print("\ncheck-struct-layout: FAILED — %d struct(s) disagree with the headers." % len(bad))
         print("  A layout mismatch silently corrupts every read through that struct.")
         return 1
-    print("\ncheck-struct-layout: ALL PASSED (size and field count agree for all %d)" % len(names))
+    print("\ncheck-struct-layout: ALL PASSED (%d structs: size, field count and order; "
+          "+ %d bridge pairs)" % (len(names), len(pairs)))
     return 0
 
 
