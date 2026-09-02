@@ -1,5 +1,5 @@
 """
-wgpu.query_set — QuerySet RAII wrapper.
+QuerySet RAII wrapper.
 """
 
 from std.memory import ArcPointer

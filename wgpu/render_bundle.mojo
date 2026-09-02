@@ -1,5 +1,5 @@
 """
-wgpu.render_bundle — RenderBundle and RenderBundleEncoder RAII wrappers.
+RenderBundle and RenderBundleEncoder RAII wrappers.
 
 A RenderBundle is a pre-recorded sequence of draw commands that can be replayed
 in any render pass via RenderPassEncoder.execute_bundles(). This avoids

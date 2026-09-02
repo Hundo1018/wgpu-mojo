@@ -66,7 +66,7 @@ struct MappedBuffer[T: ImplicitlyCopyable](Movable):
         self._lib[].buffer_unmap(self._handle)
 
     def __getitem__(self, i: Int) -> Self.T:
-        return self._data[i]
+        return self._data[unsafe_offset=i]
 
     def len(self) -> Int:
         return self._count
@@ -75,7 +75,7 @@ struct MappedBuffer[T: ImplicitlyCopyable](Movable):
         """Copy all mapped values into a new List."""
         var out = List[Self.T](capacity=self._count)
         for i in range(self._count):
-            out.append(self._data[i])
+            out.append(self._data[unsafe_offset=i])
         return out^
 
 
@@ -197,7 +197,7 @@ struct Buffer(Movable, Boolable):
         var byte_size = UInt64(len(data) * _sizeof[T]())
         var mapped = self.map_write[T](offset, byte_size)
         for i in range(len(data)):
-            (mapped._data + i).init_pointee_copy(data[i])
+            mapped._data.unsafe_offset(i).unsafe_write(data[i])
 
     # ------------------------------------------------------------------
     # Label

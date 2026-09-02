@@ -1,5 +1,5 @@
 """
-wgpu.pipeline — ComputePipeline and RenderPipeline RAII wrappers.
+ComputePipeline and RenderPipeline RAII wrappers.
 """
 
 from std.memory import ArcPointer

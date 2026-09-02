@@ -1,5 +1,5 @@
 """
-wgpu.api_index — Human-readable index of the public wgpu API surface.
+Human-readable index of the public wgpu API surface.
 
 Call api_index() to get a structured text listing every symbol exported by
 the wgpu package. Useful for consumers who only have the compiled .mojopkg

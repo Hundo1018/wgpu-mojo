@@ -66,5 +66,44 @@ if [ "$FAILED" -gt 0 ]; then
   echo "check-compile: $FAILED file(s) FAILED"
   exit 1
 fi
+
+# ---------------------------------------------------------------------------
+# Build the whole package, the way the conda recipe and `Consume path` CI do.
+#
+# Compiling the files above is NOT equivalent: Mojo only fully checks `def`
+# bodies that are referenced, and nothing in the list above reaches wgpu/_core/,
+# so that subtree went entirely unchecked. A trait left with an empty body after
+# a removal compiled fine here and broke the packaged build — caught by CI, not
+# by this script. Building the package closes that gap.
+#
+# Warnings are failures: they were invisible before this step existed, which is
+# how 31 of them accumulated unnoticed.
+# ---------------------------------------------------------------------------
+echo ""
+printf "  %-56s" "package wgpu (full-tree compile)"
+PKG_LOG=$(mktemp)
+PKG_OUT=$(mktemp -d)/wgpu.mojopkg
+if ! mojo package wgpu -o "$PKG_OUT" -I . 2>"$PKG_LOG"; then
+  echo "FAIL"
+  grep -E " error:" "$PKG_LOG" | head -10 | sed 's/^/    /'
+  rm -f "$PKG_LOG"
+  echo ""
+  echo "check-compile: package build FAILED"
+  exit 1
+fi
+# Only source-level warnings count; `mojo package`/.mojopkg are deprecated at
+# the CLI level, which is the recipe's business, not this tree's.
+PKG_WARN=$(grep -cE "^[[:alnum:]_/.-]+\.mojo:[0-9]+:[0-9]+: warning:" "$PKG_LOG" || true)
+if [ "$PKG_WARN" -gt 0 ]; then
+  echo "WARN"
+  grep -E "^[[:alnum:]_/.-]+\.mojo:[0-9]+:[0-9]+: warning:" "$PKG_LOG" | head -12 | sed 's/^/    /'
+  rm -f "$PKG_LOG"
+  echo ""
+  echo "check-compile: $PKG_WARN source warning(s) in the packaged build"
+  exit 1
+fi
+rm -f "$PKG_LOG" "$PKG_OUT"
+echo "OK"
+
 echo ""
 echo "check-compile: ALL PASSED"

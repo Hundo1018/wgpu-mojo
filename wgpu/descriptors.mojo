@@ -1,5 +1,5 @@
 """
-wgpu.descriptors — Builder helpers that eliminate null-field boilerplate.
+Builder helpers that eliminate null-field boilerplate.
 
 Replace verbose WGPUBindGroupLayoutEntry construction with named factories:
 

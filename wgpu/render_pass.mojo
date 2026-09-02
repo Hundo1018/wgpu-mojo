@@ -1,5 +1,5 @@
 """
-wgpu.render_pass — RenderPassEncoder RAII wrapper.
+RenderPassEncoder RAII wrapper.
 """
 
 from std.memory import ArcPointer

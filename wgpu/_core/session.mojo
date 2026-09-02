@@ -23,6 +23,7 @@ With Session:
 
 from std.memory import ArcPointer
 from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu._backend.wgpu_native.nulls import null_any_ptr
 from wgpu._backend.wgpu_native.types import (
     WGPUDeviceHandle, WGPUQueueHandle, WGPUCommandBufferHandle, WGPU_TRUE,
@@ -140,7 +141,7 @@ struct Session(Movable):
     def submit(mut self, var cmd: CommandBuffer):
         """Submit a command buffer to the GPU queue (does not poll)."""
         var handle = cmd.raw()
-        var handle_p = alloc[WGPUCommandBufferHandle](1)
+        var handle_p = raw_alloc[WGPUCommandBufferHandle](1)
         handle_p[] = handle
         var arr = rebind[Pointer[WGPUCommandBufferHandle, MutUntrackedOrigin]](handle_p)
         self._lib[].queue_submit(self._queue_handle, UInt(1), arr)

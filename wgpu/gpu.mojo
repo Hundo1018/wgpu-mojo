@@ -1,5 +1,5 @@
 """
-wgpu.gpu — Unified GPU facade (Layer 3).
+Unified GPU facade (Layer 3).
 
 Provides a single entry point for GPU compute operations that hides
 the complexity of Instance → Adapter → Device initialization, command
