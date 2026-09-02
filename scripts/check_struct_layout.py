@@ -141,10 +141,16 @@ def main():
                 f.write('  printf("%s %%zu\\n", sizeof(%s));\n' % (cname, cname))
             f.write("  return 0;\n}\n")
         exe2 = os.path.join(tmp, "bz")
+        # The probe only takes sizeof() — it never calls a wgpu function — so it
+        # deliberately does NOT link libwgpu_native. Requiring it would tie this
+        # check to wherever the library happens to live, and CI installs it to
+        # $CONDA_PREFIX/lib rather than ffi/lib. Undefined symbols are tolerated
+        # instead, which keeps the check runnable with no native library present.
+        undef = (["-Wl,-undefined,dynamic_lookup"] if sys.platform == "darwin"
+                 else ["-Wl,--unresolved-symbols=ignore-all"])
         r = subprocess.run(["gcc", "-I", os.path.join(ROOT, "ffi"),
                             "-I", os.path.join(ROOT, "ffi/include"),
-                            csrc2, "-o", exe2,
-                            "-L", os.path.join(ROOT, "ffi/lib"), "-lwgpu_native"],
+                            csrc2, "-o", exe2] + undef,
                            capture_output=True, text=True)
         if r.returncode:
             print("check-struct-layout: bridge probe failed to build:\n" + r.stderr[-1500:],
