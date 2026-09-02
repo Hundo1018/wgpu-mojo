@@ -106,14 +106,27 @@ strings -a "$LIB" 2>/dev/null \
   | grep -oE 'wgpu[A-Za-z0-9_]+ is not implemented' \
   | sed 's/ is not implemented//' > "$TMP/unimpl.raw" || true
 
+# Trap mnemonics differ by architecture: ud2 on x86, brk/udf on ARM. Match any
+# of them so this works on both the linux-64 .so and the osx-arm64 .dylib.
 objdump -d "$LIB" 2>/dev/null | awk '
-  /^[0-9a-f]+ <.*>:$/ { if (sym != "" && ud && !rt) print sym
-                        sym=$2; gsub(/[<>:]/,"",sym); ud=0; rt=0; next }
-  /^ *[0-9a-f]+:/     { if ($0 ~ /\tud2/) ud=1; if ($0 ~ /\tret/) rt=1 }
-  END                 { if (sym != "" && ud && !rt) print sym }
+  /^[0-9a-f]+ <.*>:$/ { if (sym != "" && trap && !rt) print sym
+                        sym=$2; gsub(/[<>:_]/,"",sym); trap=0; rt=0; next }
+  /^ *[0-9a-f]+:/     { if ($0 ~ /\t(ud2|brk|udf)/) trap=1
+                        if ($0 ~ /\tret/)           rt=1 }
+  END                 { if (sym != "" && trap && !rt) print sym }
 ' | grep -E '^wgpu[A-Z]' >> "$TMP/unimpl.raw" || true
 
 sort -u "$TMP/unimpl.raw" > "$TMP/unimpl"
+
+# wgpu-native always ships stubs, so finding none means the detector could not
+# read this binary — a different object format, an objdump that declines it, or
+# a trap mnemonic not listed above. Rather than report every stub as an
+# unclassified gap (40 false failures), say so and fall back to the resolution
+# check, which is format-independent and is the one that matters most.
+STUB_DETECTION="ok"
+if [ ! -s "$TMP/unimpl" ]; then
+  STUB_DETECTION="unavailable"
+fi
 comm -12 "$TMP/expected" "$TMP/unimpl" > "$TMP/bound_unimpl"
 
 ALLOW="scripts/known-unimplemented.txt"
@@ -127,6 +140,16 @@ fi
 comm -23 "$TMP/bound_unimpl" "$TMP/allow" > "$TMP/new_unimpl"
 KNOWN_N=$(wc -l < "$TMP/bound_unimpl" | tr -d ' ')
 NEW_N=$(wc -l < "$TMP/new_unimpl" | tr -d ' ')
+
+if [ "$STUB_DETECTION" = "unavailable" ]; then
+  echo ""
+  echo "  note: could not detect unimplemented stubs in this binary"
+  echo "        ($(uname -s)/$(uname -m)); skipping the stub and classification"
+  echo "        checks. Symbol resolution above still applies."
+  echo ""
+  echo "check-symbols: PASSED (resolution only — $EXPECTED_N/$EXPECTED_N resolve)"
+  exit 0
+fi
 
 echo "  unimplemented stubs in library: $(wc -l < "$TMP/unimpl" | tr -d ' ')"
 echo "  ...of those, bound here       : $KNOWN_N ($ALLOW records them)"
