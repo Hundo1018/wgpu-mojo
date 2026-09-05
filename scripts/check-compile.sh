@@ -80,10 +80,10 @@ fi
 # how 31 of them accumulated unnoticed.
 # ---------------------------------------------------------------------------
 echo ""
-printf "  %-56s" "package wgpu (full-tree compile)"
+printf "  %-56s" "precompile wgpu (full-tree compile)"
 PKG_LOG=$(mktemp)
-PKG_OUT=$(mktemp -d)/wgpu.mojopkg
-if ! mojo package wgpu -o "$PKG_OUT" -I . 2>"$PKG_LOG"; then
+PKG_OUT=$(mktemp -d)/wgpu.mojoc
+if ! mojo precompile wgpu -o "$PKG_OUT" -I . 2>"$PKG_LOG"; then
   echo "FAIL"
   grep -E " error:" "$PKG_LOG" | head -10 | sed 's/^/    /'
   rm -f "$PKG_LOG"
@@ -91,8 +91,9 @@ if ! mojo package wgpu -o "$PKG_OUT" -I . 2>"$PKG_LOG"; then
   echo "check-compile: package build FAILED"
   exit 1
 fi
-# Only source-level warnings count; `mojo package`/.mojopkg are deprecated at
-# the CLI level, which is the recipe's business, not this tree's.
+# Only source-level warnings count: a bare CLI-level warning is the recipe's
+# business, not this tree's. (`mojo package` -> `precompile` and .mojopkg ->
+# .mojoc were exactly such warnings until this script moved to the new names.)
 PKG_WARN=$(grep -cE "^[[:alnum:]_/.-]+\.mojo:[0-9]+:[0-9]+: warning:" "$PKG_LOG" || true)
 if [ "$PKG_WARN" -gt 0 ]; then
   echo "WARN"

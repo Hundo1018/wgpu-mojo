@@ -227,7 +227,7 @@ Mojo's own GPU stack is split across two conda packages: kernel-side indexing
 `DeviceContext`, `DeviceBuffer`, `enqueue_function` — ships only in `max`.
 
 **wgpu-mojo does not depend on `max`.** The bridge lives in a separate
-`wgpu_max` package that `mojo package wgpu` never compiles, so installing
+`wgpu_max` package that `mojo precompile wgpu` never compiles, so installing
 wgpu-mojo pulls in `mojo-compiler` and nothing more. Only users who want the
 bridge pay for it:
 

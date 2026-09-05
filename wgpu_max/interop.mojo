@@ -8,7 +8,7 @@ package, but *host-side dispatch* — `DeviceContext`, `DeviceBuffer`,
 `enqueue_function` — ships only in `max`. wgpu-mojo depends on `mojo` and
 `glfw` and nothing else, and forcing `max` onto every downstream consumer to
 serve an optional bridge is a bad trade. So the bridge is a separate top-level
-package: `mojo package wgpu` does not compile it, the published package does
+package: `mojo precompile wgpu` does not compile it, the published package does
 not declare `max`, and only users who ask for it pay for it.
 
 What the bridge can and cannot do

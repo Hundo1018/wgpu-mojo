@@ -69,7 +69,7 @@ max = ">=26.5,<27"
 [feature.maxinterop.tasks]
 test-max-interop    = { cmd = "mojo run -I . tests/test_max_interop.mojo", depends-on = ["build-callbacks"] }
 example-max-interop = { cmd = "mojo run -I . examples/max_interop.mojo", depends-on = ["build-callbacks"] }
-# Compile-check the opt-in package itself. `mojo package wgpu` cannot cover it
+# Compile-check the opt-in package itself. `mojo precompile wgpu` cannot cover it
 # (wgpu_max is not part of the wgpu package, by design), so this is its backstop.
 check-compile-max   = { cmd = "bash scripts/check-compile-max.sh", depends-on = ["build-callbacks"] }
 

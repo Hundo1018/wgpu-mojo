@@ -1,7 +1,7 @@
-"""wgpu_max — opt-in bridge between wgpu-mojo and Mojo's built-in GPU stack.
+"""Opt-in bridge between wgpu-mojo and Mojo's built-in GPU stack.
 
 This package is deliberately NOT part of the `wgpu` package. It is the only
-code in this repository that imports `max`, and `mojo package wgpu` never
+code in this repository that imports `max`, and `mojo precompile wgpu` never
 compiles it, so the published wgpu-mojo package keeps its `mojo`-only
 dependency set. See `wgpu_max/interop.mojo` for why that separation exists.
 
