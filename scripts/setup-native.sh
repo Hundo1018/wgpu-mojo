@@ -116,18 +116,43 @@ echo "    Target: ${INSTALL_DIR}"
 TMP=$(mktemp -d)
 trap 'rm -rf "${TMP}"' EXIT
 
-echo "--> Downloading ${WGPU_ASSET} ..."
-curl -fsSL --retry 3 \
-    "https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_TAG}/${WGPU_ASSET}" \
-    -o "${TMP}/wgpu.zip"
+# wgpu-native is a declared run-dependency of the wgpu-mojo package, so in a
+# conda environment it is normally already installed -- and overwriting a
+# conda-managed file with a hand-downloaded one is how an environment starts
+# lying about its own contents. Download only when it is genuinely absent.
+# Set WGPU_FORCE_DOWNLOAD=1 to override.
+if [[ -f "${INSTALL_DIR}/${WGPU_LIB}" && "${WGPU_FORCE_DOWNLOAD:-0}" != "1" ]]; then
+    echo "--> ${WGPU_LIB} already present in ${INSTALL_DIR} — keeping it"
+    echo "    (set WGPU_FORCE_DOWNLOAD=1 to replace it with ${WGPU_TAG})"
+else
+    echo "--> Downloading ${WGPU_ASSET} ..."
+    curl -fsSL --retry 3 \
+        "https://github.com/gfx-rs/wgpu-native/releases/download/${WGPU_TAG}/${WGPU_ASSET}" \
+        -o "${TMP}/wgpu.zip"
 
-unzip -q "${TMP}/wgpu.zip" -d "${TMP}/wgpu"
+    unzip -q "${TMP}/wgpu.zip" -d "${TMP}/wgpu"
 
-cp "${TMP}/wgpu/lib/${WGPU_LIB}" "${INSTALL_DIR}/"
-echo "    Installed ${WGPU_LIB}"
+    cp "${TMP}/wgpu/lib/${WGPU_LIB}" "${INSTALL_DIR}/"
+    echo "    Installed ${WGPU_LIB}"
+fi
 
-# Keep headers for C compilation below
-INCLUDE_DIR="${TMP}/wgpu/include/webgpu"
+# ---------------------------------------------------------------------------
+# Headers for compiling the bridge
+# ---------------------------------------------------------------------------
+# Always the copies vendored in this repo, never whatever a release zip or a
+# conda package happens to carry: these are the headers the binding's struct
+# layouts and SType constants were written against, and the ones every gate
+# checks against. Prefer the local checkout; fall back to raw.githubusercontent
+# for the documented `curl ... | bash` flow, which has no checkout.
+INCLUDE_DIR="${TMP}/include/webgpu"
+mkdir -p "${INCLUDE_DIR}"
+for header in webgpu.h wgpu.h; do
+    if [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/ffi/include/webgpu/${header}" ]]; then
+        cp "${REPO_ROOT}/ffi/include/webgpu/${header}" "${INCLUDE_DIR}/"
+    else
+        curl -fsSL "${REPO_RAW}/ffi/include/webgpu/${header}" -o "${INCLUDE_DIR}/${header}"
+    fi
+done
 
 # ---------------------------------------------------------------------------
 # Download and compile the Mojo callback bridge (libwgpu_mojo_cb)
@@ -138,7 +163,7 @@ curl -fsSL "${REPO_RAW}/ffi/wgpu_callbacks.c" -o "${TMP}/wgpu_callbacks.c"
 gcc -shared -fPIC \
     -o "${TMP}/${CB_OUT}" \
     "${TMP}/wgpu_callbacks.c" \
-    -I"${TMP}/wgpu" \
+    -I"${TMP}" \
     -L"${INSTALL_DIR}" -lwgpu_native \
     ${LINK_FLAGS}
 

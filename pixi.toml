@@ -44,6 +44,13 @@ mojo-compiler = ">=1.0.0,<2"
 
 [package.run-dependencies]
 mojo-compiler = ">=1.0.0,<2"
+# The wgpu package includes wgpu.rendercanvas, which dlopens libglfw at runtime,
+# and every path through it dlopens libwgpu_native. Declaring both here is what
+# stops a downstream `pixi add --git` from failing at runtime rather than at
+# install time. Exact pin on wgpu-native: the v29.0.0.0 -> v29.0.1.1 *patch*
+# renumbered the SType enum, so "compatible" is not a safe word here.
+wgpu-native = "==29.0.0.0"
+glfw = ">=3.4,<4"
 
 [activation]
 # Make ffi/lib discoverable when running from the repo (dev mode).
