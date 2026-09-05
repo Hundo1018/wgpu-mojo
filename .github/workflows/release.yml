@@ -1,13 +1,18 @@
 name: Release
 
-# Tag a version (vX.Y.Z) → build a self-contained .conda for each platform with
-# rattler-build (downloads wgpu-native, compiles the C bridges, bundles the
-# mojopkg) and attach the artifacts to a GitHub Release. No external secrets:
-# the built-in GITHUB_TOKEN is enough to publish the Release.
+# Tag a version (vX.Y.Z) → build the .conda for each published platform with
+# rattler-build and attach the artifacts to a GitHub Release. No external
+# secrets: the built-in GITHUB_TOKEN is enough to publish the Release.
 #
-# Release a version:
-#   1. bump `version` in pixi.toml and conda.recipe/recipe.yaml
-#   2. git tag vX.Y.Z && git push --tags
+# The recipe builds from `source.git` at a pinned commit SHA, because that is
+# what modular-community requires. So this workflow does not build the checkout
+# — it builds whatever that SHA names, and the guards below are what tie the two
+# together.
+#
+# Release a version (full checklist in CONTRIBUTING.md):
+#   1. bump `version` in pixi.toml and conda.recipe/recipe.yaml, push
+#   2. set `rev` in conda.recipe/recipe.yaml to that pushed commit, push
+#   3. git tag vX.Y.Z && git push --tags
 
 on:
   push:
@@ -33,6 +38,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # the pinned-rev guard below diffs two commits
 
       - name: Verify tag matches recipe version
         if: github.ref_type == 'tag'
@@ -44,6 +51,32 @@ jobs:
             echo "::error::Tag v$TAG_VER does not match conda.recipe version $RECIPE_VER. Bump the recipe (and pixi.toml) before tagging."
             exit 1
           fi
+
+      # A commit cannot contain its own hash, so `rev` necessarily points at the
+      # commit *before* the one that pins it -- see CONTRIBUTING.md, "Releasing".
+      # What must hold is that the difference is confined to the recipe itself:
+      # otherwise the released package is built from source that was never
+      # tagged, and the tag documents something that was never shipped.
+      - name: Verify the pinned rev carries this tag's source
+        if: github.ref_type == 'tag'
+        run: |
+          REV=$(sed -n 's/^  rev: "\([0-9a-f]\{40\}\)".*/\1/p' conda.recipe/recipe.yaml)
+          if [ -z "$REV" ]; then
+            echo "::error::conda.recipe/recipe.yaml has no 40-character source.rev pin."
+            exit 1
+          fi
+          echo "pinned rev: $REV"
+          echo "tagged sha: $GITHUB_SHA"
+          if ! git cat-file -e "${REV}^{commit}" 2>/dev/null; then
+            echo "::error::Pinned rev $REV is not an ancestor of this repository."
+            exit 1
+          fi
+          if ! git diff --quiet "$REV" "$GITHUB_SHA" -- . ':(exclude)conda.recipe'; then
+            echo "::error::Source at the pinned rev differs from the tagged source outside conda.recipe/."
+            git diff --stat "$REV" "$GITHUB_SHA" -- . ':(exclude)conda.recipe'
+            exit 1
+          fi
+          echo "OK: the pinned rev's source matches this tag."
 
       - name: Setup Pixi (CLI only — rattler-build runs via pixi exec)
         uses: prefix-dev/setup-pixi@v0.10.2
