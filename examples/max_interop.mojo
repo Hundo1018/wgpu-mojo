@@ -1,5 +1,5 @@
 """
-examples/max_interop.mojo — one pipeline, two GPU stacks.
+One pipeline, two GPU stacks.
 
 A Mojo kernel dispatched through MAX's `DeviceContext` produces data; that data
 crosses into wgpu via `wgpu_max`; a WGSL compute shader consumes it; the result

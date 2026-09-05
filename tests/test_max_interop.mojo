@@ -1,5 +1,5 @@
 """
-tests/test_max_interop.mojo — round trips across the wgpu <-> MAX bridge.
+Round trips across the wgpu <-> MAX bridge.
 
 Requires GPU hardware AND the opt-in `max` dependency. Run via:
     pixi run -e maxinterop test-max-interop
@@ -43,7 +43,7 @@ def ramp(n: Int, scale: Float32) -> List[Scalar[dtype]]:
 
 
 def test_max_host_round_trip() raises:
-    """list -> MAX device buffer -> list preserves every element."""
+    """A list -> MAX device buffer -> list round trip preserves every element."""
     var ctx = DeviceContext()
     var dev = ctx.enqueue_create_buffer[dtype](N)
     var src = ramp(N, 1.5)
@@ -105,7 +105,7 @@ def test_max_to_wgpu() raises:
 
 
 def test_wgpu_to_max() raises:
-    """wgpu storage buffer -> MAX device buffer, verified by reading MAX back."""
+    """A wgpu storage buffer reaches MAX, verified by reading MAX back."""
     var ctx = DeviceContext()
     var device = create_test_device()
 
