@@ -148,6 +148,49 @@ jobs:
           pixi run example-compute-v2
 
   # ---------------------------------------------------------------------------
+  # The conda package users actually install.
+  #
+  # Everything above tests the *source tree*. consume.yml tests `pixi add --git`,
+  # which builds with pixi-build-mojo and therefore ships no native libraries at
+  # all. Neither touches conda.recipe/recipe.yaml -- which is how that recipe sat
+  # for months still calling the deprecated `mojo package` CLI while every gate
+  # stayed green, because nothing ever built it.
+  #
+  # check-recipe builds the recipe against this checkout (substituting a path
+  # source for the pinned SHA, which cannot exist before the commit is pushed)
+  # and runs its package test in a bare environment. check-consume-channel then
+  # installs the result from a local channel into a throwaway project and runs
+  # it -- on a runner with no GPU that proves the package is self-contained; on
+  # one with an adapter it also completes a compute round trip.
+  # ---------------------------------------------------------------------------
+  package:
+    name: Conda package (${{ matrix.os }})
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]   # the two platforms the recipe publishes
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}   # branch tip = auto-commit; see `test` job
+
+      - name: Setup Pixi (CLI only — rattler-build runs via pixi exec)
+        uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          run-install: false
+
+      - name: Build the conda recipe and run its package test
+        run: bash scripts/check-recipe.sh "$RUNNER_TEMP/channel"
+
+      - name: Install the built package from a channel into a fresh project
+        run: bash scripts/check-consume-channel.sh "$RUNNER_TEMP/channel"
+
+  # ---------------------------------------------------------------------------
   # Opt-in wgpu <-> MAX bridge (wgpu_max/).
   #
   # Compile-check only, and deliberately a separate job: `max` is not in the

@@ -102,6 +102,16 @@ check-struct-layout = { cmd = "python3 scripts/check_struct_layout.py" }
 # Verify each FFI call's arity and void-ness against the header declaration.
 # The last unmeasured surface: a wrong-arity call compiles, links, and corrupts.
 check-signatures = { cmd = "python3 scripts/check_signatures.py" }
+# Build conda.recipe/recipe.yaml against the working tree, tests included. The
+# recipe pins a commit SHA (modular-community requires one), which makes it
+# unverifiable before that commit is pushed -- this substitutes a path source so
+# every push can still gate on it. Needs network, no GPU.
+check-recipe = { cmd = "bash scripts/check-recipe.sh" }
+# Install the built package from a local conda channel into a throwaway project
+# and run it. This is the only gate that exercises what users actually install:
+# consume.yml's `pixi add --git` path builds with pixi-build-mojo, which ships
+# no native libraries at all. Run check-recipe first.
+check-consume-channel = { cmd = "bash scripts/check-consume-channel.sh" }
 
 # Run all non-GPU tests
 test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
