@@ -94,5 +94,5 @@ from wgpu.descriptors import BGL
 from wgpu._core.session import Session
 from wgpu._core.wgpu_native.buffer import MappedBuffer
 
-# API discovery (works from .mojopkg without source access)
+# API discovery (works from a compiled package without source access)
 from wgpu.api_index import api_index

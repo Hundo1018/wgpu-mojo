@@ -2,7 +2,7 @@
 Human-readable index of the public wgpu API surface.
 
 Call api_index() to get a structured text listing every symbol exported by
-the wgpu package. Useful for consumers who only have the compiled .mojopkg
+the wgpu package. Useful for consumers who only have the compiled package
 and cannot browse source files.
 
 Example::
@@ -19,7 +19,7 @@ def api_index() -> String:
     category and listed alphabetically within each group.
 
     This is intentionally a static listing (not reflection-based) so it
-    works identically from source and from a compiled .mojopkg.
+    works identically from source and from a compiled package.
     """
     return """wgpu-mojo public API index (wgpu-native ABI: v29.0.0.0)
 ================================================================

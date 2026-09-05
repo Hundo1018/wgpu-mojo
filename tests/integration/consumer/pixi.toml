@@ -22,7 +22,7 @@ mojo = ">=1.0.0,<2"
 
 [tasks]
 # Compile-only assertion: proves `from wgpu import …` resolves against the
-# installed wgpu.mojopkg. Needs no native .so files, so it runs on every OS.
+# installed wgpu package. Needs no native .so files, so it runs on every OS.
 check = "mojo build app.mojo -o /dev/null"
 # Runtime assertion: actually constructs GPU objects. Requires the native
 # runtime libs (run setup-native.sh first) and a Vulkan/Metal adapter.

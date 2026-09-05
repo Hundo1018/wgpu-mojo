@@ -135,7 +135,7 @@ pixi run test-compute
 ## Releasing a version
 
 The package is published as a self-contained `.conda` (it bundles `libwgpu_native`,
-the compiled C bridges, and `wgpu.mojopkg`) built from
+the compiled C bridges, and the compiled `wgpu` package) built from
 [conda.recipe/recipe.yaml](../conda.recipe/recipe.yaml) with rattler-build.
 
 1. Bump the version in **both** [pixi.toml](../pixi.toml) and
@@ -163,7 +163,7 @@ pixi exec rattler-build build \
 ## Two build mechanisms (don't conflate them)
 
 - **`pixi-build-mojo`** (configured under `[package.build]` in `pixi.toml`) is what
-  `pixi add --git`/`--path` triggers. It packages **only `wgpu.mojopkg`** — it does
+  `pixi add --git`/`--path` triggers. It packages **only the compiled `wgpu` package** — it does
   **not** bundle native `.so` files, so consumers still run `setup-native.sh`. This is
   the path `consume.yml` exercises and the README documents.
 

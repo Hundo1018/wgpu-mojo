@@ -58,7 +58,7 @@ preview  = ["pixi-build"]
 pixi add --git https://github.com/Hundo1018/wgpu-mojo wgpu-mojo
 ```
 
-This builds `wgpu.mojopkg` and installs it into your environment.
+This builds the compiled `wgpu` package and installs it into your environment.
 
 ### 3 · Install the native GPU library (once per machine)
 
