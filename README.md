@@ -6,6 +6,7 @@
 
 [![CI](https://github.com/Hundo1018/wgpu-mojo/actions/workflows/ci.yml/badge.svg)](https://github.com/Hundo1018/wgpu-mojo/actions/workflows/ci.yml)
 [![Package Consume](https://github.com/Hundo1018/wgpu-mojo/actions/workflows/consume.yml/badge.svg)](https://github.com/Hundo1018/wgpu-mojo/actions/workflows/consume.yml)
+[![CodeQL](https://github.com/Hundo1018/wgpu-mojo/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Hundo1018/wgpu-mojo/security/code-scanning)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-linux--64%20%7C%20osx--arm64-informational)](#drivers--platforms)
 [![wgpu-native](https://img.shields.io/badge/wgpu--native-v29-orange)](https://github.com/gfx-rs/wgpu-native)
@@ -41,9 +42,30 @@ Compute *and* graphics on every backend Vulkan / Metal / DX12 supports — from 
 
 ## Quickstart
 
-Use wgpu-mojo as a package in your own [pixi](https://pixi.sh) project — three steps.
+### Option A · from the modular-community channel
 
-### 1 · Point pixi at the right channels
+```toml
+# pixi.toml
+[workspace]
+channels = [
+  "https://repo.prefix.dev/modular-community",
+  "https://conda.modular.com/max",
+  "conda-forge",
+]
+```
+
+```bash
+pixi add wgpu-mojo
+```
+
+That is the whole install. The package ships both compiled C bridges and pulls
+`wgpu-native` and `glfw` in as ordinary conda dependencies, so there is no
+post-install script and nothing to download by hand.
+
+> Available from **0.2.0**. If `pixi add` reports no candidates, the release has
+> not reached the channel yet — use Option B.
+
+### Option B · from git (tracks `main`)
 
 ```toml
 # pixi.toml
@@ -52,32 +74,16 @@ channels = ["https://conda.modular.com/max", "conda-forge"]
 preview  = ["pixi-build"]
 ```
 
-### 2 · Add the package
-
 ```bash
 pixi add --git https://github.com/Hundo1018/wgpu-mojo wgpu-mojo
+pixi run bash -c "curl -fsSL https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main/scripts/setup-native.sh | bash"
 ```
 
-This builds the compiled `wgpu` package and installs it into your environment.
-
-### 3 · Install the native GPU library (once per machine)
-
-The package needs `libwgpu_native` + its callback bridge at runtime. Run this inside your activated pixi env:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main/scripts/setup-native.sh | bash
-```
-
-<details>
-<summary>What the script does</summary>
-
-- Downloads `libwgpu_native` **v29** from [wgpu-native releases](https://github.com/gfx-rs/wgpu-native/releases)
-- Compiles the Mojo callback bridge `libwgpu_mojo_cb` from source
-- Installs both into `$CONDA_PREFIX/lib/`
-- Compiles the GLFW window bridge `libglfw_input_cb` if GLFW is present
-- Requires `curl`, `unzip`, `gcc` — all standard in a conda environment
-
-</details>
+The second command compiles the two C callback bridges. It is needed on this
+path and not on Option A because `pixi-build-mojo` — the backend that builds a
+git source dependency — packages Mojo code only and cannot compile C.
+`wgpu-native` and `glfw` still arrive as normal dependencies, so the script
+downloads a library only if one is genuinely missing.
 
 ### Check it works
 
@@ -85,15 +91,17 @@ curl -fsSL https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main/scripts/se
 
 ```bash
 cat > wgpu_check.mojo <<'EOF'
-from wgpu import Instance
+from wgpu.diagnostics import preflight
 
 
 def main() raises:
-    _ = Instance()
-    print("wgpu-mojo OK")
+    print(preflight())
 EOF
 pixi run mojo run wgpu_check.mojo
 ```
+
+It prints the library search path and load status, the wgpu-native version
+actually loaded, the ABI symbol check, and every adapter it can see.
 
 ---
 
@@ -338,13 +346,34 @@ full CI/release pipeline.
 | **macOS** (`osx-arm64`) | Metal — built in, nothing to install (**compute only**, see below) |
 | **Windows** | D3D12 or Vulkan — usually present with vendor drivers |
 
-`linux-64` and `osx-arm64` are first-class via pixi. `osx-x86_64` / `win-x64` can be built
-manually — see [`conda.recipe/recipe.yaml`](conda.recipe/recipe.yaml).
+`linux-64` and `osx-arm64` are the platforms that are built, tested and published.
+[`conda.recipe/recipe.yaml`](conda.recipe/recipe.yaml) skips every other target on
+purpose: nothing in the binding is architecture-specific and conda-forge ships
+`wgpu-native` for `linux-aarch64`, `osx-64` and `win-64` too, but no one has run
+wgpu-mojo on them, so no package claims they work. If you have such a machine
+and it works, that is a very welcome PR.
 
 > **macOS is compute-only today.** Surface creation is implemented for Xlib and
 > Wayland only, so headless compute works on `osx-arm64` but nothing windowed
 > does — there is no `CAMetalLayer` path yet. Tracked as Tier 1 in
 > [`docs/BINDING_ROADMAP.md`](docs/BINDING_ROADMAP.md).
+
+### Versions & the wgpu-native ABI pin
+
+wgpu-mojo pins **exactly one** wgpu-native revision — currently **v29.0.0.0** —
+and the pin is part of the public contract, not an implementation detail:
+
+> wgpu-native renumbered its entire `0x0003xxxx` SType enum in the
+> v29.0.0.0 → **v29.0.1.1 patch release**. A mismatched library still loads and
+> still runs. It just misreads every extras chain, silently.
+
+So a wgpu-native bump is always a breaking change here, never a patch, and the
+conda package depends on `wgpu-native ==29.0.0.0` rather than a range. When you
+install from the channel this is handled for you; when you install any other way,
+`preflight()` will tell you what actually loaded.
+
+Release notes and the full compatibility record live in
+[`CHANGELOG.md`](CHANGELOG.md).
 
 ### Diagnostics
 
@@ -354,6 +383,17 @@ print(preflight())   # search paths, load status, wgpu-native version, adapters
 ```
 
 ---
+
+## Project
+
+| | |
+|---|---|
+| Release notes | [CHANGELOG.md](CHANGELOG.md) |
+| Contributing, the gates, the release process | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Reporting a vulnerability | [SECURITY.md](SECURITY.md) |
+| Community expectations | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| Binding coverage & roadmap | [docs/BINDING_ROADMAP.md](docs/BINDING_ROADMAP.md) |
+| CI and release pipeline | [docs/CI_CD.md](docs/CI_CD.md) |
 
 ## License
 

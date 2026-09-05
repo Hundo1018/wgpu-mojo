@@ -7,14 +7,14 @@ runners**, and how to set up the missing pieces yourself.
 
 | Workflow | File | Trigger | What it does |
 |---|---|---|---|
-| **CI** | [.github/workflows/ci.yml](../.github/workflows/ci.yml) | push/PR to `main`/`develop` | Non-GPU tests + compile-check on Linux & macOS arm64; headless GPU tests via lavapipe |
+| **CI** | [.github/workflows/ci.yml](../.github/workflows/ci.yml) | push/PR to `main`/`develop` | Non-GPU tests + compile-check on Linux & macOS arm64; headless GPU tests via lavapipe; conda recipe build + channel install |
 | **Package Consume** | [.github/workflows/consume.yml](../.github/workflows/consume.yml) | push/PR + weekly + manual | Installs wgpu-mojo as a package into an isolated project and runs it |
 | **Release** | [.github/workflows/release.yml](../.github/workflows/release.yml) | tag `v*` + manual | Builds a `.conda` per platform and attaches it to a GitHub Release |
 | **Stable Mojo Tracking** | [.github/workflows/stable-tracking.yml](../.github/workflows/stable-tracking.yml) | weekly Mon 06:17 UTC + manual | Updates to the latest stable Mojo release (`max` channel), tests, auto-commits `pixi.lock` or files an issue |
 
 ```
                 ┌─ ci.yml ──────── test (linux, macos) + gpu-software (lavapipe)
- push / PR ─────┤
+ push / PR ─────┤                  package (recipe build → channel install, linux + macos)
                 └─ consume.yml ─── consume-path (pixi add --path, this commit)
                                    consume-git  (pixi add --git, documented flow)*  *non-PR
 
@@ -33,6 +33,8 @@ runners**, and how to set up the missing pieces yourself.
 | Headless GPU compute (instance/device/buffer/compute) | ✅ via **lavapipe** (software Vulkan, Linux) | also real GPU |
 | Windowed / display tests (triangle, fire-sim, glfw input) | ❌ needs display + GPU | ✅ self-hosted / local (Xvfb) |
 | Real-hardware GPU validation, multi-vendor (NVIDIA/AMD/Metal) | ❌ no physical GPU | ✅ self-hosted runner (below) |
+| Conda recipe build + package test | ✅ `ci.yml` job `package` | — |
+| Install from a conda channel into a fresh project | ✅ `ci.yml` job `package` | also real GPU |
 | Conda package build + Release | ✅ `release.yml` | — |
 
 The first column is fully automated. The rest of this document is the guide for the
@@ -134,31 +136,63 @@ pixi run test-compute
 
 ## Releasing a version
 
-The package is published as a self-contained `.conda` (it bundles `libwgpu_native`,
-the compiled C bridges, and the compiled `wgpu` package) built from
-[conda.recipe/recipe.yaml](../conda.recipe/recipe.yaml) with rattler-build.
+The package is built from [conda.recipe/recipe.yaml](../conda.recipe/recipe.yaml)
+with rattler-build. It contains the compiled `wgpu` package and both C bridges;
+`libwgpu_native` and `libglfw` are **not** bundled — they are declared runtime
+dependencies resolved from conda-forge, which is what makes `pixi add wgpu-mojo`
+sufficient on its own without making this repo the distributor of someone else's
+binaries.
 
-1. Bump the version in **both** [pixi.toml](../pixi.toml) and
-   [conda.recipe/recipe.yaml](../conda.recipe/recipe.yaml) (`context.version`).
-2. Tag and push:
+The recipe's `source` is a git URL plus a full commit SHA, because
+modular-community requires one. A commit cannot contain its own hash, so pinning
+takes an extra commit:
+
+1. Move `Unreleased` items into a new version heading in
+   [CHANGELOG.md](../CHANGELOG.md).
+2. Bump `version` in **both** [pixi.toml](../pixi.toml) and
+   [conda.recipe/recipe.yaml](../conda.recipe/recipe.yaml). Commit and push.
+3. Set `context.rev` in the recipe to the SHA of that pushed commit. Commit as
+   `chore: pin recipe rev for vX.Y.Z` and push.
+4. Tag and push:
    ```bash
    git tag v0.3.0
    git push origin v0.3.0
    ```
-3. `release.yml` verifies the tag matches the recipe version, builds `linux-64` and
-   `osx-arm64` packages, and attaches them to the GitHub Release. No secrets are
-   required — the built-in `GITHUB_TOKEN` publishes the Release.
+
+`release.yml` then checks two things before building: that the tag matches
+`context.version`, and that the source tree at `context.rev` is identical to the
+tagged source outside `conda.recipe/`. The second guard is what keeps the
+one-commit offset honest — without it the released package could be built from
+source that was never tagged.
 
 `workflow_dispatch` runs the build steps as a dry run (no Release is published).
 
-Dry-run a build locally:
+### Validating the recipe without pushing
+
+The pinned SHA makes the recipe unverifiable before the commit exists, which is
+how it once sat for months still calling the deprecated `mojo package` CLI while
+every other gate stayed green. Two tasks close that:
 
 ```bash
-pixi exec rattler-build build \
-  --recipe conda.recipe/recipe.yaml \
-  -c https://conda.modular.com/max -c conda-forge \
-  --output-dir /tmp/out
+pixi run check-recipe            # swaps in a path source, builds, runs the package test
+pixi run check-consume-channel   # installs the result into a throwaway project and runs it
 ```
+
+`check-consume-channel` creates a fresh pixi project in a temp directory with no
+repo on the path, no `-I` flag and no `ffi/lib`, so it fails if the package is
+not self-contained. On a machine with an adapter it also completes a real
+compute round trip. Both run in CI's `package` job on Linux and macOS.
+
+### Publishing to the modular-community channel
+
+`pixi add wgpu-mojo` resolves through
+[modular-community](https://github.com/modular/modular-community). To publish a
+release there, open a PR against that repository adding
+`recipes/wgpu-mojo/recipe.yaml` — a copy of this repo's
+`conda.recipe/recipe.yaml` — together with `test_package.mojo`. A maintainer
+applies the `OK to test` label to run their build. Their CI builds on
+`linux-64`, `linux-aarch64` and `osx-arm64`; the recipe's `skip:` expression
+declines the platforms this project does not test.
 
 ## Two build mechanisms (don't conflate them)
 
@@ -176,8 +210,11 @@ pixi exec rattler-build build \
   *"could not initialize the build-backend … no candidates were found"*, and CI
   stayed green only because both consume jobs pinned pixi v0.70.2. `consume-git`
   is now matrixed over both ends of the range to keep that honest.
-- **rattler-build** (`conda.recipe/recipe.yaml`) builds a **self-contained `.conda`**
-  with the native libs bundled. This is the path `release.yml` uses.
+- **rattler-build** (`conda.recipe/recipe.yaml`) builds the **published `.conda`**:
+  the compiled `wgpu` package plus both C bridges, with `wgpu-native` and `glfw`
+  as declared dependencies. Installing it needs no post-install step. This is the
+  path `release.yml` and the modular-community channel use, and the one CI's
+  `package` job gates.
 
 ## One-time GitHub repository setup
 
@@ -188,6 +225,8 @@ pixi exec rattler-build build \
    - `Test (macos-14)`
    - `Consume path (ubuntu-latest)`
    - `Consume path (macos-14)`
+   - `Conda package (ubuntu-latest)`
+   - `Conda package (macos-14)`
 
    Add `Headless GPU (lavapipe)` once it is consistently green.
 3. **Stable-tracking workflow permissions:** `stable-tracking.yml` already declares
