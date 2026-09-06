@@ -8,7 +8,7 @@
 # Validate it against the working tree (no pushed SHA needed) with:
 #     pixi run check-recipe
 context:
-  version: "0.2.0"
+  version: "0.2.1"
 
   # modular-community requires a full 40-character commit SHA -- never a branch
   # or a tag, both of which can be repointed after review. A commit cannot
