@@ -95,7 +95,12 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: conda-${{ matrix.target }}
-          path: output/**/*.conda
+          # One level only. rattler-build clones the git source into
+          # output/bld/<build>/work/, so `output/**` also matched any .conda
+          # committed to the repo -- which is how v0.2.1's release picked up a
+          # stale wgpu-mojo 0.2.0 and an unrelated rendercanvas-mojo 0.1.0.
+          # The built artifacts are always output/<subdir>/*.conda.
+          path: output/*/*.conda
           if-no-files-found: error
 
   release:

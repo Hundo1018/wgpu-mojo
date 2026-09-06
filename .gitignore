@@ -40,3 +40,8 @@
 /CLAUDE.md
 /BINDING_STATUS.md
 /MOJO_ROUGH_EDGES.md
+
+# Build artifacts. These were committed once and, because the recipe's git
+# source is cloned into the build directory, ended up attached to a GitHub
+# Release as if they were that release's packages.
+*.conda
