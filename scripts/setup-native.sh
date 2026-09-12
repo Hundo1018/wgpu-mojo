@@ -104,6 +104,33 @@ if [[ -z "${CONDA_PREFIX:-}" ]]; then
     echo "  pixi shell   (from your project directory)" >&2
     exit 1
 fi
+# A set CONDA_PREFIX is not the same thing as the *right* CONDA_PREFIX. Running
+# this script without activating the project environment first (plain
+# `bash setup-native.sh` instead of `pixi run bash setup-native.sh`) leaves
+# CONDA_PREFIX pointing at whatever base conda/micromamba env the shell was
+# born with, and the bridge silently lands there instead of in the project --
+# where nothing looks for it, and where it outlives the project that made it.
+# The failure surfaces much later as "Failed to load libwgpu_mojo_cb.so",
+# listing a $CONDA_PREFIX that is not the one the program actually runs under.
+#
+# Only decidable when the current directory owns a pixi environment; the
+# documented `curl ... | bash` flow and plain-conda users have no .pixi to
+# compare against, so they fall through untouched.
+if [[ -d "${PWD}/.pixi/envs" && "${WGPU_ALLOW_FOREIGN_PREFIX:-0}" != "1" ]]; then
+    if [[ "${CONDA_PREFIX}" != "${PWD}/.pixi/envs/"* ]]; then
+        echo "Error: CONDA_PREFIX points outside this project's pixi environment." >&2
+        echo "  CONDA_PREFIX = ${CONDA_PREFIX}" >&2
+        echo "  expected     = ${PWD}/.pixi/envs/<env>" >&2
+        echo "" >&2
+        echo "Installing there would put the callback bridge in an environment your" >&2
+        echo "project never loads. Activate the project environment first:" >&2
+        echo "  pixi run bash scripts/setup-native.sh" >&2
+        echo "" >&2
+        echo "Set WGPU_ALLOW_FOREIGN_PREFIX=1 if the target really is intended." >&2
+        exit 1
+    fi
+fi
+
 INSTALL_DIR="${CONDA_PREFIX}/lib"
 mkdir -p "${INSTALL_DIR}"
 

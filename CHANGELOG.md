@@ -11,7 +11,19 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- `scripts/setup-native.sh` now refuses to install into an environment that is
+  not the current project's. It already required `CONDA_PREFIX` to be *set*,
+  but a set prefix is not necessarily the right one: invoked as plain
+  `bash scripts/setup-native.sh` instead of `pixi run bash …`, it inherited
+  whatever base conda/micromamba prefix the shell carried and installed the
+  callback bridge there. Nothing in the project ever looks at that path, so the
+  mistake surfaced much later as `Failed to load libwgpu_mojo_cb.so` naming a
+  `$CONDA_PREFIX` the program does not actually run under. The check applies
+  only when the working directory owns a `.pixi/envs`, leaving the documented
+  `curl … | bash` and plain-conda flows untouched; set
+  `WGPU_ALLOW_FOREIGN_PREFIX=1` when the foreign target is deliberate.
 
 ## [0.2.1] — 2026-09-06
 
