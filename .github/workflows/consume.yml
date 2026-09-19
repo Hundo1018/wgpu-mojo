@@ -62,10 +62,12 @@ jobs:
         with:
           # pixi-build-mojo needs a `pixi-build-api-version` virtual package that
           # the action's default pixi does not provide at all, so the build
-          # backend fails to initialize. Pin one that does. This job deliberately
-          # holds the OLD end of the supported range (api 4 -> backend 0.1.x);
-          # consume-git covers the current end. See pixi.toml's backend note.
-          pixi-version: v0.70.2
+          # backend fails to initialize. Pin one that does. This job holds the
+          # OLD end of the supported range: v0.77.0 is the first pixi to provide
+          # api 7, hence the oldest that can reach backend 0.2.6+. Anything older
+          # selects a backend that still calls `mojo package -o *.mojopkg`, which
+          # Mojo 1.1.0 rejects outright. See pixi.toml's backend note.
+          pixi-version: v0.77.0
           run-install: false
 
       - name: Create isolated consumer project
@@ -119,11 +121,16 @@ jobs:
       matrix:
         # Both ends of the `pixi-build-mojo` range declared in pixi.toml. A pixi
         # release provides exactly one `pixi-build-api-version`, and each backend
-        # minor requires a different one: v0.70.2 -> api 4 -> backend 0.1.x,
-        # v0.73.0 -> api 6 -> backend 0.2.x. Testing only one end is how the
-        # "0.1.*" pin shipped while being uninstallable on every current pixi —
-        # CI was green the whole time because both jobs pinned v0.70.2.
-        pixi-version: [v0.70.2, v0.73.0]
+        # minor requires a different one: v0.77.0 -> api 7 -> backend 0.2.6+.
+        # Testing only one end is how the "0.1.*" pin shipped while being
+        # uninstallable on every current pixi — CI was green the whole time
+        # because both jobs pinned v0.70.2.
+        #
+        # `latest` is deliberate, not laziness: a pin CI also controls is not
+        # tested, it is assumed. Floating the top end is what turns "a new pixi
+        # provides an api no released backend supports yet" into a red build
+        # here instead of a broken `pixi add` for users.
+        pixi-version: [v0.77.0, latest]
     steps:
       - name: Setup Pixi (CLI only)
         uses: prefix-dev/setup-pixi@v0.10.2

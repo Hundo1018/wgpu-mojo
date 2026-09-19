@@ -17,15 +17,23 @@ repository = "https://github.com/Hundo1018/wgpu-mojo"
 
 
 [package.build]
-# Keep this range OPEN across backend minor lines. Each pixi-build-mojo release
-# requires a specific `pixi-build-api-version` virtual package, and each pixi
-# release provides exactly one: the 0.1.x line needs api-version >=4,<5 (pixi
-# ~0.70), the 0.2.x line needs >=6,<7 (pixi >=0.72). Pinning a single minor
-# ("0.1.*") therefore pins the *consumer's* pixi version too — with 0.1.* every
-# `pixi add wgpu-mojo` on pixi >=0.72 failed with "could not initialize the
-# build-backend ... no candidates were found". A range lets the solver pick the
-# backend matching whichever pixi the consumer actually has.
-backend = { name = "pixi-build-mojo",version = ">=0.1,<0.3" }
+# Keep this range OPEN across backend minor lines, but the FLOOR is load-bearing.
+# Each pixi-build-mojo release requires a specific `pixi-build-api-version`
+# virtual package and each pixi release provides exactly one:
+#   api 4 -> backend 0.1.x   (pixi ~0.70)
+#   api 6 -> backend 0.2.5.x (pixi >=0.72)
+#   api 7 -> backend 0.2.6+  (pixi >=0.77.0)
+# Pinning a single minor pins the *consumer's* pixi version too — "0.1.*" once
+# made every `pixi add wgpu-mojo` on pixi >=0.72 fail with "could not initialize
+# the build-backend ... no candidates were found". A range lets the solver pick
+# the backend matching whichever pixi the consumer actually has.
+#
+# The floor moved 0.1 -> 0.2.6 on 2026-09-19: backends below 0.2.6 invoke the
+# retired `mojo package -o <name>.mojopkg`, and Mojo 1.1.0 turned that into a
+# hard error ("output path must have a '.mojoc' extension"). Those backends
+# cannot build this package at all any more, so admitting them only trades a
+# clear solver message for a confusing mid-build script failure.
+backend = { name = "pixi-build-mojo",version = ">=0.2.6,<0.4" }
 
 
 [package.build.config.pkg]

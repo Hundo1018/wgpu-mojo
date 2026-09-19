@@ -201,15 +201,25 @@ declines the platforms this project does not test.
   **not** bundle native `.so` files, so consumers still run `setup-native.sh`. This is
   the path `consume.yml` exercises and the README documents.
 
-  Its version constraint must stay a **range** (`>=0.1,<0.3`), never a single minor.
+  Its version constraint must stay a **range** (`>=0.2.6,<0.4`), never a single minor.
   Every pixi release provides exactly one `pixi-build-api-version` virtual package
   and every backend minor demands a specific one — 0.1.x needs api `>=4,<5`
-  (pixi ~0.70), 0.2.x needs `>=6,<7` (pixi >=0.72). So pinning one backend minor
-  silently pins the *consumer's* pixi version: while `pixi.toml` said `0.1.*`,
-  `pixi add wgpu-mojo` failed on every current pixi with
+  (pixi ~0.70), 0.2.5.x needs `>=6,<7` (pixi >=0.72), 0.2.6+ needs `>=7,<8`
+  (pixi >=0.77.0). So pinning one backend minor silently pins the *consumer's*
+  pixi version: while `pixi.toml` said `0.1.*`, `pixi add wgpu-mojo` failed on
+  every current pixi with
   *"could not initialize the build-backend … no candidates were found"*, and CI
   stayed green only because both consume jobs pinned pixi v0.70.2. `consume-git`
   is now matrixed over both ends of the range to keep that honest.
+
+  The **floor** carries its own constraint, separate from the range rule. Mojo
+  1.1.0 (2026-09-19) made the retired `mojo package` verb reject its old output
+  extension outright — *"output path must have a '.mojoc' extension"* — and every
+  backend below 0.2.6 still invokes `mojo package -o <name>.mojopkg`. Those
+  backends therefore cannot build this package on any current Mojo, so the floor
+  rose to `0.2.6` and **pixi >=0.77.0 is now the minimum for building
+  wgpu-mojo from source**. Consumers on older pixi get a solver error naming the
+  backend instead of a script failure buried in build output.
 - **rattler-build** (`conda.recipe/recipe.yaml`) builds the **published `.conda`**:
   the compiled `wgpu` package plus both C bridges, with `wgpu-native` and `glfw`
   as declared dependencies. Installing it needs no post-install step. This is the
