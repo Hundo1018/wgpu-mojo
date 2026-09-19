@@ -99,9 +99,9 @@ struct Buffer(Movable, Boolable):
         )
         if status != WGPUMapAsyncStatus.Success:
             raise Error("Buffer map (read) failed, status=" + String(status))
-        return Pointer(self._lib[].buffer_get_const_mapped_range(
+        return self._lib[].buffer_get_const_mapped_range(
             self._handle, UInt(offset), byte_size
-        ))
+        )
 
     def map_write(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> Pointer[NoneType, MutUntrackedOrigin]:
         """Block until mapped for writing, return raw pointer."""
@@ -116,9 +116,9 @@ struct Buffer(Movable, Boolable):
         )
         if status != WGPUMapAsyncStatus.Success:
             raise Error("Buffer map (write) failed, status=" + String(status))
-        return Pointer(self._lib[].buffer_get_mapped_range(
+        return self._lib[].buffer_get_mapped_range(
             self._handle, UInt(offset), byte_size
-        ))
+        )
 
     def unmap(self):
         self._lib[].buffer_unmap(self._handle)

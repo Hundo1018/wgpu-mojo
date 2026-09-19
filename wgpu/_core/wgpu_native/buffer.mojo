@@ -53,7 +53,7 @@ struct MappedBuffer[T: ImplicitlyCopyable](Movable):
     ):
         self._lib    = lib
         self._handle = handle
-        self._data   = Pointer(raw).unsafe_bitcast[Self.T]()
+        self._data   = raw.unsafe_bitcast[Self.T]()
         self._count  = count
 
     def __init__(out self, *, deinit move: Self):
