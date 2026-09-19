@@ -17,7 +17,7 @@ GPU architecture::
 
 Ecosystem note:
     The physics here runs via WebGPU compute shaders (WGSL).  Mojo's
-    native GPU programming (std.gpu / DeviceContext) targets CUDA/ROCm and
+    native GPU programming (max.gpu / DeviceContext) targets CUDA/ROCm and
     is under active integration in wgpu/_core/mojo_gpu/.  Once that bridge
     ships, Mojo-native GPU kernels will write directly into wgpu storage
     buffers — unifying HPC compute and interactive GPU graphics in a single

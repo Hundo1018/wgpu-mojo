@@ -63,7 +63,14 @@ requirements:
     - wgpu-native ==${{ wgpu_native_version }}
     - glfw >=3.4,<4
   run:
-    - ${{ pin_compatible('mojo-compiler') }}
+    # Exact, matching `mojo_version` above -- NOT pin_compatible. The package
+    # ships a `.mojoc`, which the compiler refuses to load across versions
+    # ("Precompiled file ... version 1.0.0 is older than compiler version
+    # 1.1.0"). pin_compatible resolved to >=1.0.0,<2 and so let the package's
+    # own test environment install a newer compiler than built the artifact,
+    # which is how Mojo 1.1.0 turned this into a red build. An exact pin is
+    # also what the comment on `mojo_version` already promised.
+    - mojo-compiler ${{ mojo_version }}
     - wgpu-native ==${{ wgpu_native_version }}
     - glfw >=3.4,<4
 

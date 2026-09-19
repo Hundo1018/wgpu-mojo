@@ -2,10 +2,12 @@
 
 Why this lives outside the `wgpu` package
 -----------------------------------------
-Mojo's own GPU stack is split across two conda packages. Kernel-side indexing
-(`std.gpu`: `global_idx`, `thread_idx`, `lane_id`) ships in the base `mojo`
-package, but *host-side dispatch* — `DeviceContext`, `DeviceBuffer`,
-`enqueue_function` — ships only in `max`. wgpu-mojo depends on `mojo` and
+Mojo's own GPU stack lives in the `max` conda package. Host-side dispatch
+— `DeviceContext`, `DeviceBuffer`, `enqueue_function` — always has. Kernel-side
+indexing (`global_idx`, `thread_idx`, `lane_id`) used to ship in the base `mojo`
+package as `std.gpu`, but Mojo 1.1.0 moved it to `max.gpu`, so *both* halves now
+require `max`. That strengthens rather than changes the case below.
+wgpu-mojo depends on `mojo` and
 `glfw` and nothing else, and forcing `max` onto every downstream consumer to
 serve an optional bridge is a bad trade. So the bridge is a separate top-level
 package: `mojo precompile wgpu` does not compile it, the published package does
