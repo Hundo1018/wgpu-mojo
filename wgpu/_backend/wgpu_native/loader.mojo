@@ -1220,10 +1220,16 @@ struct WGPULib(Movable):
 
     def queue_on_submitted_work_done_sync(
         self,
-        instance: WGPUInstanceHandle,
+        device: WGPUDeviceHandle,
         queue: WGPUQueueHandle,
     ) raises -> UInt32:
-        """Block until submitted queue work is done. Returns status."""
+        """Block until submitted queue work is done. Returns status.
+
+        The wait is a blocking device poll. A non-blocking
+        wgpuInstanceProcessEvents (what this used to do) returns before
+        in-flight work finishes, the guard below is freed, and the callback
+        later writes into freed memory.
+        """
         with AllocGuard[_WorkDoneResult](1) as result:
             result[] = _WorkDoneResult(0)
             var cb_info = WGPUQueueWorkDoneCallbackInfo(
@@ -1234,7 +1240,7 @@ struct WGPULib(Movable):
                 null_opaque(),
             )
             _ = self._wgpu.call["wgpuQueueOnSubmittedWorkDone", WGPUFuture](queue, cb_info)
-            self._wgpu.call["wgpuInstanceProcessEvents"](instance)
+            _ = self._wgpu.call["wgpuDevicePoll", UInt32](device, WGPU_TRUE, null_opaque())
             return result[].status
 
     # ------------------------------------------------------------------
