@@ -11,6 +11,13 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-10-09
+
+Bug-fix release; same toolchain and ABI pin as 0.3.0 (stable Mojo 1.1.0,
+wgpu-native v29.0.1.1). Upgrade if you open window surfaces, use error scopes,
+or wait on queue work: all three fixes below are memory-safety bugs present in
+0.3.0.
+
 ### Fixed
 
 - **Window surfaces panicked with "Error: Unsupported Surface"** (0.3.0, and
@@ -46,6 +53,18 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   typedef (arity and per-parameter size); `tests/test_callback_abi.mojo` pins
   the by-value `CallbackInfo` + stored-callback shape on linux-64 and osx-arm64
   without a GPU.
+- The headless lavapipe GPU job in CI is now required (it had been
+  `continue-on-error`; 27 successes and 0 failures over its last 30 runs).
+
+### Removed
+
+- The never-implemented `MojoGPUContext` stubs under `wgpu/_backend/mojo_gpu/`
+  and `wgpu/_core/mojo_gpu/`; MAX interop lives in the opt-in `wgpu_max/`.
+- The `build-hello-linked` / `build-compute-linked` pixi tasks (unused; the
+  loader `dlopen`s, so link flags did nothing).
+- `AllocGuard.ptr()` (internal; see the surface fix above).
+- The `queue_on_submitted_work_done_sync` loader method now takes the device
+  instead of the instance (loader-level, no callers in the high-level API).
 
 ## [0.3.0] — 2026-10-08
 
@@ -243,6 +262,7 @@ Unchanged in 0.2.1:
 - **`linux-aarch64` is not published.** Nothing in the binding is x86-specific
   and conda-forge ships wgpu-native for it, but it is untested here.
 
-[Unreleased]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/Hundo1018/wgpu-mojo/releases/tag/v0.2.1
