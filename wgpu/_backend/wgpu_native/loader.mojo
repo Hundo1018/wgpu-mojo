@@ -8,6 +8,7 @@ every webgpu.h + wgpu.h function as a method call.
 from std.ffi import OwnedDLHandle
 from std.sys import CompilationTarget
 from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.native_ext import WGPUImageSubresourceRange
 from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._backend.wgpu_native.types import (
     WGPUAdapterHandle, WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
@@ -141,7 +142,7 @@ comptime _WGPU_LIB_PATH = _wgpu_dev_path()
 comptime _CB_LIB_PATH   = _cb_dev_path()
 
 # Expected wgpu-native ABI version (matches ffi/wgpu-native-meta/wgpu-native-git-tag)
-comptime _WGPU_NATIVE_VERSION = "v29.0.0.0"
+comptime _WGPU_NATIVE_VERSION = "v29.0.1.1"
 
 
 # ---------------------------------------------------------------------------
@@ -454,6 +455,17 @@ struct WGPULib(Movable):
             device, desc
         )
 
+    def device_create_shader_module_trusted(
+        self,
+        device: WGPUDeviceHandle,
+        desc: Pointer[WGPUShaderModuleDescriptor, MutUntrackedOrigin],
+        runtime_checks: UInt64,  # WGPUShaderRuntimeChecks
+    ) -> WGPUShaderModuleHandle:
+        """Create a shader module with chosen runtime checks (wgpu-native v29.0.1.1+)."""
+        return self._wgpu.call["wgpuDeviceCreateShaderModuleTrusted", WGPUShaderModuleHandle](
+            device, desc, runtime_checks
+        )
+
     def device_create_bind_group(
         self,
         device: WGPUDeviceHandle,
@@ -678,6 +690,15 @@ struct WGPULib(Movable):
         size: UInt64,
     ):
         self._wgpu.call["wgpuCommandEncoderClearBuffer"](encoder, buffer, offset, size)
+
+    def command_encoder_clear_texture(
+        self,
+        encoder: WGPUCommandEncoderHandle,
+        texture: WGPUTextureHandle,
+        subresource_range: Pointer[WGPUImageSubresourceRange, MutUntrackedOrigin],
+    ):
+        """Clear a texture range (wgpu-native v29.0.1.1+; needs the ClearTexture feature)."""
+        self._wgpu.call["wgpuCommandEncoderClearTexture"](encoder, texture, subresource_range)
 
     def command_encoder_resolve_query_set(
         self,
@@ -1480,33 +1501,42 @@ struct WGPULib(Movable):
         self,
         pass_enc: WGPURenderPassEncoderHandle,
         offset: UInt32,
-        size_bytes: UInt32,
         data: OpaquePointer[MutUntrackedOrigin],
+        size: UInt,
     ):
+        # webgpu.h order: (encoder, offset, data, size). v29.0.0.0's wgpu.h had
+        # (encoder, offset, sizeBytes, data); v29.0.1.1 moved the function into
+        # webgpu.h and swapped the last two.
         self._wgpu.call["wgpuRenderPassEncoderSetImmediates"](
-            pass_enc, offset, size_bytes, data
+            pass_enc, offset, data, size
         )
 
     def compute_pass_set_immediates(
         self,
         pass_enc: WGPUComputePassEncoderHandle,
         offset: UInt32,
-        size_bytes: UInt32,
         data: OpaquePointer[MutUntrackedOrigin],
+        size: UInt,
     ):
+        # webgpu.h order: (encoder, offset, data, size). v29.0.0.0's wgpu.h had
+        # (encoder, offset, sizeBytes, data); v29.0.1.1 moved the function into
+        # webgpu.h and swapped the last two.
         self._wgpu.call["wgpuComputePassEncoderSetImmediates"](
-            pass_enc, offset, size_bytes, data
+            pass_enc, offset, data, size
         )
 
     def render_bundle_encoder_set_immediates(
         self,
         encoder: WGPURenderBundleEncoderHandle,
         offset: UInt32,
-        size_bytes: UInt32,
         data: OpaquePointer[MutUntrackedOrigin],
+        size: UInt,
     ):
+        # webgpu.h order: (encoder, offset, data, size). v29.0.0.0's wgpu.h had
+        # (encoder, offset, sizeBytes, data); v29.0.1.1 moved the function into
+        # webgpu.h and swapped the last two.
         self._wgpu.call["wgpuRenderBundleEncoderSetImmediates"](
-            encoder, offset, size_bytes, data
+            encoder, offset, data, size
         )
 
     # ------------------------------------------------------------------

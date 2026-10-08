@@ -34,6 +34,10 @@ from wgpu.render_pass import RenderPassEncoder, FrameRenderPass
 from wgpu.buffer import Buffer
 from wgpu.query_set import QuerySet
 from wgpu.texture import Texture, TextureView
+from wgpu._backend.wgpu_native.native_ext import WGPUImageSubresourceRange
+from wgpu._backend.wgpu_native.types import (
+    WGPUTextureAspect, WGPU_MIP_LEVEL_COUNT_UNDEFINED, WGPU_ARRAY_LAYER_COUNT_UNDEFINED,
+)
 
 
 struct CommandBuffer(Movable, Boolable):
@@ -305,6 +309,28 @@ struct CommandEncoder(Movable, Deinitable where False):
     def clear_buffer(self, buffer: Buffer, offset: UInt64 = 0, size: UInt64 = 0):
         """Wrapper-first overload — accepts RAII Buffer directly."""
         self._lib[].command_encoder_clear_buffer(self._handle, buffer.handle().raw, offset, size)
+
+    def clear_texture(
+        self,
+        texture: Texture,
+        aspect: UInt32 = WGPUTextureAspect.All,
+        base_mip_level: UInt32 = 0,
+        mip_level_count: UInt32 = WGPU_MIP_LEVEL_COUNT_UNDEFINED,
+        base_array_layer: UInt32 = 0,
+        array_layer_count: UInt32 = WGPU_ARRAY_LAYER_COUNT_UNDEFINED,
+    ):
+        """Clear a texture subresource range to zero.
+
+        wgpu-native extension: the device must have been created with
+        `WGPUNativeFeature.ClearTexture`. The defaults clear every mip level
+        and array layer.
+        """
+        var range_p = raw_alloc[WGPUImageSubresourceRange](1)
+        range_p[] = WGPUImageSubresourceRange(
+            aspect, base_mip_level, mip_level_count, base_array_layer, array_layer_count
+        )
+        self._lib[].command_encoder_clear_texture(self._handle, texture.handle().raw, range_p)
+        range_p.unsafe_free()
 
     def resolve_query_set(
         self,

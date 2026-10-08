@@ -105,7 +105,7 @@ def test_instance_limits() raises:
     unimplemented!() stubs that abort the process, so they are not bound.
     """
     var limits = instance_limits()
-    # timedWaitAnyMaxCount is 0 on v29; assert only that the field reads back,
+    # timedWaitAnyMaxCount is 0 on v29 (still on v29.0.1.1); assert only that the field reads back,
     # so this does not break when upstream starts reporting a real value.
     assert_true(limits.timed_wait_any_max_count >= UInt(0))
 

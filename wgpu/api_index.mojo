@@ -21,7 +21,7 @@ def api_index() -> String:
     This is intentionally a static listing (not reflection-based) so it
     works identically from source and from a compiled package.
     """
-    return """wgpu-mojo public API index (wgpu-native ABI: v29.0.0.0)
+    return """wgpu-mojo public API index (wgpu-native ABI: v29.0.1.1)
 ================================================================
 
 ## Entry points

@@ -57,7 +57,7 @@ mojo-compiler = ">=1.0.0,<2"
 # stops a downstream `pixi add --git` from failing at runtime rather than at
 # install time. Exact pin on wgpu-native: the v29.0.0.0 -> v29.0.1.1 *patch*
 # renumbered the SType enum, so "compatible" is not a safe word here.
-wgpu-native = "==29.0.0.0"
+wgpu-native = "==29.0.1.1"
 glfw = ">=3.4,<4"
 
 [activation]
@@ -154,6 +154,7 @@ test-query-set      = { cmd = "mojo run -I . tests/test_query_set.mojo",     dep
 test-render-pipeline = { cmd = "mojo run -I . tests/test_render_pipeline.mojo", depends-on = ["build-callbacks"] }
 test-gpu-compile    = { cmd = "mojo run -I . tests/test_gpu_compile.mojo",   depends-on = ["build-callbacks"] }
 test-render-bundle  = { cmd = "mojo run -I . tests/test_render_bundle.mojo", depends-on = ["build-callbacks"] }
+test-native-v29    = { cmd = "mojo run -I . tests/test_native_v29_0_1.mojo", depends-on = ["build-callbacks"] }
 
 # Callback ABI test (non-GPU)
 test-callback-abi   = { cmd = "mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callback-probe"] }

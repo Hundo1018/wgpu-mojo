@@ -242,9 +242,9 @@ struct RenderBundleEncoder(Movable, Deinitable where False):
     def set_immediates(
         self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]
     ):
-        """Write push-constant data (requires PushConstants feature)."""
+        """Write immediate (push-constant) data. Requires the Immediates feature."""
         self._lib[].render_bundle_encoder_set_immediates(
-            self._handle, offset, size_bytes, data
+            self._handle, offset, data, UInt(size_bytes)
         )
 
     # ------------------------------------------------------------------

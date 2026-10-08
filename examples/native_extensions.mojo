@@ -23,7 +23,7 @@ def main() raises:
     var feature_list = [
         ("TextureBindingArray", WGPUNativeFeature.TextureBindingArray),
         ("SampledTextureAndStorageBufferArrayNonUniformIndexing", WGPUNativeFeature.SampledTextureAndStorageBufferArrayNonUniformIndexing),
-        ("PushConstants", WGPUNativeFeature.PushConstants),
+        ("Immediates", WGPUNativeFeature.Immediates),
         ("StorageResourceBindingArray", WGPUNativeFeature.StorageResourceBindingArray),
         ("BufferBindingArray", WGPUNativeFeature.BufferBindingArray),
         ("VertexAttribute64bit", WGPUNativeFeature.VertexAttribute64bit),

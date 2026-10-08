@@ -1,6 +1,6 @@
 # Binding Roadmap
 
-Coverage of wgpu-native **v29.0.0.0**, what is deliberately left out, and what
+Coverage of wgpu-native **v29.0.1.1**, what is deliberately left out, and what
 remains.
 
 Reproduce every number here with:
@@ -9,27 +9,28 @@ Reproduce every number here with:
 pixi run check-symbols
 ```
 
-Last measured: 2026-08-30, against `ffi/lib/libwgpu_native.so`.
+Last measured: 2026-10-08, against `ffi/lib/libwgpu_native.so` (v29.0.1.1).
 
 ## Where we are
 
 | Category | Bound | Target | Coverage |
 |---|---:|---:|---:|
-| **C functions, vs. the target surface** | **185** | **185** | **100%** |
-| C functions, vs. everything exported | 185 | 226 | 81.9% |
-| Structs, vs. the target surface | 101 | 101 | **100%** |
-| Structs, vs. every struct in the headers | 101 | 113 | 89.4% |
-| Struct layouts verified against `gcc sizeof()` | 88 | 88 | **100%** |
-| FFI call sites with arity + void-ness checked | 185 | 185 | **100%** |
-| ↳ also checked for argument sizes | 175 | 185 | 94.6% |
+| **C functions, vs. the target surface** | **187** | **187** | **100%** |
+| C functions, vs. everything exported | 187 | 228 | 82.0% |
+| Structs, vs. the target surface | 103 | 103 | **100%** |
+| Structs, vs. every struct in the headers | 103 | 114 | 90.4% |
+| Struct layouts verified against `gcc sizeof()` | 103 | 103 | **100%** |
+| wgpu.h enum constants (`WGPUNativeSType`/`Feature`) verified by value | 60 | 60 | **100%** |
+| FFI call sites with arity + void-ness checked | 187 | 187 | **100%** |
+| ↳ also checked for argument sizes | 176 | 187 | 94.1% |
 | C bridge result-struct pairs verified | 5 | 5 | **100%** |
 | Enum groups | 59 + 5 bitflags | 56 header enums | substantially complete |
 | Handle newtypes | 22 | all WebGPU objects | 100% |
 
-**226 is the wrong denominator.** The library exports 226 `wgpu*` symbols, but
+**228 is the wrong denominator.** The library exports 228 `wgpu*` symbols, but
 40 of them are `unimplemented!()` stubs that abort the process when called, and
 1 more is excluded for cause. The target surface — what upstream actually
-implements, minus what we deliberately skip — is 185, and all 185 are bound.
+implements, minus what we deliberately skip — is 187, and all 187 are bound.
 Everything this binding names both resolves *and* works.
 
 ## How coverage is measured
@@ -72,7 +73,7 @@ It also checks the **C callback bridge contract**: the five `_*Result` structs i
 verified it before.
 
 `scripts/check_signatures.py` (`pixi run check-signatures`) covers the call side.
-All 185 `self._wgpu.call` sites are checked against their header declaration for
+All 187 `self._wgpu.call` sites are checked against their header declaration for
 argument count and void-ness, and 175 of them additionally for **argument
 sizes** — each argument's byte width against its C parameter's. Sizes are
 measured on both sides (`gcc sizeof()`, and pointer arithmetic in Mojo) rather
@@ -204,7 +205,8 @@ Done, and it is what makes the 100% above meaningful. `check-symbols` reports
 
 ## What to watch at the next wgpu-native bump
 
-The stub set is specific to v29.0.0.0. A bump moves it: previously-stubbed
+The stub set is specific to a wgpu-native revision (the v29.0.0.0 → v29.0.1.1
+bump left all 40 stubs in place, same names). A bump can move it: previously-stubbed
 functions may become real (the removed wrappers can then come back), or new
 stubs may appear (the gate will fail and those bindings must go). Re-run
 `pixi run check-symbols` and diff before assuming anything carries over. See

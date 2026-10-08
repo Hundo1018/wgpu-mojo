@@ -1,4 +1,4 @@
-# Symbols this binding resolves that wgpu-native v29.0.0.0 exports as
+# Symbols this binding resolves that wgpu-native v29.0.1.1 exports as
 # unimplemented!() stubs. They link, so scripts/check-symbols.sh's resolution
 # check passes — but CALLING ONE PANICS IN RUST AND ABORTS THE PROCESS, with no
 # Mojo-level error to catch.

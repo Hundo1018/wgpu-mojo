@@ -11,7 +11,59 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+### Changed — breaking
+
+- **wgpu-native v29.0.0.0 → v29.0.1.1.** Per the rule above this is a breaking
+  change, and this one earns it:
+  - `WGPUNativeSType` is renumbered to match (`InstanceExtras` 0x00030006 →
+    0x00030004, and every later value). `PipelineLayoutExtras` is gone
+    upstream; immediates live on the core `WGPUPipelineLayoutDescriptor`.
+  - `WGPUNativeFeature.PushConstants` is now `Immediates` (same value), and
+    `UniformBufferAndStorageTextureArrayNonUniformIndexing` is now
+    `StorageTextureArrayNonUniformIndexing`. `SpirvShaderPassthrough` no longer
+    exists upstream. Every feature the header defines is now exposed.
+  - `wgpu*SetImmediates` moved into `webgpu.h` with its last two parameters
+    swapped to `(offset, data, size)`. The public `set_immediates(offset,
+    size_bytes, data)` keeps its signature; the loader-level
+    `*_set_immediates` methods now take `(offset, data, size)`.
+  - `WGPUNativeLimits` gains `max_binding_array_sampler_elements_per_shader_stage`
+    and `max_multiview_view_count`, and drops `max_push_constant_size`
+    (`max_immediate_size` is on the core `WGPULimits`).
+  - `WGPUInstanceBackend.DX11` is removed (wgpu dropped the backend) and
+    `SECONDARY` is GL only, as in the header.
+- `WGPUSurfaceConfigurationExtras.maximum_frame_latency` is renamed
+  `desired_maximum_frame_latency`, and `WGPUPrimitiveStateExtras.conservative_rasterization`
+  is renamed `conservative`, matching the header field names the layout gate
+  now checks.
+
+### Added
+
+- `CommandEncoder.clear_texture()` (`wgpuCommandEncoderClearTexture`, needs
+  `WGPUNativeFeature.ClearTexture`) and `Device.create_shader_module_wgsl_trusted()`
+  (`wgpuDeviceCreateShaderModuleTrusted`), both new in v29.0.1.1.
+- Immediates are usable end to end: `Adapter.request_device()` takes
+  `required_limits` and `Device.create_pipeline_layout()` takes
+  `immediate_size`. Before this, every pipeline layout was created with
+  `immediate_size = 0`, so `set_immediates` could not succeed at all.
+- `WGPUShaderRuntimeChecks`, `WGPUSamplerDescriptorExtras`,
+  `WGPUImageSubresourceRange`, `WGPUNativeDisplayHandle`, and the remaining
+  `WGPUInstanceFlag` values.
+- `tests/test_native_v29_0_1.mojo` (`pixi run test-native-v29`, run in CI): an
+  immediates round trip through a shader, which crashes if the argument order
+  regresses, plus `clear_texture` and the trusted shader path.
+
 ### Fixed
+
+- Five extension structs disagreed with `wgpu.h` and nothing noticed, because
+  `check-struct-layout` never looked at `native_ext.mojo`.
+  `WGPUInstanceExtras` was 88 bytes against the header's 112 (missing
+  `displayHandle`), and `WGPURegistryReport` carried two fields the header does
+  not have, which made `WGPUHubReport` and `WGPUGlobalReport` the wrong size
+  too. `WGPUPipelineLayoutExtras` described a push-constant-range layout that no
+  v29 header has. The gate now scans `native_ext.mojo` and also compares every
+  `WGPUNativeSType`/`WGPUNativeFeature` constant against the header by value.
+- `wgpu._native` was a hand-maintained copy of `native_ext.mojo` rather than a
+  re-export of it, so every fix had to be made twice. It is now a shim.
 
 - `scripts/setup-native.sh` now refuses to install into an environment that is
   not the current project's. It already required `CONDA_PREFIX` to be *set*,

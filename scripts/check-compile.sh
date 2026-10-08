@@ -30,6 +30,7 @@ FILES=(
   tests/test_preflight.mojo
   tests/test_error_scope.mojo
   tests/test_render_bundle.mojo
+  tests/test_native_v29_0_1.mojo
   tests/test_add_ref.mojo
   tests/test_spirv.mojo
   tests/test_log_bridge.mojo

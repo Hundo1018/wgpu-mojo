@@ -8,14 +8,17 @@ from std.testing import assert_equal, assert_true, assert_false
 from wgpu._native import (
     WGPUNativeSType, WGPUNativeFeature, WGPULogLevel,
     WGPUInstanceBackend, WGPUInstanceFlag,
-    WGPUInstanceExtras,
+    WGPUInstanceExtras, WGPUNativeDisplayHandle, NativeDisplayHandleData,
 )
 from wgpu._ffi.structs import WGPUChainedStruct, WGPUStringView
 
 
 def test_native_stype_values() raises:
     assert_equal(WGPUNativeSType.DeviceExtras, UInt32(0x00030001))
-    assert_equal(WGPUNativeSType.InstanceExtras, UInt32(0x00030006))
+    # v29.0.1.1 renumbered this block (PipelineLayoutExtras was removed).
+    # Every constant is also checked against wgpu.h by check-struct-layout.
+    assert_equal(WGPUNativeSType.InstanceExtras, UInt32(0x00030004))
+    assert_equal(WGPUNativeSType.SamplerDescriptorExtras, UInt32(0x0003000B))
 
 
 def test_log_level_values() raises:
@@ -38,7 +41,7 @@ def test_instance_backend_bitflags() raises:
     assert_equal(WGPUInstanceBackend.GL.value, UInt64(1 << 1))
     assert_equal(WGPUInstanceBackend.METAL.value, UInt64(1 << 2))
     assert_equal(WGPUInstanceBackend.DX12.value, UInt64(1 << 3))
-    assert_equal(WGPUInstanceBackend.DX11.value, UInt64(1 << 4))
+    assert_equal(WGPUInstanceBackend.SECONDARY.value, UInt64(1 << 1))
 
 
 def test_instance_flag_bitflags() raises:
@@ -55,7 +58,7 @@ def test_instance_flag_bitflags() raises:
 
 
 def test_native_feature_values() raises:
-    assert_equal(WGPUNativeFeature.PushConstants, UInt32(0x00030001))
+    assert_equal(WGPUNativeFeature.Immediates, UInt32(0x00030001))
     assert_equal(WGPUNativeFeature.TextureAdapterSpecificFormatFeatures, UInt32(0x00030002))
 
 
@@ -69,6 +72,7 @@ def test_instance_extras_construction() raises:
         UInt32(0), UInt32(0), UInt32(0),
         sv, UInt32(0), UInt32(0),
         null_opaque(), null_opaque(),
+        WGPUNativeDisplayHandle(UInt32(0), NativeDisplayHandleData(null_opaque(), Int32(0))),
     )
     assert_equal(extras.chain.stype, WGPUNativeSType.InstanceExtras)
     assert_equal(extras.backends, WGPUInstanceBackend.VULKAN.value)
