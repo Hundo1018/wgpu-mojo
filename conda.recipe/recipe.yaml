@@ -27,7 +27,7 @@ context:
   # Pinned exactly, per the modular-community packaging guide: a package is
   # rebuilt (build.number += 1) against each new compiler release rather than
   # claiming forward compatibility it has not been tested for.
-  mojo_version: "=1.0.0"
+  mojo_version: "=1.1.0"
 
 package:
   name: wgpu-mojo

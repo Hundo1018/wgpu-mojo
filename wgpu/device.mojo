@@ -2,6 +2,7 @@
 High-level Device + Queue RAII wrapper.
 """
 
+from std.sys import size_of
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
@@ -49,7 +50,7 @@ from wgpu._backend.wgpu_native.loader import (
     _PopErrorResult,
 )
 from wgpu._ffi.types import WGPUSType
-from wgpu.buffer import Buffer, _sizeof
+from wgpu.buffer import Buffer
 from wgpu.instance_owner import InstanceOwner
 from wgpu.texture import Texture, TextureView
 from wgpu.sampler import Sampler
@@ -632,7 +633,7 @@ struct Device(Movable, Boolable):
         Borrowing both `buffer` and `data` keeps them alive for the FFI call,
         eliminating manual `_ = data^` / `_ = buffer^` pins.
         """
-        var byte_count = UInt(len(data)) * UInt(_sizeof[T]())
+        var byte_count = UInt(len(data)) * UInt(size_of[T]())
         var ptr = rebind[Pointer[T, MutUntrackedOrigin]](data.unsafe_ptr())
         self._lib[].queue_write_buffer(
             self._queue,

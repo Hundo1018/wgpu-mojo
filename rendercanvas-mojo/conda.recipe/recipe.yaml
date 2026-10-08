@@ -1,5 +1,8 @@
 context:
   version: "0.1.0"
+  # Exact, as in ../../conda.recipe/recipe.yaml: the package ships a `.mojoc`,
+  # which a different compiler version refuses to load.
+  mojo_version: "=1.1.0"
 
 package:
   name: rendercanvas-mojo
@@ -18,7 +21,7 @@ build:
     - if: linux
       then:
         - mkdir -p rendercanvas-mojo/ffi/lib
-        - gcc -shared -fPIC -o rendercanvas-mojo/ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
+        - gcc -shared -fPIC -o rendercanvas-mojo/ffi/lib/libglfw_input_cb.so rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib
 
     # -----------------------------
     # GLFW input callback bridge (macOS)
@@ -26,7 +29,7 @@ build:
     - if: osx
       then:
         - mkdir -p rendercanvas-mojo/ffi/lib
-        - gcc -shared -fPIC -o rendercanvas-mojo/ffi/lib/libglfw_input_cb.dylib rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib || true
+        - gcc -shared -fPIC -o rendercanvas-mojo/ffi/lib/libglfw_input_cb.dylib rendercanvas-mojo/ffi/glfw_input_callbacks.c -L$CONDA_PREFIX/lib -lglfw -Wl,-rpath,'$ORIGIN' -Wl,-rpath,$CONDA_PREFIX/lib
 
     # -----------------------------
     # GLFW input callback bridge (windows)
@@ -39,17 +42,19 @@ build:
     # -----------------------------
     # package mojo
     # -----------------------------
-    - mojo package rendercanvas -o rendercanvas.mojopkg -I rendercanvas-mojo -I .
+    # `mojo package` is deprecated, and since Mojo 1.1.0 a `.mojopkg` output is
+    # a hard error. `precompile` takes the package directory as a path.
+    - mojo precompile rendercanvas-mojo/rendercanvas -o rendercanvas.mojoc -I .
 
     - if: unix
       then:
         - mkdir -p $PREFIX/lib/mojo
-        - cp rendercanvas.mojopkg $PREFIX/lib/mojo/
+        - cp rendercanvas.mojoc $PREFIX/lib/mojo/
 
     - if: win
       then:
         - mkdir -p %PREFIX%\Library\lib\mojo
-        - copy rendercanvas.mojopkg %PREFIX%\Library\lib\mojo\
+        - copy rendercanvas.mojoc %PREFIX%\Library\lib\mojo\
 
     # -----------------------------
     # install libs (linux)
@@ -57,7 +62,7 @@ build:
     - if: linux
       then:
         - mkdir -p $PREFIX/lib
-        - cp rendercanvas-mojo/ffi/lib/libglfw_input_cb.so $PREFIX/lib/ 2>/dev/null || true
+        - cp rendercanvas-mojo/ffi/lib/libglfw_input_cb.so $PREFIX/lib/
 
     # -----------------------------
     # install libs (macOS)
@@ -65,7 +70,7 @@ build:
     - if: osx
       then:
         - mkdir -p $PREFIX/lib
-        - cp rendercanvas-mojo/ffi/lib/libglfw_input_cb.dylib $PREFIX/lib/ 2>/dev/null || true
+        - cp rendercanvas-mojo/ffi/lib/libglfw_input_cb.dylib $PREFIX/lib/
 
     # -----------------------------
     # install libs (windows)
@@ -77,14 +82,14 @@ build:
 
 requirements:
   build:
-    - mojo-compiler >=1.0.0,<2
+    - mojo-compiler ${{ mojo_version }}
     - gcc  # [unix]
     - libgcc  # [linux]
     - curl  # [unix]
     - glfw  # [unix]
 
   host:
-    - mojo-compiler >=1.0.0,<2
+    - mojo-compiler ${{ mojo_version }}
     - libgcc  # [linux]
     - glfw  # [unix]
     # wgpu-mojo is required at compile time (canvas.mojo imports wgpu types).
@@ -92,7 +97,7 @@ requirements:
     # - wgpu-mojo >=0.2
 
   run:
-    - ${{ pin_compatible('mojo-compiler', lower_bound='x.x', upper_bound='x') }}
+    - mojo-compiler ${{ mojo_version }}
     - libgcc  # [linux]
     - glfw  # [unix]
     # - wgpu-mojo >=0.2

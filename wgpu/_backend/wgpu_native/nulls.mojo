@@ -1,4 +1,4 @@
-"""wgpu._backend.wgpu_native.nulls — shared null pointer helpers for current Mojo nightly."""
+"""wgpu._backend.wgpu_native.nulls — shared null pointer helpers (Mojo pointers have no default constructor)."""
 
 
 def null_opaque() -> OpaquePointer[MutUntrackedOrigin]:

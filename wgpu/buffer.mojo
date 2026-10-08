@@ -2,6 +2,7 @@
 Buffer RAII wrapper with map/read/write helpers.
 """
 
+from std.sys import size_of
 from std.memory import ArcPointer
 from wgpu._ffi.lib import WGPULib
 from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
@@ -13,10 +14,6 @@ from wgpu._ffi.types import (
 from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import BufferHandle
 
-
-def _sizeof[T: AnyType]() -> Int:
-    var p = null_ptr[T]()
-    return Int(p.unsafe_offset(1)) - Int(p)
 
 
 struct Buffer(Movable, Boolable):
@@ -129,7 +126,7 @@ struct Buffer(Movable, Boolable):
 
     def read_data[T: ImplicitlyCopyable](self, offset: UInt64 = 0) raises -> List[T]:
         """Map, copy data into a List[T], then unmap."""
-        var count = Int(self._size - offset) // _sizeof[T]()
+        var count = Int(self._size - offset) // size_of[T]()
         var raw = self.map_read(offset)
         var out = List[T](capacity=count)
         var src = raw.unsafe_bitcast[T]()
@@ -140,7 +137,7 @@ struct Buffer(Movable, Boolable):
 
     def write_data[T: ImplicitlyCopyable](self, data: List[T], offset: UInt64 = 0) raises:
         """Map for write, copy List[T] data, then unmap."""
-        var byte_size = UInt64(len(data) * _sizeof[T]())
+        var byte_size = UInt64(len(data) * size_of[T]())
         var raw = self.map_write(offset, byte_size)
         var dst = raw.unsafe_bitcast[T]()
         for i in range(len(data)):

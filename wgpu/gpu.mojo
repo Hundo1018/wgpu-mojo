@@ -18,6 +18,7 @@ Usage (wgpu backend):
     var result = gpu.read[Float32](buf_c)
 """
 
+from std.sys import size_of
 from std.memory import ArcPointer
 from wgpu.instance import Instance
 from wgpu.adapter import Adapter
@@ -34,11 +35,6 @@ from wgpu._ffi.structs import WGPUBindGroupEntry, WGPUBindGroupLayoutEntry
 from wgpu._ffi.nulls import null_opaque, null_ptr
 from wgpu._ffi.handles import BufferHandle, SamplerHandle, TextureViewHandle
 
-
-def _elem_size[T: AnyType]() -> Int:
-    """Compute sizeof(T) without requiring a real instance."""
-    var p = null_ptr[T]()
-    return Int(p.unsafe_offset(1)) - Int(p)
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +112,7 @@ struct GPU(Movable):
     ) raises -> Buffer:
         """Allocate a GPU buffer sized for `count` elements of type T."""
         return self._device.create_buffer(
-            UInt64(count * _elem_size[T]()), usage, False, label
+            UInt64(count * size_of[T]()), usage, False, label
         )
 
     # ------------------------------------------------------------------

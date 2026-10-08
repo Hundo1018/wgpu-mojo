@@ -64,6 +64,19 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   `WGPUNativeSType`/`WGPUNativeFeature` constant against the header by value.
 - `wgpu._native` was a hand-maintained copy of `native_ext.mojo` rather than a
   re-export of it, so every fix had to be made twice. It is now a shim.
+- The library located `$CONDA_PREFIX` by calling `getenv` through
+  `OwnedDLHandle("libc.so.6")`, a workaround for a missing `std.env` on old
+  nightlies. `libc.so.6` does not exist on macOS, so there the lookup failed
+  and the loader silently skipped the conda environment. It now uses
+  `std.os.getenv`.
+- Three copies of a null-pointer-arithmetic `sizeof` helper are replaced by
+  `std.sys.size_of`.
+- The conda recipe builds against Mojo 1.1.0 (it still pinned 1.0.0, so a
+  package built from it would not load under the current compiler).
+- `rendercanvas-mojo`: the recipe used `mojo package … .mojopkg`, a hard error
+  since Mojo 1.1.0, and `|| true` on the bridge build and install steps hid
+  any failure; it now uses `mojo precompile` and fails loudly. Its
+  `pixi-build-mojo` floor is raised to 0.2.6 to match the root.
 
 - `scripts/setup-native.sh` now refuses to install into an environment that is
   not the current project's. It already required `CONDA_PREFIX` to be *set*,

@@ -8,6 +8,7 @@ Key improvement over the old wgpu/buffer.mojo:
 - No Pointer in any public method signature
 """
 
+from std.sys import size_of
 from std.memory import ArcPointer
 from wgpu._backend.wgpu_native.loader import WGPULib
 from wgpu._backend.wgpu_native.nulls import null_ptr
@@ -19,10 +20,6 @@ from wgpu._backend.wgpu_native.types import (
 from wgpu._backend.wgpu_native.structs import WGPUStringView, str_to_sv
 from wgpu._backend.wgpu_native.handles import BufferHandle
 
-
-def _sizeof[T: AnyType]() -> Int:
-    var p = null_ptr[T]()
-    return Int(p.unsafe_offset(1)) - Int(p)
 
 
 struct MappedBuffer[T: ImplicitlyCopyable](Movable):
@@ -159,7 +156,7 @@ struct Buffer(Movable, Boolable):
         var raw = self._lib[].buffer_get_const_mapped_range(
             self._handle, UInt(offset), byte_size
         )
-        return MappedBuffer[T](self._lib, self._handle, raw, Int(byte_size) // _sizeof[T]())
+        return MappedBuffer[T](self._lib, self._handle, raw, Int(byte_size) // size_of[T]())
 
     def map_write[T: ImplicitlyCopyable](
         self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE
@@ -179,7 +176,7 @@ struct Buffer(Movable, Boolable):
         var raw = self._lib[].buffer_get_mapped_range(
             self._handle, UInt(offset), byte_size
         )
-        return MappedBuffer[T](self._lib, self._handle, raw, Int(byte_size) // _sizeof[T]())
+        return MappedBuffer[T](self._lib, self._handle, raw, Int(byte_size) // size_of[T]())
 
     # ------------------------------------------------------------------
     # Convenience helpers (higher level, still no raw pointers)
@@ -194,7 +191,7 @@ struct Buffer(Movable, Boolable):
         self, data: List[T], offset: UInt64 = 0
     ) raises:
         """Map for writing, copy List[T] data into GPU buffer (auto-unmaps)."""
-        var byte_size = UInt64(len(data) * _sizeof[T]())
+        var byte_size = UInt64(len(data) * size_of[T]())
         var mapped = self.map_write[T](offset, byte_size)
         for i in range(len(data)):
             mapped._data.unsafe_offset(i).unsafe_write(data[i])

@@ -100,7 +100,7 @@ struct Session(Movable):
 
     # ------------------------------------------------------------------
     # pin() overloads — one per resource type
-    # (var = owned/consuming parameter in Mojo nightly)
+    # (`var` = owned/consuming parameter)
     # ------------------------------------------------------------------
 
     def pin(mut self, var resource: Buffer):
