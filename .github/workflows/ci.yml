@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
-      - develop
   pull_request:
     branches:
-      - develop
       - main
   # Stable-tracking auto-commits its pixi.lock bump with the default GITHUB_TOKEN, and
   # GitHub's anti-recursion rule means that push does NOT trigger this workflow.
