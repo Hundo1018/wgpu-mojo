@@ -157,12 +157,12 @@ struct WGPUFuture(TrivialRegisterPassable):
 # ---------------------------------------------------------------------------
 
 @fieldwise_init
-struct WGPUBufferMapCallbackInfo:
-    var next_in_chain: Optional[OpaquePointer[MutUntrackedOrigin]]
+struct WGPUBufferMapCallbackInfo(TrivialRegisterPassable):
+    var next_in_chain: OpaquePointer[MutUntrackedOrigin]
     var mode: UInt32
     var callback: OpaquePointer[MutUntrackedOrigin]   # WGPUBufferMapCallback fn ptr
     var userdata1: OpaquePointer[MutUntrackedOrigin]
-    var userdata2: Optional[OpaquePointer[MutUntrackedOrigin]]
+    var userdata2: OpaquePointer[MutUntrackedOrigin]
 
 
 @fieldwise_init

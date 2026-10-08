@@ -10,7 +10,7 @@
 #
 # Produces, all into $PREFIX:
 #   lib/mojo/wgpu.mojoc     the compiled Mojo package
-#   lib/libwgpu_mojo_cb.*   the C callback bridge (wgpu-native async APIs)
+#   lib/libwgpu_mojo_cb.*   the C log bridge (wgpuSetLogCallback ring buffer)
 #   lib/libglfw_input_cb.*  the GLFW keyboard/mouse bridge (RenderCanvas)
 set -euo pipefail
 
@@ -67,7 +67,7 @@ fi
 echo "==> wgpu-native ABI guard: pinned header matches the installed package"
 
 # ---------------------------------------------------------------------------
-# C callback bridge — wgpu-native's async APIs need real C function pointers
+# C log bridge — process-wide ring buffer for wgpuSetLogCallback (Mojo has no globals)
 # ---------------------------------------------------------------------------
 # ffi/wgpu_callbacks.c includes "include/webgpu/webgpu.h" relative to its own
 # directory, so it compiles against the vendored headers checked above. Only

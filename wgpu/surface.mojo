@@ -207,18 +207,21 @@ def create_surface_wayland(
     wayland_surface: OpaquePointer[MutUntrackedOrigin],
 ) raises -> Surface:
     """Create a surface from a Wayland display and wl_surface pointer."""
-    var src_guard = AllocGuard[WGPUSurfaceSourceWaylandSurface](1)
-    src_guard.ptr()[] = WGPUSurfaceSourceWaylandSurface(
-        WGPUChainedStruct(null_opaque(), WGPUSType.SurfaceSourceWaylandSurface),
-        display,
-        wayland_surface,
-    )
-    var desc_guard = AllocGuard[WGPUSurfaceDescriptor](1)
-    desc_guard.ptr()[] = WGPUSurfaceDescriptor(
-        src_guard.ptr().unsafe_bitcast[NoneType](),
-        WGPUStringView.null_view(),
-    )
-    var h = lib[].instance_create_surface(inst, desc_guard.ptr())
+    # `with` scopes, not bare guards: a guard whose last use is `.ptr()` is
+    # destroyed by ASAP destruction right there — before wgpu-native reads the
+    # chain — and the freed SType made it panic with "Unsupported Surface".
+    var h: WGPUSurfaceHandle
+    with AllocGuard[WGPUSurfaceSourceWaylandSurface](1) as src:
+        src[] = WGPUSurfaceSourceWaylandSurface(
+            WGPUChainedStruct(null_opaque(), WGPUSType.SurfaceSourceWaylandSurface),
+            display,
+            wayland_surface,
+        )
+        with AllocGuard[WGPUSurfaceDescriptor](1) as desc:
+            desc[] = WGPUSurfaceDescriptor(
+                src.unsafe_bitcast[NoneType](), WGPUStringView.null_view()
+            )
+            h = lib[].instance_create_surface(inst, desc)
     if h == null_opaque():
         raise Error("wgpuInstanceCreateSurface returned null (Wayland)")
     return Surface(lib, h)
@@ -230,18 +233,19 @@ def create_surface_xlib(
     window: UInt64,
 ) raises -> Surface:
     """Create a surface from an X11 Display* and Window id."""
-    var src_guard = AllocGuard[WGPUSurfaceSourceXlibWindow](1)
-    src_guard.ptr()[] = WGPUSurfaceSourceXlibWindow(
-        WGPUChainedStruct(null_opaque(), WGPUSType.SurfaceSourceXlibWindow),
-        display,
-        window,
-    )
-    var desc_guard = AllocGuard[WGPUSurfaceDescriptor](1)
-    desc_guard.ptr()[] = WGPUSurfaceDescriptor(
-        src_guard.ptr().unsafe_bitcast[NoneType](),
-        WGPUStringView.null_view(),
-    )
-    var h = lib[].instance_create_surface(inst, desc_guard.ptr())
+    # `with` scopes for the same reason as create_surface_wayland.
+    var h: WGPUSurfaceHandle
+    with AllocGuard[WGPUSurfaceSourceXlibWindow](1) as src:
+        src[] = WGPUSurfaceSourceXlibWindow(
+            WGPUChainedStruct(null_opaque(), WGPUSType.SurfaceSourceXlibWindow),
+            display,
+            window,
+        )
+        with AllocGuard[WGPUSurfaceDescriptor](1) as desc:
+            desc[] = WGPUSurfaceDescriptor(
+                src.unsafe_bitcast[NoneType](), WGPUStringView.null_view()
+            )
+            h = lib[].instance_create_surface(inst, desc)
     if h == null_opaque():
         raise Error("wgpuInstanceCreateSurface returned null (X11)")
     return Surface(lib, h)

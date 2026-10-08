@@ -115,3 +115,32 @@ uint64_t mojo_probe_cbinfo40_checksum(CallbackInfo40 info) {
     out ^= (uint64_t)(uintptr_t)info.userdata2;
     return out;
 }
+
+// ---------------------------------------------------------------
+// The shape wgpu-native uses since the callbacks moved to Mojo:
+// a 40-byte *CallbackInfo passed BY VALUE whose `callback` field is a
+// Mojo abi("C") function, called back with a 16-byte WGPUStringView by
+// value. Mirrors wgpuInstanceRequestAdapter / wgpuDevicePopErrorScope, so
+// tests/test_callback_abi.mojo pins the exact ABI on every CI platform
+// without needing a GPU.
+// ---------------------------------------------------------------
+
+void mojo_probe_dispatch_adapter_like(CallbackInfo40 info) {
+    StringView16 msg = { "hello", 5 };
+    ((mojo_adapter_like_cb)info.callback)(
+        42, (void*)(uintptr_t)0xBEEF, msg, info.userdata1, info.userdata2);
+}
+
+typedef void (*mojo_pop_error_like_cb)(uint32_t status, uint32_t type,
+                                        StringView16 message,
+                                        void* ud1, void* ud2);
+
+// Calls back with a message whose storage is clobbered as soon as the
+// callback returns, as wgpu-native's is freed: the callee must copy it.
+void mojo_probe_dispatch_pop_error_like(CallbackInfo40 info) {
+    char text[] = "validation: héllo";
+    StringView16 msg = { text, sizeof(text) - 1 };
+    ((mojo_pop_error_like_cb)info.callback)(1, 2, msg, info.userdata1, info.userdata2);
+    volatile char* t = text;   /* volatile: the clobber must not be elided */
+    for (unsigned i = 0; i < sizeof(text); i++) t[i] = 'X';
+}

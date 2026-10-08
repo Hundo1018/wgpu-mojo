@@ -11,6 +11,36 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+### Fixed
+
+- **Window surfaces panicked with "Error: Unsupported Surface"** (0.3.0, and
+  earlier wherever the allocator reused the freed block). `create_surface_wayland`
+  and `create_surface_xlib` built the surface-source chain in `AllocGuard`s whose
+  last use was reading their pointer, so ASAP destruction freed both before
+  `wgpuInstanceCreateSurface` read them. They are `with`-scoped now, and
+  `AllocGuard.ptr()` is gone so the pattern cannot be written again.
+- **`Device.pop_error_scope()` read its message after wgpu-native freed it.**
+  The callback stored the `WGPUStringView` it was given and the string was
+  decoded after the callback returned; it is copied inside the callback now. It
+  was also decoded byte by byte with `chr()`, which mangled any non-ASCII text
+  (WGSL identifiers can be Unicode); it is decoded as UTF-8.
+
+### Changed
+
+- **wgpu-native's async callbacks are Mojo.** Mojo 1.1.0 can pass a >16-byte
+  struct by value through `OwnedDLHandle.call` (modular#3144 no longer
+  reproduces) and an `abi("C")` function's address can be stored in a C struct,
+  so the adapter, device, buffer-map, queue-done and error-scope callbacks moved
+  from `ffi/wgpu_callbacks.c` into `wgpu/_backend/wgpu_native/callbacks.mojo`,
+  and the six pointer-taking C wrappers are gone: the loader passes each
+  `*CallbackInfo` (and `WGPUSurfaceCapabilities`) straight to wgpu-native.
+  `libwgpu_mojo_cb` now holds only the log ring buffer, which stays C because
+  it is process-wide state and Mojo has no module-level variables.
+- `check-signatures` now also compares each Mojo callback against its header
+  typedef (arity and per-parameter size); `tests/test_callback_abi.mojo` pins
+  the by-value `CallbackInfo` + stored-callback shape on linux-64 and osx-arm64
+  without a GPU.
+
 ## [0.3.0] — 2026-10-08
 
 Built for **stable Mojo 1.1.0** and **wgpu-native v29.0.1.1**. Breaking, because

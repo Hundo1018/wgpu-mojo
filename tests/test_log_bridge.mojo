@@ -1,8 +1,9 @@
 """
 Wgpu-native log routed into Mojo.
 
-wgpuSetLogCallback needs a stored C function pointer, which Mojo cannot produce,
-and wgpu-native calls it from its own threads. ffi/wgpu_callbacks.c owns a
+The log callback is process-wide and wgpu-native calls it from its own threads,
+so its queue has to be global state, which Mojo 1.1.0 cannot declare.
+ffi/wgpu_callbacks.c owns a
 mutex-guarded ring buffer; these tests check the Mojo side drains it correctly.
 
 Requires GPU hardware (adapter enumeration is what produces log traffic).

@@ -22,7 +22,13 @@ header declaration:
                      e.g. a UInt32 passed where the C API takes uint64_t — a
                      live risk with the bitflag parameters.
 
-The remaining 10 call sites transform or reorder their arguments (adding a
+Also checks the other direction: the `abi("C")` callbacks in callbacks.mojo
+that wgpu-native calls. Each is tagged `# C typedef: WGPUXCallback`, and must
+match that function-pointer typedef in arity and per-parameter size. Until
+Mojo 1.1.0 these were C functions and the compiler checked them; now nothing
+else does, and a wrong parameter here is read as garbage on wgpu's side.
+
+The remaining call sites transform or reorder their arguments (adding a
 null, converting a Bool, or matching C's parameter order rather than the
 method's), so their argument types cannot be read off the signature. They are
 still arity- and void-checked, and are reported as unchecked-for-size.
@@ -31,6 +37,7 @@ import os, re, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOADER = os.path.join(ROOT, "wgpu/_backend/wgpu_native/loader.mojo")
+CALLBACKS = os.path.join(ROOT, "wgpu/_backend/wgpu_native/callbacks.mojo")
 HEADERS = [os.path.join(ROOT, "ffi/include/webgpu/webgpu.h"),
            os.path.join(ROOT, "ffi/include/webgpu/wgpu.h")]
 
@@ -95,6 +102,34 @@ def header_decls():
         # a later declaration of the same symbol should agree; keep the first
         decls.setdefault(name, (ret, types))
     return decls
+
+
+def header_callback_typedefs():
+    """typedef name -> (return_type, [param_types]) for function-pointer typedefs."""
+    text = "".join(read(h) for h in HEADERS)
+    text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    out = {}
+    for m in re.finditer(r"typedef\s+(\w+)\s*\(\s*\*\s*(WGPU\w+)\s*\)\s*\(", text):
+        inner, _ = balanced(text, m.end() - 1)
+        types = []
+        for prm in split_top_level(inner):
+            prm = prm.replace("WGPU_NULLABLE", "").strip()
+            types.append(re.sub(r"\b[A-Za-z_]\w*\s*$", "", prm).strip() or prm)
+        out[m.group(2)] = (m.group(1), types)
+    return out
+
+
+def mojo_callbacks():
+    """(typedef, def_name, [param_types], returns_none, line) per tagged callback."""
+    src = read(CALLBACKS)
+    out = []
+    for m in re.finditer(r"^# C typedef: (\w+)\ndef (\w+)\(", src, re.M):
+        inner, after = balanced(src, m.end() - 1)
+        tail = src[after:src.index(":", after)]
+        types = [p.split(":", 1)[1].strip() for p in split_top_level(inner)]
+        out.append((m.group(1), m.group(2), types, "->" not in tail,
+                    src.count("\n", 0, m.start()) + 2))
+    return out
 
 
 def loader_calls():
@@ -204,6 +239,14 @@ def main():
     typed = [c for c in calls if c[4] is not None and c[0] in decls]
     c_types = {t for sym, _, _, _, _ in typed for t in decls[sym][1]}
     m_types = {t for _, _, _, _, mt in typed for t in mt}
+    cb_typedefs, callbacks = header_callback_typedefs(), mojo_callbacks()
+    if not callbacks:
+        print("check-signatures: found no tagged callbacks in callbacks.mojo — parser broken?",
+              file=sys.stderr)
+        return 1
+    for td, _, mt, _, _ in callbacks:
+        m_types |= set(mt)
+        c_types |= set(cb_typedefs.get(td, ("", []))[1])
     c_sizes, err = measure_c_sizes(c_types)
     if c_sizes is None:
         print("check-signatures: C size probe failed:\n" + err[-1200:], file=sys.stderr); return 1
@@ -234,13 +277,29 @@ def main():
                 bad.append((line, sym, f"arg {k+1}",
                             f"{mt} = {ms}B", f"{ct} = {cs}B"))
 
+    for td, name, mt, returns_none, line in callbacks:
+        where = f"callbacks.mojo:{line}"
+        if td not in cb_typedefs:
+            bad.append((where, name, "no typedef", td, "")); continue
+        ret, ct = cb_typedefs[td]
+        if returns_none != (ret == "void"):
+            bad.append((where, name, "returns", "def returns a value" if not returns_none
+                        else "def returns None", f"{td} returns {ret}")); continue
+        if len(mt) != len(ct):
+            bad.append((where, name, "arity", f"def takes {len(mt)}", f"{td} takes {len(ct)}")); continue
+        for k, (a, b) in enumerate(zip(mt, ct)):
+            ms, cs = m_sizes.get(a), c_sizes.get(b)
+            if ms is None or cs is None or ms != cs:
+                bad.append((where, name, f"arg {k+1}", f"{a} = {ms}B", f"{b} = {cs}B"))
+
     print(f"check-signatures: {len(calls)} FFI call sites vs {len(decls)} header declarations")
     print(f"  arity + void-ness: all {len(calls)} | argument sizes: {len(calls) - unchecked} "
           f"({unchecked} transform their arguments, size-unchecked)")
+    print(f"  callbacks: {len(callbacks)} abi(\"C\") defs vs their header typedefs (arity + sizes)")
     if bad:
         print("")
-        for line, sym, kind, a, b in sorted(bad):
-            loc = f"loader.mojo:{line}"
+        for line, sym, kind, a, b in sorted(bad, key=lambda x: str(x[0])):
+            loc = line if isinstance(line, str) else f"loader.mojo:{line}"
             print(f"  {kind:8s} {sym:46s} {a} / {b}".rstrip() + f"   [{loc}]")
         print(f"\ncheck-signatures: FAILED — {len(bad)} call site(s) disagree with the headers.")
         return 1
