@@ -31,6 +31,7 @@ struct QuerySet(Movable, Boolable):
         # Buffer/Texture don't have this problem because their Destroy only
         # marks the resource invalid without removing it from the registry.
         # Fix: skip Destroy and let Release + Arc drop do the full cleanup.
+        # Re-probed on v29.0.1.1 (2026-10-08): Destroy + Release still crashes.
         self._lib[].query_set_release(self._handle)
 
     def clone(self) -> Self:

@@ -34,7 +34,14 @@ each struct, which needs valid arguments for all ~88 of them.
 import os, re, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STRUCTS = os.path.join(ROOT, "wgpu/_backend/wgpu_native/structs.mojo")
+# (file, module) pairs scanned for structs. native_ext.mojo holds the wgpu.h
+# extension structs; until 2026-10 it was not scanned, which let
+# WGPUPipelineLayoutExtras drift to a push-constant layout no header had.
+STRUCT_SOURCES = [
+    ("wgpu/_backend/wgpu_native/structs.mojo", "wgpu._backend.wgpu_native.structs"),
+    ("wgpu/_backend/wgpu_native/native_ext.mojo", "wgpu._backend.wgpu_native.native_ext"),
+]
+NATIVE_EXT = os.path.join(ROOT, "wgpu/_backend/wgpu_native/native_ext.mojo")
 LOADER = os.path.join(ROOT, "wgpu/_backend/wgpu_native/loader.mojo")
 BRIDGE = os.path.join(ROOT, "ffi/wgpu_callbacks.c")
 HEADERS = [os.path.join(ROOT, "ffi/include/webgpu/webgpu.h"),
@@ -47,11 +54,20 @@ def read(p):
 
 
 def main():
-    mojo = read(STRUCTS)
+    sources = [(read(os.path.join(ROOT, p)), mod) for p, mod in STRUCT_SOURCES]
+    mojo = "\n".join(src for src, _ in sources)
+    module_of = {}
+    for src, mod in sources:
+        for n in re.findall(r"^struct (WGPU\w+)", src, re.M):
+            module_of.setdefault(n, mod)
     hdr = "".join(read(h) for h in HEADERS)
 
     c_structs = set(re.findall(r"^\}\s*(WGPU\w+)\s*(?:WGPU_STRUCTURE_ATTRIBUTE)?\s*;", hdr, re.M))
     c_structs |= set(re.findall(r"^typedef struct (WGPU\w+)", hdr, re.M))
+    # Only real C structs: `} WGPUFoo;` also closes enums, which the Mojo side
+    # models as field-less constant namespaces.
+    c_structs = {n for n in c_structs
+                 if not re.search(r"typedef enum %s\b" % n, hdr)}
     names = [n for n in sorted(set(re.findall(r"^struct (WGPU\w+)", mojo, re.M))) if n in c_structs]
     if not names:
         print("check-struct-layout: no structs found — parser broken?", file=sys.stderr)
@@ -68,6 +84,8 @@ def main():
             return None
         body = re.sub(r"/\*.*?\*/", "", m.group(1), flags=re.S)
         body = re.sub(r"//[^\n]*", "", body)
+        # An anonymous union is one field (named after the closing brace).
+        body = re.sub(r"union\s*\{[^{}]*\}\s*(\w+)\s*;", r"union_t \1;", body, flags=re.S)
         return re.findall(r"^\s*[A-Za-z_][\w \*]*?[\* ](\w+)\s*;", body, re.M)
 
     tmp = tempfile.mkdtemp()
@@ -90,10 +108,10 @@ def main():
     # --- Mojo side: same sizes via pointer arithmetic ---
     msrc = os.path.join(tmp, "sz.mojo")
     with open(msrc, "w") as f:
-        f.write("from wgpu._ffi.nulls import null_ptr\nfrom wgpu._backend.wgpu_native.structs import (\n")
+        f.write("from wgpu._ffi.nulls import null_ptr\n")
         for n in names:
-            f.write("    %s,\n" % n)
-        f.write(")\n\ndef _sz[T: AnyType]() -> Int:\n    var p = null_ptr[T]()\n    return Int(p + 1) - Int(p)\n\ndef main() raises:\n")
+            f.write("from %s import %s\n" % (module_of[n], n))
+        f.write("\ndef _sz[T: AnyType]() -> Int:\n    var p = null_ptr[T]()\n    return Int(p + 1) - Int(p)\n\ndef main() raises:\n")
         for n in names:
             f.write('    print("%s", _sz[%s]())\n' % (n, n))
     r = subprocess.run(["mojo", "run", "-I", ".", msrc], cwd=ROOT, capture_output=True, text=True)
@@ -187,9 +205,33 @@ def main():
             elif mfc != cfc:
                 bad.append((f"{mname}/{cname}", "fields", mfc, cfc))
 
-    print("check-struct-layout: %d structs vs %s, %d bridge pairs vs %s" %
+    # --- wgpu.h enum constants: WGPUNativeSType / WGPUNativeFeature ---
+    # Every value is hand-copied from wgpu.h, and wgpu-native renumbered the
+    # whole SType block in a *patch* release (v29.0.0.0 -> v29.0.1.1). A stale
+    # value still compiles and still runs; it just tags a chain as the wrong
+    # struct. So compare each constant against the header by name.
+    native_src = read(NATIVE_EXT)
+    n_enum = 0
+    for mstruct, cprefix in (("WGPUNativeSType", "WGPUSType_"),
+                             ("WGPUNativeFeature", "WGPUNativeFeature_")):
+        body = re.search(r"^struct %s\b[^\n]*:\n((?:(?:    [^\n]*)?\n)*?)(?=\S|\Z)" % mstruct,
+                         native_src, re.M)
+        if not body:
+            bad.append((mstruct, "unparsed", None, None))
+            continue
+        cvals = {k: int(v, 16) for k, v in
+                 re.findall(r"^\s*%s(\w+)\s*=\s*(0x[0-9A-Fa-f]+)" % cprefix, hdr, re.M)}
+        for k, v in re.findall(r"^    comptime (\w+)\s*:\s*UInt32\s*=\s*(0x[0-9A-Fa-f]+)",
+                               body.group(1), re.M):
+            n_enum += 1
+            if k not in cvals:
+                bad.append((f"{mstruct}.{k}", "no-enum", v, "absent"))
+            elif cvals[k] != int(v, 16):
+                bad.append((f"{mstruct}.{k}", "value", v, "0x%08X" % cvals[k]))
+
+    print("check-struct-layout: %d structs vs %s, %d bridge pairs vs %s, %d enum constants" %
           (len(names), " + ".join(os.path.basename(h) for h in HEADERS),
-           len(pairs), os.path.basename(BRIDGE)))
+           len(pairs), os.path.basename(BRIDGE), n_enum))
     if bad:
         print("")
         for n, kind, mv, cv in bad:
@@ -198,7 +240,7 @@ def main():
         print("  A layout mismatch silently corrupts every read through that struct.")
         return 1
     print("\ncheck-struct-layout: ALL PASSED (%d structs: size, field count and order; "
-          "+ %d bridge pairs)" % (len(names), len(pairs)))
+          "+ %d bridge pairs; + %d enum constants)" % (len(names), len(pairs), n_enum))
     return 0
 
 

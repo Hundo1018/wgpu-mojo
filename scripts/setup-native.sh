@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-WGPU_TAG="v29.0.0.0"
+WGPU_TAG="v29.0.1.1"
 REPO_RAW="https://raw.githubusercontent.com/Hundo1018/wgpu-mojo/main"
 
 # ---------------------------------------------------------------------------

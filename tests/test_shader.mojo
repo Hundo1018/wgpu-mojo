@@ -83,7 +83,8 @@ def test_compilation_info_bad_shader() raises:
     # instead verify the bad shader is rejected via the error-scope mechanism.
     # NOTE: creating a bad shader WITHOUT an active error scope routes the error
     # to wgpu-native's default sink, which panics and aborts the process — the
-    # push/pop scope below is what makes this test safe.
+    # push/pop scope below is what makes this test safe. Still true on
+    # v29.0.1.1 (re-probed 2026-10-08).
     device.push_error_scope()
     var shader = device.create_shader_module_wgsl(BAD_WGSL, "bad_shader")
     var msg = device.pop_error_scope()

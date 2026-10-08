@@ -22,7 +22,7 @@ context:
   # in the v29.0.0.0 -> v29.0.1.1 *patch* release, so a "compatible" newer patch
   # silently misreads every extras chain. conda.recipe/build.sh additionally
   # compares the installed header against the copy vendored in this repo.
-  wgpu_native_version: "29.0.0.0"
+  wgpu_native_version: "29.0.1.1"
 
   # Pinned exactly, per the modular-community packaging guide: a package is
   # rebuilt (build.number += 1) against each new compiler release rather than

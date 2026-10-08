@@ -282,8 +282,8 @@ struct RenderPassEncoder(Movable, Deinitable where False):
     def set_immediates(
         self, offset: UInt32, size_bytes: UInt32, data: OpaquePointer[MutUntrackedOrigin]
     ):
-        """Write push-constant data via wgpu-native SetImmediates API (v29 name for push constants)."""
-        self._lib[].render_pass_set_immediates(self._handle, offset, size_bytes, data)
+        """Write immediate (push-constant) data. Requires the Immediates feature."""
+        self._lib[].render_pass_set_immediates(self._handle, offset, data, UInt(size_bytes))
 
     def multi_draw_indirect(
         self, buffer: WGPUBufferHandle, offset: UInt64, count: UInt32

@@ -83,7 +83,10 @@ struct Adapter(Movable):
         self,
         label: String = "",
         required_features: List[UInt32] = [],
+        required_limits: Optional[WGPULimits] = None,
     ) raises -> Device:
+        """`required_limits`: start from `wgpu_limits_default()` (every field
+        undefined = use the default) and raise only what you need."""
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
 
         var lost_cb = WGPUDeviceLostCallbackInfo(
@@ -110,13 +113,18 @@ struct Adapter(Movable):
             for i in range(len(required_features)):
                 feat_ptr[unsafe_offset=i] = required_features[i]
 
+        var limits_p = null_ptr[WGPULimits]()
+        if required_limits:
+            limits_p = raw_alloc[WGPULimits](1)
+            limits_p[] = required_limits.value()
+
         var desc_p = raw_alloc[WGPUDeviceDescriptor](1)
         desc_p[] = WGPUDeviceDescriptor(
             null_opaque(),
             label_sv,
             UInt(len(required_features)),
             feat_ptr,
-            null_ptr[WGPULimits](),
+            limits_p,
             queue_desc,
             lost_cb,
             err_cb,
@@ -129,6 +137,8 @@ struct Adapter(Movable):
         desc_p.unsafe_free()
         if len(required_features) > 0:
             feat_ptr.unsafe_free()
+        if required_limits:
+            limits_p.unsafe_free()
 
         var device = dev_result.device
         var status = dev_result.status

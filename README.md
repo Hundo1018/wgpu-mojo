@@ -360,7 +360,7 @@ and it works, that is a very welcome PR.
 
 ### Versions & the wgpu-native ABI pin
 
-wgpu-mojo pins **exactly one** wgpu-native revision — currently **v29.0.0.0** —
+wgpu-mojo pins **exactly one** wgpu-native revision — currently **v29.0.1.1** —
 and the pin is part of the public contract, not an implementation detail:
 
 > wgpu-native renumbered its entire `0x0003xxxx` SType enum in the
@@ -368,7 +368,7 @@ and the pin is part of the public contract, not an implementation detail:
 > still runs. It just misreads every extras chain, silently.
 
 So a wgpu-native bump is always a breaking change here, never a patch, and the
-conda package depends on `wgpu-native ==29.0.0.0` rather than a range. When you
+conda package depends on `wgpu-native ==29.0.1.1` rather than a range. When you
 install from the channel this is handled for you; when you install any other way,
 `preflight()` will tell you what actually loaded.
 

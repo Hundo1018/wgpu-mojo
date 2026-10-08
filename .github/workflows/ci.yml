@@ -136,6 +136,7 @@ jobs:
           pixi run test-log-bridge
           pixi run test-query-set
           pixi run test-render-pipeline
+          pixi run test-native-v29
 
       # The documented examples, not just the tests. These are headless, so
       # lavapipe can run them. check-compile only ever compiled them, which is

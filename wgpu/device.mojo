@@ -243,6 +243,37 @@ struct Device(Movable, Boolable):
         desc_p.unsafe_free()
         return ShaderModule(self._lib, result, self._instance)
 
+    def create_shader_module_wgsl_trusted(
+        self,
+        code: String,
+        runtime_checks: UInt64,
+        label: String = "",
+    ) raises -> ShaderModule:
+        """Create a WGSL module with only the given runtime checks enabled.
+
+        wgpu-native extension. `runtime_checks` is a `WGPUShaderRuntimeChecks`
+        mask; every check left out is a promise the caller makes about the
+        shader (e.g. no infinite loops without `ForceLoopBounding`). Pass
+        `WGPUShaderRuntimeChecks.ALL` for the same checks as
+        `create_shader_module_wgsl`.
+        """
+        var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
+        var code_sv  = str_to_sv(code)
+        var chain_val = WGPUChainedStruct(null_opaque(), WGPUSType.ShaderSourceWGSL)
+        var source_p = raw_alloc[WGPUShaderSourceWGSL](1)
+        source_p[] = WGPUShaderSourceWGSL(chain_val, code_sv)
+        var desc_p = raw_alloc[WGPUShaderModuleDescriptor](1)
+        desc_p[] = WGPUShaderModuleDescriptor(
+            source_p.unsafe_bitcast[NoneType](),
+            label_sv,
+        )
+        var result = self._lib[].device_create_shader_module_trusted(
+            self._handle, desc_p, runtime_checks
+        )
+        source_p.unsafe_free()
+        desc_p.unsafe_free()
+        return ShaderModule(self._lib, result, self._instance)
+
     def create_shader_module_spirv(
         self,
         code: List[UInt32],
@@ -367,7 +398,11 @@ struct Device(Movable, Boolable):
         self,
         bind_group_layouts: List[WGPUBindGroupLayoutHandle],
         label: String = "",
+        immediate_size: UInt32 = 0,
     ) raises -> PipelineLayout:
+        """`immediate_size` > 0 reserves that many bytes of immediate
+        (push-constant) data; it needs the Immediates feature and a device
+        `max_immediate_size` limit at least as large."""
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var layouts_ptr = rebind[Pointer[WGPUBindGroupLayoutHandle, MutUntrackedOrigin]](bind_group_layouts.unsafe_ptr())
         var desc_p = raw_alloc[WGPUPipelineLayoutDescriptor](1)
@@ -376,7 +411,7 @@ struct Device(Movable, Boolable):
             label_sv,
             UInt(len(bind_group_layouts)),
             layouts_ptr,
-            0,  # immediateDataRangeByteSize
+            immediate_size,
         )
         var result = self._lib[].device_create_pipeline_layout(self._handle, desc_p)
         desc_p.unsafe_free()
@@ -386,6 +421,7 @@ struct Device(Movable, Boolable):
         self,
         bgl: BindGroupLayout,
         label: String = "",
+        immediate_size: UInt32 = 0,
     ) raises -> PipelineLayout:
         """Single-BGL convenience overload.
 
@@ -393,7 +429,7 @@ struct Device(Movable, Boolable):
         eliminating the need for a manual `_ = bgl^` pin.
         """
         var handles: List[WGPUBindGroupLayoutHandle] = [bgl.handle().raw]
-        return self.create_pipeline_layout(handles, label)
+        return self.create_pipeline_layout(handles, label, immediate_size)
 
     def create_compute_pipeline(
         self,
