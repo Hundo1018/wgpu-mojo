@@ -6,6 +6,7 @@ every webgpu.h + wgpu.h function as a method call.
 """
 
 from std.ffi import OwnedDLHandle
+from std.os import getenv
 from std.sys import CompilationTarget
 from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 from wgpu._backend.wgpu_native.native_ext import WGPUImageSubresourceRange
@@ -145,36 +146,9 @@ comptime _CB_LIB_PATH   = _cb_dev_path()
 comptime _WGPU_NATIVE_VERSION = "v29.0.1.1"
 
 
-# ---------------------------------------------------------------------------
-# Runtime environment helpers (no std.env module in current nightly)
-# ---------------------------------------------------------------------------
-
-def _read_env_var(name: String) raises -> String:
-    """Read an environment variable via libc getenv.
-
-    Returns an empty string when the variable is unset or empty.
-    This avoids depending on std.env (not available in current Mojo nightly).
-    """
-    var libc = OwnedDLHandle("libc.so.6")
-    var name_bytes = name.as_bytes()
-    var raw = libc.call["getenv", OpaquePointer[MutUntrackedOrigin]](
-        Pointer(name_bytes.unsafe_ptr())
-    )
-    var null_ptr = null_opaque()
-    if raw == null_ptr:
-        return String("")
-    var p = Pointer(raw).unsafe_bitcast[UInt8]()
-    var out = String()
-    var i = 0
-    while p[unsafe_offset=i] != 0:
-        out += chr(Int(p[unsafe_offset=i]))
-        i += 1
-    return out
-
-
 def _conda_lib_path(lib_name: String) raises -> String:
     """Return $CONDA_PREFIX/lib/<lib_name>, or empty string if CONDA_PREFIX is unset."""
-    var prefix = _read_env_var("CONDA_PREFIX")
+    var prefix = getenv("CONDA_PREFIX")
     if prefix == "":
         return String("")
     return prefix + "/lib/" + lib_name
