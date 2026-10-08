@@ -73,7 +73,10 @@ fi
 #
 # Compiling the files above is NOT equivalent: Mojo only fully checks `def`
 # bodies that are referenced, and nothing in the list above reaches wgpu/_core/,
-# so that subtree went entirely unchecked. A trait left with an empty body after
+# so that subtree went entirely unchecked. (Re-verified on Mojo 1.1.0: an
+# unreferenced `def` in wgpu/_core/session.mojo with a deliberate type error
+# passes `mojo run`/`mojo build` of tests/test_types.mojo, which imports wgpu;
+# only `mojo precompile wgpu` reports it.) A trait left with an empty body after
 # a removal compiled fine here and broke the packaged build — caught by CI, not
 # by this script. Building the package closes that gap.
 #

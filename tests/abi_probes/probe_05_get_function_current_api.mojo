@@ -5,6 +5,8 @@ from std.ffi import OwnedDLHandle
 
 def main() raises:
     var lib = OwnedDLHandle("ffi/lib/libwgpu_native.so")
-    # In current stdlib, get_function[result_type](name) returns the symbol bitcasted to result_type.
-    var fn_addr = lib.get_function[UInt64]("wgpuGetVersion")
-    print("PASS: get_function[UInt64] returned symbol-sized value:", fn_addr)
+    # On Mojo 1.1.0, get_function[result_type](name) returns an opaque
+    # `_DLCallable` (not Writable, so it cannot be printed). Resolution of the
+    # symbol is the behavior under test: a missing symbol would raise here.
+    _ = lib.get_function[UInt64]("wgpuGetVersion")
+    print("PASS: get_function[UInt64] resolved wgpuGetVersion")

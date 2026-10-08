@@ -77,9 +77,6 @@ jobs:
   # No physical GPU and no display server are needed — only the compute/headless
   # paths run here. Windowed tests (triangle/fire/glfw) live in the self-hosted
   # GPU guide (docs/CI_CD.md).
-  #
-  # continue-on-error while we confirm lavapipe covers every feature these tests
-  # use; flip to required once the job is consistently green.
   # ---------------------------------------------------------------------------
   gpu-software:
     name: Headless GPU (lavapipe)
@@ -87,7 +84,6 @@ jobs:
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v5

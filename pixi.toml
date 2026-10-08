@@ -181,6 +181,3 @@ render-gifs = { cmd = "mojo run -I . tools/render_shader_gif.mojo && bash script
 example-compute-v2 = { cmd = "mojo run -I . examples/compute_add_v2.mojo", depends-on = ["build-callbacks"] }
 examples-input    = { cmd = "pixi run example-input" }
 
-# Linked binary builds (Phase 3 groundwork)
-build-hello-linked = { cmd = "mkdir -p build && mojo build -I . hello.mojo -o build/hello-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
-build-compute-linked = { cmd = "mkdir -p build && mojo build -I . examples/compute_add.mojo -o build/compute-linked -Xlinker -Lffi/lib -Xlinker -lwgpu_native -Xlinker -lwgpu_mojo_cb -Xlinker -rpath -Xlinker '$ORIGIN/../ffi/lib'", depends-on = ["build-callbacks"] }
