@@ -11,7 +11,19 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-08
+
+Built for **stable Mojo 1.1.0** and **wgpu-native v29.0.1.1**. Breaking, because
+the wgpu-native ABI pin moved (see the rule above); code that only uses the
+high-level API and the core `webgpu.h` types should need no changes beyond the
+renamed `WGPUNativeFeature`/extension-struct names listed below.
+
 ### Changed — breaking
+
+- **Mojo 1.1.0.** The package is compiled with, and pinned exactly to, Mojo
+  1.1.0: a `.mojoc` does not load under any other compiler version. Building
+  from source needs `pixi-build-mojo` >= 0.2.6, and therefore **pixi >= 0.77.0**
+  — older backends run `mojo package -o *.mojopkg`, which Mojo 1.1.0 rejects.
 
 - **wgpu-native v29.0.0.0 → v29.0.1.1.** Per the rule above this is a breaking
   change, and this one earns it:
@@ -73,6 +85,13 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   `std.sys.size_of`.
 - The conda recipe builds against Mojo 1.1.0 (it still pinned 1.0.0, so a
   package built from it would not load under the current compiler).
+- Mojo 1.1.0 compatibility: `Pointer(x)` now yields an immutable origin, so the
+  redundant wrappers that fed loader results into mutable slots are gone; the
+  opt-in `wgpu_max` bridge imports kernel indexing from `max.gpu`, where Mojo
+  1.1.0 moved it out of `std.gpu`.
+- `release.yml` attached every `.conda` file under the build tree, which put a
+  stale wgpu-mojo 0.2.0 and an unrelated rendercanvas-mojo 0.1.0 on the v0.2.1
+  Release. The glob now reaches only the artifact directory.
 - `rendercanvas-mojo`: the recipe used `mojo package … .mojopkg`, a hard error
   since Mojo 1.1.0, and `|| true` on the bridge build and install steps hid
   any failure; it now uses `mojo precompile` and fails loudly. Its
@@ -188,5 +207,6 @@ Unchanged in 0.2.1:
 - **`linux-aarch64` is not published.** Nothing in the binding is x86-specific
   and conda-forge ships wgpu-native for it, but it is untested here.
 
-[Unreleased]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/Hundo1018/wgpu-mojo/releases/tag/v0.2.1
