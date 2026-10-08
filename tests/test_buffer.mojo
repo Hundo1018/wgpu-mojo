@@ -8,7 +8,7 @@ from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
 from wgpu._ffi.alloc_guard import AllocGuard
-from wgpu._ffi.types import WGPUBufferUsage
+from wgpu._ffi.types import WGPUBufferUsage, WGPUQueueWorkDoneStatus
 
 
 def create_test_device() raises -> Device:
@@ -88,8 +88,27 @@ def test_queue_write_and_map_read_buffer() raises:
     _ = device^
 
 
+def test_queue_on_submitted_work_done_waits() raises:
+    """The work-done wait must block until the submitted work finishes."""
+    var device = create_test_device()
+    var n = UInt64(1 << 20)
+    var src = device.create_buffer(n, WGPUBufferUsage.COPY_SRC | WGPUBufferUsage.COPY_DST, False, "wd_src")
+    var dst = device.create_buffer(n, WGPUBufferUsage.COPY_DST, False, "wd_dst")
+    var enc = device.create_command_encoder("wd_enc")
+    enc.copy_buffer_to_buffer(src, UInt64(0), dst, UInt64(0), n)
+    device.queue_submit(enc^.finish())
+    var status = device._lib[].queue_on_submitted_work_done_sync(
+        device.handle().raw, device.queue().raw
+    )
+    assert_equal(status, WGPUQueueWorkDoneStatus.Success)
+    _ = src^
+    _ = dst^
+    _ = device^
+
+
 def main() raises:
     test_create_storage_buffer()
     test_create_staging_buffer_mapped()
     test_queue_write_and_map_read_buffer()
+    test_queue_on_submitted_work_done_waits()
     print("test_buffer: ALL PASSED")

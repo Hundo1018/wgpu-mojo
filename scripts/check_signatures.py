@@ -240,9 +240,11 @@ def main():
     c_types = {t for sym, _, _, _, _ in typed for t in decls[sym][1]}
     m_types = {t for _, _, _, _, mt in typed for t in mt}
     cb_typedefs, callbacks = header_callback_typedefs(), mojo_callbacks()
-    if not callbacks:
-        print("check-signatures: found no tagged callbacks in callbacks.mojo — parser broken?",
-              file=sys.stderr)
+    n_abi_c = len(re.findall(r'\)\s*abi\("C"\)', read(CALLBACKS)))
+    if not callbacks or len(callbacks) != n_abi_c:
+        print(f"check-signatures: callbacks.mojo has {n_abi_c} abi(\"C\") defs but "
+              f"{len(callbacks)} are tagged `# C typedef: <name>` on the line right above "
+              f"the def — tag every one, or this check skips it.", file=sys.stderr)
         return 1
     for td, _, mt, _, _ in callbacks:
         m_types |= set(mt)

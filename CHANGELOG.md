@@ -24,6 +24,12 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   decoded after the callback returned; it is copied inside the callback now. It
   was also decoded byte by byte with `chr()`, which mangled any non-ASCII text
   (WGSL identifiers can be Unicode); it is decoded as UTF-8.
+- **`queue_on_submitted_work_done_sync` returned before the work was done.**
+  It waited with the non-blocking `wgpuInstanceProcessEvents`, so with work in
+  flight it returned status 0, freed the result, and the callback later wrote
+  into freed memory. It now takes the device and does a blocking
+  `wgpuDevicePoll`; a new test submits a 1 MiB copy and asserts `Success`
+  (it fails 3/3 with a non-blocking poll).
 
 ### Changed
 

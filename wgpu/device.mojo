@@ -726,9 +726,11 @@ struct Device(Movable, Boolable):
 
             var status = result[].status
             var err_type = result[].type
-            if status != UInt32(1):  # WGPUPopErrorScopeStatus.Success == 1
-                raise Error("pop_error_scope failed, status=" + String(status))
             var n = Int(result[].message_len)
+            if status != UInt32(1):  # WGPUPopErrorScopeStatus.Success == 1
+                if n > 0:
+                    result[].message_data.unsafe_bitcast[UInt8]().unsafe_free()
+                raise Error("pop_error_scope failed, status=" + String(status))
             if n == 0:
                 return String("")
             # The callback copied the message (wgpu-native's view dies when
