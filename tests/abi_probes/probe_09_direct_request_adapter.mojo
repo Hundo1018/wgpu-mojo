@@ -64,9 +64,8 @@ def main() raises:
     if got == want:
         print("PASS: 40-byte struct-by-value checksum =", got)
     else:
-        # Known on current nightly: probe runs, but by-value payload differs.
-        # Keep this as XFAIL so it reports signal without breaking CI/main tests.
-        print("XFAIL: 40-byte struct-by-value checksum mismatch")
+        # Passes on Mojo 1.1.0 linux-64; a mismatch is a real ABI regression.
+        print("FAIL: 40-byte struct-by-value checksum mismatch")
         print("  got :", got)
         print("  want:", want)
-
+        raise Error("probe_09: 40-byte struct-by-value ABI mismatch")
