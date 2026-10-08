@@ -1,7 +1,26 @@
-"""Phase 4 ABI probe: pass Mojo def callback into C and invoke it."""
+"""ABI pins for Mojo callbacks called from C: as call arguments, and stored
+by address in a by-value CallbackInfo struct (how wgpu-native takes them)."""
 
 from std.ffi import OwnedDLHandle
 from std.testing import assert_equal, assert_true
+from wgpu._backend.wgpu_native.callbacks import (
+    _AdapterResult, _PopErrorResult,
+    request_adapter_callback, pop_error_scope_callback,
+)
+from wgpu._backend.wgpu_native.nulls import null_opaque
+
+
+@fieldwise_init
+struct _CallbackInfo40(TrivialRegisterPassable):
+    var next_in_chain: OpaquePointer[MutUntrackedOrigin]
+    var mode: UInt32
+    var callback: OpaquePointer[MutUntrackedOrigin]
+    var userdata1: OpaquePointer[MutUntrackedOrigin]
+    var userdata2: OpaquePointer[MutUntrackedOrigin]
+
+
+def _addr[T: AnyType](p: Pointer[T, ...]) -> OpaquePointer[MutUntrackedOrigin]:
+    return OpaquePointer[MutUntrackedOrigin](unsafe_from_address=Int(p))
 
 
 def triple(x: Int64) -> Int64:
@@ -86,12 +105,34 @@ def main() raises:
     assert_equal(status_v, UInt32(42))
     print("  PASS: struct-by-value callback status =", status_v)
 
-    # NOTE: Extracting a Mojo def as OpaquePointer[MutUntrackedOrigin] for storage in C structs
-    # does NOT work. Mojo def functions are kgen.generator internally, not
-    # plain function pointers. rebind[OpaquePointer[MutUntrackedOrigin]](fn) fails.
-    # This means wgpu callbacks (which require storing a function pointer in
-    # WGPURequestAdapterCallbackInfo) must remain as C implementations.
-    # DLHandle.call handles the conversion implicitly when passing functions
-    # as arguments, but we cannot extract the raw pointer ourselves.
-    print("  NOTE: raw fn_ptr extraction not possible (def = kgen.generator)")
-    print("  Conclusion: C callback bridge must stay for stored fn-ptr callbacks")
+    # ------ Stored callbacks: the shape wgpu-native uses ------
+    # The production callbacks from callbacks.mojo, stored by address in a
+    # 40-byte CallbackInfo passed BY VALUE, and called back with a 16-byte
+    # string view by value. This used to need ffi/wgpu_callbacks.c.
+    var adapter_res = _AdapterResult(null_opaque(), 0)
+    lib.call["mojo_probe_dispatch_adapter_like"](
+        _CallbackInfo40(
+            null_opaque(), 1, request_adapter_callback(),
+            _addr(Pointer(to=adapter_res)), null_opaque(),
+        )
+    )
+    assert_equal(Int(adapter_res.adapter), 0xBEEF)
+    assert_equal(adapter_res.status, UInt32(42))
+    print("  PASS: stored callback via by-value CallbackInfo (adapter shape)")
+
+    var pop_res = _PopErrorResult(0, 0, null_opaque(), 0)
+    lib.call["mojo_probe_dispatch_pop_error_like"](
+        _CallbackInfo40(
+            null_opaque(), 1, pop_error_scope_callback(),
+            _addr(Pointer(to=pop_res)), null_opaque(),
+        )
+    )
+    assert_equal(pop_res.status, UInt32(1))
+    assert_equal(pop_res.type, UInt32(2))
+    var p = pop_res.message_data.unsafe_bitcast[UInt8]()
+    var msg = String(StringSlice(unsafe_from_utf8=Span(unsafe_ptr=p, length=Int(pop_res.message_len))))
+    p.unsafe_free()
+    # The C side overwrote its buffer after the callback returned, so this
+    # only holds if the callback copied the bytes (and kept the UTF-8 intact).
+    assert_equal(msg, "validation: héllo")
+    print("  PASS: pop-error callback copies its message before the view dies")

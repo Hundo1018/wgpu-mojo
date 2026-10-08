@@ -46,8 +46,8 @@ from wgpu._ffi.structs import (
 )
 from wgpu._ffi.types import WGPUCallbackMode, WGPUErrorFilter, WGPUErrorType
 from wgpu._ffi.alloc_guard import AllocGuard
-from wgpu._backend.wgpu_native.loader import (
-    _PopErrorResult,
+from wgpu._backend.wgpu_native.callbacks import (
+    _PopErrorResult, pop_error_scope_callback,
 )
 from wgpu._ffi.types import WGPUSType
 from wgpu.buffer import Buffer
@@ -712,30 +712,32 @@ struct Device(Movable, Boolable):
         """
         with AllocGuard[_PopErrorResult](1) as result:
             result[] = _PopErrorResult(UInt32(0), UInt32(0), null_opaque(), UInt(0))
-            with AllocGuard[WGPUPopErrorScopeCallbackInfo](1) as cb_info_p:
-                cb_info_p[] = WGPUPopErrorScopeCallbackInfo(
+            self._lib[].device_pop_error_scope(
+                self._handle,
+                WGPUPopErrorScopeCallbackInfo(
                     null_opaque(),
                     WGPUCallbackMode.AllowSpontaneous,
-                    self._lib[]._pop_error_cb_ptr,
+                    pop_error_scope_callback(),
                     result.unsafe_bitcast[NoneType](),
                     null_opaque(),
-                )
-                self._lib[].device_pop_error_scope(self._handle, cb_info_p)
+                ),
+            )
             self._lib[].instance_process_events(self._instance)
 
             var status = result[].status
             var err_type = result[].type
             if status != UInt32(1):  # WGPUPopErrorScopeStatus.Success == 1
                 raise Error("pop_error_scope failed, status=" + String(status))
+            var n = Int(result[].message_len)
+            if n == 0:
+                return String("")
+            # The callback copied the message (wgpu-native's view dies when
+            # the callback returns); the copy is ours to free.
+            var p = result[].message_data.unsafe_bitcast[UInt8]()
+            var out = String(StringSlice(unsafe_from_utf8=Span(unsafe_ptr=p, length=n)))
+            p.unsafe_free()
             if err_type == WGPUErrorType.NoError:
                 return String("")
-            var p = Pointer(result[].message_data).unsafe_bitcast[UInt8]()
-            var n = result[].message_len
-            var out = String()
-            var i = UInt(0)
-            while i < n and p[unsafe_offset=Int(i)] != 0:
-                out += chr(Int(p[unsafe_offset=Int(i)]))
-                i += 1
             return out
 
     # ------------------------------------------------------------------

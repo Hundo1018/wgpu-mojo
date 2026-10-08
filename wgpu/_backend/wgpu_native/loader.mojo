@@ -1,14 +1,20 @@
 """
 wgpu._ffi.lib — Dynamic library loader and raw function dispatcher.
 
-Loads libwgpu_native.so and libwgpu_mojo_cb.so at runtime and exposes
-every webgpu.h + wgpu.h function as a method call.
+Loads libwgpu_native.so (and libwgpu_mojo_cb.so, the C log bridge) at
+runtime and exposes every webgpu.h + wgpu.h function as a method call. The
+async completion callbacks are Mojo: see callbacks.mojo.
 """
 
 from std.ffi import OwnedDLHandle
 from std.os import getenv
 from std.sys import CompilationTarget
 from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.callbacks import (
+    _AdapterResult, _DeviceResult, _MapResult, _WorkDoneResult, _PopErrorResult,
+    request_adapter_callback, request_device_callback, buffer_map_callback,
+    queue_work_done_callback, pop_error_scope_callback,
+)
 from wgpu._backend.wgpu_native.native_ext import WGPUImageSubresourceRange
 from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._backend.wgpu_native.types import (
@@ -56,46 +62,6 @@ from wgpu._backend.wgpu_native.structs import (
     WGPUExtent3D,
     WGPUColor,
 )
-
-# ---------------------------------------------------------------------------
-# Callback result structs (must match C layout in wgpu_callbacks.c)
-# ---------------------------------------------------------------------------
-
-@fieldwise_init
-struct _AdapterResult(TrivialRegisterPassable):
-    var adapter: WGPUAdapterHandle
-    var status: UInt32
-
-
-@fieldwise_init
-struct _DeviceResult(TrivialRegisterPassable):
-    var device: WGPUDeviceHandle
-    var status: UInt32
-
-
-@fieldwise_init
-struct _MapResult(TrivialRegisterPassable):
-    var status: UInt32
-
-
-@fieldwise_init
-struct _WorkDoneResult(TrivialRegisterPassable):
-    var status: UInt32
-
-
-@fieldwise_init
-struct _PopErrorResult(TrivialRegisterPassable):
-    var status: UInt32
-    var type: UInt32
-    var message_data: OpaquePointer[MutUntrackedOrigin]
-    var message_len: UInt
-
-
-
-
-
-
-
 
 # ---------------------------------------------------------------------------
 # Platform-aware library names and dev-tree fallback paths
@@ -212,12 +178,6 @@ struct WGPULib(Movable):
     var _wgpu: OwnedDLHandle
     var _cb:   OwnedDLHandle
 
-    # Cached callback function pointers (void*)
-    var _adapter_cb_ptr: OpaquePointer[MutUntrackedOrigin]
-    var _device_cb_ptr: OpaquePointer[MutUntrackedOrigin]
-    var _map_cb_ptr: OpaquePointer[MutUntrackedOrigin]
-    var _done_cb_ptr: OpaquePointer[MutUntrackedOrigin]
-    var _pop_error_cb_ptr: OpaquePointer[MutUntrackedOrigin]
 
     def __init__(out self) raises:
         # Three-stage fallback for each library:
@@ -227,20 +187,10 @@ struct WGPULib(Movable):
         # All three failing raises a descriptive error listing searched paths.
         self._wgpu = _load_lib_with_fallback(_WGPU_LIB_NAME, _WGPU_LIB_PATH)
         self._cb   = _load_lib_with_fallback(_CB_LIB_NAME,   _CB_LIB_PATH)
-        self._adapter_cb_ptr = self._cb.call["wgpu_mojo_get_adapter_callback", OpaquePointer[MutUntrackedOrigin]]()
-        self._device_cb_ptr  = self._cb.call["wgpu_mojo_get_device_callback",  OpaquePointer[MutUntrackedOrigin]]()
-        self._map_cb_ptr     = self._cb.call["wgpu_mojo_get_buffer_map_callback", OpaquePointer[MutUntrackedOrigin]]()
-        self._done_cb_ptr    = self._cb.call["wgpu_mojo_get_queue_done_callback", OpaquePointer[MutUntrackedOrigin]]()
-        self._pop_error_cb_ptr = self._cb.call["wgpu_mojo_get_pop_error_callback", OpaquePointer[MutUntrackedOrigin]]()
 
     def __init__(out self, *, deinit move: Self):
         self._wgpu = move._wgpu^
         self._cb   = move._cb^
-        self._adapter_cb_ptr = move._adapter_cb_ptr
-        self._device_cb_ptr  = move._device_cb_ptr
-        self._map_cb_ptr     = move._map_cb_ptr
-        self._done_cb_ptr    = move._done_cb_ptr
-        self._pop_error_cb_ptr = move._pop_error_cb_ptr
 
     # ------------------------------------------------------------------
     # Symbol introspection (ABI drift detection)
@@ -287,17 +237,16 @@ struct WGPULib(Movable):
         with AllocGuard[_AdapterResult](1) as result:
             result[] = _AdapterResult(null_opaque(), 0)
 
-            with AllocGuard[WGPURequestAdapterCallbackInfo](1) as cb_info_p:
-                cb_info_p[] = WGPURequestAdapterCallbackInfo(
-                    null_opaque(),
-                    WGPUCallbackMode.AllowSpontaneous,
-                    self._adapter_cb_ptr,
-                    result.unsafe_bitcast[NoneType](),
-                    null_opaque(),
-                )
-                _ = self._cb.call["wgpu_mojo_instance_request_adapter", WGPUFuture](
-                    instance, options, cb_info_p
-                )
+            var cb_info = WGPURequestAdapterCallbackInfo(
+                null_opaque(),
+                WGPUCallbackMode.AllowSpontaneous,
+                request_adapter_callback(),
+                result.unsafe_bitcast[NoneType](),
+                null_opaque(),
+            )
+            _ = self._wgpu.call["wgpuInstanceRequestAdapter", WGPUFuture](
+                instance, options, cb_info
+            )
 
             self._wgpu.call["wgpuInstanceProcessEvents"](instance)
             return _AdapterResult(result[].adapter, result[].status)
@@ -334,17 +283,16 @@ struct WGPULib(Movable):
         with AllocGuard[_DeviceResult](1) as result:
             result[] = _DeviceResult(null_opaque(), 0)
 
-            with AllocGuard[WGPURequestDeviceCallbackInfo](1) as cb_info_p:
-                cb_info_p[] = WGPURequestDeviceCallbackInfo(
-                    null_opaque(),
-                    WGPUCallbackMode.AllowSpontaneous,
-                    self._device_cb_ptr,
-                    result.unsafe_bitcast[NoneType](),
-                    null_opaque(),
-                )
-                _ = self._cb.call["wgpu_mojo_adapter_request_device", WGPUFuture](
-                    adapter, desc, cb_info_p
-                )
+            var cb_info = WGPURequestDeviceCallbackInfo(
+                null_opaque(),
+                WGPUCallbackMode.AllowSpontaneous,
+                request_device_callback(),
+                result.unsafe_bitcast[NoneType](),
+                null_opaque(),
+            )
+            _ = self._wgpu.call["wgpuAdapterRequestDevice", WGPUFuture](
+                adapter, desc, cb_info
+            )
 
             self._wgpu.call["wgpuInstanceProcessEvents"](instance)
             return _DeviceResult(result[].device, result[].status)
@@ -551,17 +499,16 @@ struct WGPULib(Movable):
         with AllocGuard[_MapResult](1) as result:
             result[] = _MapResult(0)
 
-            with AllocGuard[WGPUBufferMapCallbackInfo](1) as cb_info_p:
-                cb_info_p[] = WGPUBufferMapCallbackInfo(
-                    None,
-                    WGPUCallbackMode.AllowSpontaneous,
-                    self._map_cb_ptr,
-                    result.unsafe_bitcast[NoneType](),
-                    None,
-                )
-                _ = self._cb.call["wgpu_mojo_buffer_map_async", WGPUFuture](
-                    buffer, mode, offset, size, cb_info_p
-                )
+            var cb_info = WGPUBufferMapCallbackInfo(
+                null_opaque(),
+                WGPUCallbackMode.AllowSpontaneous,
+                buffer_map_callback(),
+                result.unsafe_bitcast[NoneType](),
+                null_opaque(),
+            )
+            _ = self._wgpu.call["wgpuBufferMapAsync", WGPUFuture](
+                buffer, mode, offset, size, cb_info
+            )
 
             # Blocking poll: the WGPUBool it returns reports whether the queue
             # drained, which is not what decides the outcome here — the map
@@ -1103,10 +1050,7 @@ struct WGPULib(Movable):
         self,
         caps: Pointer[WGPUSurfaceCapabilities, MutUntrackedOrigin],
     ):
-        # wgpuSurfaceCapabilitiesFreeMembers takes struct by value; Mojo FFI
-        # cannot safely pass non-TrivialRegisterPassable structs by value, so we
-        # call a thin C wrapper that accepts a pointer and dereferences it.
-        self._cb.call["wgpu_mojo_surface_capabilities_free_members"](caps)
+        self._wgpu.call["wgpuSurfaceCapabilitiesFreeMembers"](caps[])
 
     # ------------------------------------------------------------------
     # Missing standard WebGPU functions — Instance / global
@@ -1132,9 +1076,9 @@ struct WGPULib(Movable):
     def device_pop_error_scope(
         self,
         device: WGPUDeviceHandle,
-        callback_info_ptr: Pointer[WGPUPopErrorScopeCallbackInfo, MutUntrackedOrigin],
+        callback_info: WGPUPopErrorScopeCallbackInfo,
     ):
-        self._cb.call["wgpu_mojo_device_pop_error_scope"](device, callback_info_ptr)
+        _ = self._wgpu.call["wgpuDevicePopErrorScope", WGPUFuture](device, callback_info)
 
     def device_create_render_bundle_encoder(
         self,
@@ -1282,15 +1226,14 @@ struct WGPULib(Movable):
         """Block until submitted queue work is done. Returns status."""
         with AllocGuard[_WorkDoneResult](1) as result:
             result[] = _WorkDoneResult(0)
-            with AllocGuard[WGPUQueueWorkDoneCallbackInfo](1) as cb_info_p:
-                cb_info_p[] = WGPUQueueWorkDoneCallbackInfo(
-                    null_opaque(),
-                    WGPUCallbackMode.AllowSpontaneous,
-                    self._done_cb_ptr,
-                    result.unsafe_bitcast[NoneType](),
-                    null_opaque(),
-                )
-                _ = self._cb.call["wgpu_mojo_queue_on_submitted_work_done", WGPUFuture](queue, cb_info_p)
+            var cb_info = WGPUQueueWorkDoneCallbackInfo(
+                null_opaque(),
+                WGPUCallbackMode.AllowSpontaneous,
+                queue_work_done_callback(),
+                result.unsafe_bitcast[NoneType](),
+                null_opaque(),
+            )
+            _ = self._wgpu.call["wgpuQueueOnSubmittedWorkDone", WGPUFuture](queue, cb_info)
             self._wgpu.call["wgpuInstanceProcessEvents"](instance)
             return result[].status
 

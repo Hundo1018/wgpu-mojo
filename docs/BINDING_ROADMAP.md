@@ -66,11 +66,9 @@ type, and neither sees a reordering — comparing offsets would not either, sinc
 swapping two same-sized fields leaves every offset unchanged. All three failure
 modes are verified by mutation.
 
-It also checks the **C callback bridge contract**: the five `_*Result` structs in
-`loader.mojo` against the `Mojo*Result` typedefs the callbacks in
-`ffi/wgpu_callbacks.c` write through, measured by compiling the bridge itself.
-`CLAUDE.md` flags breaking this as silently corrupting the result, and nothing
-verified it before.
+The C callback bridge contract it used to check is gone with the bridge: the
+async callbacks are Mojo (`callbacks.mojo`) since Mojo 1.1.0, and
+`check-signatures` compares each one against its header typedef instead.
 
 `scripts/check_signatures.py` (`pixi run check-signatures`) covers the call side.
 All 187 `self._wgpu.call` sites are checked against their header declaration for
@@ -178,8 +176,9 @@ should say plainly that macOS is compute-only.
 ### Tier 3 — developer experience
 
 - **`wgpuSetLogCallback` — done.** wgpu-native's log now reaches Mojo. The
-  callback needs a stored C function pointer, which Mojo cannot produce, and
-  wgpu-native calls it from its own threads — so `ffi/wgpu_callbacks.c` owns a
+  callback is process-wide and wgpu-native calls it from its own threads, so
+  its queue must be global — which Mojo 1.1.0 cannot declare — so
+  `ffi/wgpu_callbacks.c` owns a
   mutex-guarded ring buffer and Mojo drains it via
   `wgpu.diagnostics.drain_log()`. Covered by `tests/test_log_bridge.mojo`.
 - **Graphics-debugger capture — done.** `Device.start_graphics_debugger_capture()`

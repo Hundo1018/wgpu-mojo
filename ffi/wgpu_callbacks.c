@@ -1,8 +1,10 @@
 /**
- * ffi/wgpu_callbacks.c — Callback bridge helpers for Mojo wgpu bindings.
+ * ffi/wgpu_callbacks.c — wgpu-native log bridge for the Mojo bindings.
  *
- * Provides C function pointers that Mojo can retrieve and pass to wgpu-native's
- * async APIs. Results are written through userdata1 pointers.
+ * Until Mojo 1.1.0 this file also held the async completion callbacks
+ * (adapter, device, buffer map, queue done, error scope) and pointer-taking
+ * wrappers for every entry point that takes a struct by value. Those are pure
+ * Mojo now: wgpu/_backend/wgpu_native/callbacks.mojo.
  *
  * Build:  gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c \
  *              -Iffi/include
@@ -14,129 +16,16 @@
 #include <string.h>
 #include <pthread.h>
 
-/* Struct mirrors: must match the _*Result structs in
-   wgpu/_backend/wgpu_native/loader.mojo. Verified by pixi run check-struct-layout. */
-typedef struct { void* adapter; uint32_t status; } MojoAdapterResult;
-typedef struct { void* device;  uint32_t status; } MojoDeviceResult;
-typedef struct { uint32_t status; }               MojoMapResult;
-typedef struct { uint32_t status; }               MojoWorkDoneResult;
-typedef struct { uint32_t status; uint32_t type; void* message_data; size_t message_len; } MojoPopErrorResult;
-
-static void _wgpu_mojo_adapter_cb(
-    WGPURequestAdapterStatus status,
-    WGPUAdapter adapter,
-    WGPUStringView message,
-    void* ud1, void* ud2
-) {
-    MojoAdapterResult* r = (MojoAdapterResult*)ud1;
-    if (r) { r->adapter = (void*)adapter; r->status = (uint32_t)status; }
-}
-
-static void _wgpu_mojo_device_cb(
-    WGPURequestDeviceStatus status,
-    WGPUDevice device,
-    WGPUStringView message,
-    void* ud1, void* ud2
-) {
-    MojoDeviceResult* r = (MojoDeviceResult*)ud1;
-    if (r) { r->device = (void*)device; r->status = (uint32_t)status; }
-}
-
-static void _wgpu_mojo_buffer_map_cb(
-    WGPUMapAsyncStatus status,
-    WGPUStringView message,
-    void* ud1, void* ud2
-) {
-    MojoMapResult* r = (MojoMapResult*)ud1;
-    if (r) { r->status = (uint32_t)status; }
-}
-
-static void _wgpu_mojo_queue_done_cb(
-    WGPUQueueWorkDoneStatus status,
-    WGPUStringView message,
-    void* ud1, void* ud2
-) {
-    MojoWorkDoneResult* r = (MojoWorkDoneResult*)ud1;
-    if (r) { r->status = (uint32_t)status; }
-}
-
-static void _wgpu_mojo_pop_error_cb(
-    WGPUPopErrorScopeStatus status,
-    WGPUErrorType type,
-    WGPUStringView message,
-    void* ud1, void* ud2
-) {
-    MojoPopErrorResult* r = (MojoPopErrorResult*)ud1;
-    if (r) {
-        r->status = (uint32_t)status;
-        r->type = (uint32_t)type;
-        r->message_data = (void*)message.data;
-        r->message_len = message.length;
-    }
-}
-
-/* Public getter functions — Mojo calls these to obtain function pointers */
-void* wgpu_mojo_get_adapter_callback(void)          { return (void*)_wgpu_mojo_adapter_cb; }
-void* wgpu_mojo_get_device_callback(void)           { return (void*)_wgpu_mojo_device_cb; }
-void* wgpu_mojo_get_buffer_map_callback(void)       { return (void*)_wgpu_mojo_buffer_map_cb; }
-void* wgpu_mojo_get_queue_done_callback(void)       { return (void*)_wgpu_mojo_queue_done_cb; }
-void* wgpu_mojo_get_pop_error_callback(void)        { return (void*)_wgpu_mojo_pop_error_cb; }
-
-
-WGPUFuture wgpu_mojo_instance_request_adapter(
-    WGPUInstance instance,
-    const WGPURequestAdapterOptions* options,
-    const WGPURequestAdapterCallbackInfo* cb_info
-) {
-    return wgpuInstanceRequestAdapter(instance, options, *cb_info);
-}
-
-WGPUFuture wgpu_mojo_adapter_request_device(
-    WGPUAdapter adapter,
-    const WGPUDeviceDescriptor* descriptor,
-    const WGPURequestDeviceCallbackInfo* cb_info
-) {
-    return wgpuAdapterRequestDevice(adapter, descriptor, *cb_info);
-}
-
-WGPUFuture wgpu_mojo_buffer_map_async(
-    WGPUBuffer buffer,
-    WGPUMapMode mode,
-    size_t offset,
-    size_t size,
-    const WGPUBufferMapCallbackInfo* cb_info
-) {
-    return wgpuBufferMapAsync(buffer, mode, offset, size, *cb_info);
-}
-
-WGPUFuture wgpu_mojo_queue_on_submitted_work_done(
-    WGPUQueue queue,
-    const WGPUQueueWorkDoneCallbackInfo* cb_info
-) {
-    return wgpuQueueOnSubmittedWorkDone(queue, *cb_info);
-}
-
-WGPUFuture wgpu_mojo_device_pop_error_scope(
-    WGPUDevice device,
-    const WGPUPopErrorScopeCallbackInfo* cb_info
-) {
-    return wgpuDevicePopErrorScope(device, *cb_info);
-}
-
-void wgpu_mojo_surface_capabilities_free_members(
-    const WGPUSurfaceCapabilities* caps
-) {
-    wgpuSurfaceCapabilitiesFreeMembers(*caps);
-}
-
 
 /* ---------------------------------------------------------------------------
  * Log bridge.
  *
- * wgpuSetLogCallback takes a stored C function pointer, which Mojo cannot
- * produce (see tests/abi_probes and tests/test_callback_abi.mojo). wgpu-native
- * also calls it from its own threads, at arbitrary times, so the message cannot
- * be handed straight to Mojo.
+ * Why this one is still C (re-checked on Mojo 1.1.0): the log callback is
+ * process-wide and wgpu-native calls it from its own threads, so the queue it
+ * feeds must be reachable without userdata from whichever thread drains it.
+ * That needs a global, and Mojo 1.1.0 rejects module-level variables
+ * ("global variables are not supported"). A stored Mojo function pointer is
+ * no longer the obstacle — see callbacks.mojo.
  *
  * Instead the callback appends into a fixed-size ring buffer under a mutex, and
  * Mojo drains it with wgpu_mojo_log_take(). Oldest messages are dropped when the

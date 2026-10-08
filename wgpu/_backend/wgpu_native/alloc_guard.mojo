@@ -4,7 +4,13 @@ from std.memory import alloc, Layout
 
 
 struct AllocGuard[T: AnyType](Movable):
-    """Owns an `alloc[T](count)` allocation and frees it on scope exit."""
+    """Owns an `alloc[T](count)` allocation and frees it on scope exit.
+
+    Use it only as a `with` block. There is deliberately no pointer getter:
+    a bare guard whose last use is reading its pointer is destroyed right
+    there by ASAP destruction, before the FFI call that needed the memory
+    (that was the v0.3.0 "Unsupported Surface" panic in surface.mojo).
+    """
 
     var _ptr: Pointer[Self.T, MutUntrackedOrigin]
     var _is_live: Bool
@@ -37,9 +43,6 @@ struct AllocGuard[T: AnyType](Movable):
             self._ptr.unsafe_free()
             self._ptr = Pointer[Self.T, MutUntrackedOrigin].unsafe_dangling()
             self._is_live = False
-
-    def ptr(self) -> Pointer[Self.T, MutUntrackedOrigin]:
-        return self._ptr
 
 
 def raw_alloc[T: AnyType](count: Int) -> Pointer[T, MutUntrackedOrigin]:
