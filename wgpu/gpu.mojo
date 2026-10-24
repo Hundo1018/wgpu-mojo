@@ -244,7 +244,7 @@ struct GPU(Movable):
         var cmd = enc^.finish(label + "_cmd")
 
         # Submit and wait; tail-pin prog and bg to survive past poll
-        self._device.queue_submit(cmd^)
+        self._device.queue_submit(cmd)
         _ = self._device.poll(True)
         _ = bg^
         _ = prog^
