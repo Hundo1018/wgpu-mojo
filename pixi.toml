@@ -45,13 +45,13 @@ extra-args = ["-I", "."]
 compilers = ["c","cxx","gcc"]
 
 [package.host-dependencies]
-mojo-compiler = ">=1.0.0,<2"
+mojo-compiler = ">=1.2.0,<2"
 
 [package.build-dependencies]
-mojo-compiler = ">=1.0.0,<2"
+mojo-compiler = ">=1.2.0,<2"
 
 [package.run-dependencies]
-mojo-compiler = ">=1.0.0,<2"
+mojo-compiler = ">=1.2.0,<2"
 # The wgpu package includes wgpu.rendercanvas, which dlopens libglfw at runtime,
 # and every path through it dlopens libwgpu_native. Declaring both here is what
 # stops a downstream `pixi add --git` from failing at runtime rather than at
@@ -66,7 +66,7 @@ glfw = ">=3.4,<4"
 env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH" }
 
 [dependencies]
-mojo = ">=1.0.0,<2"
+mojo = ">=1.2.0,<2"
 glfw = ">=3.4,<4"
 
 # ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ glfw = ">=3.4,<4"
 # feature keeps the default environment, every `pixi run <task>`, and the
 # published conda package free of it: only `pixi run -e maxinterop ...` pays.
 [feature.maxinterop.dependencies]
-max = ">=26.5,<27"
+max = ">=26.7,<27"
 
 [feature.maxinterop.tasks]
 test-max-interop    = { cmd = "mojo run -I . tests/test_max_interop.mojo", depends-on = ["build-callbacks"] }

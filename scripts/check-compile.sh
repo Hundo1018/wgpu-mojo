@@ -110,5 +110,31 @@ fi
 rm -f "$PKG_LOG" "$PKG_OUT"
 echo "OK"
 
+# ---------------------------------------------------------------------------
+# Linear types must stay linear. tests/compile_fail/linear_encoders.mojo drops
+# each of the 5 encoders without end()/finish()/abandon(); every drop has to be
+# a compile error carrying the type's `not Deinitable else "..."` reason. A
+# type that silently became implicitly deletable would leak its wgpu handle.
+# ---------------------------------------------------------------------------
+echo ""
+printf "  %-56s" "compile_fail/linear_encoders (expect 5 errors)"
+LIN_LOG=$(mktemp)
+if mojo build -I . tests/compile_fail/linear_encoders.mojo -o /dev/null 2>"$LIN_LOG"; then
+  echo "FAIL"
+  echo "    compiled cleanly: an encoder is no longer linear"
+  rm -f "$LIN_LOG"
+  exit 1
+fi
+LIN_HITS=$(grep -cE "abandoned without being explicitly destroyed: Must call (end|finish)\(\) or abandon\(\)" "$LIN_LOG" || true)
+if [ "$LIN_HITS" -ne 5 ]; then
+  echo "FAIL"
+  echo "    expected 5 linear-type errors, got $LIN_HITS:"
+  grep -E "error:" "$LIN_LOG" | head -8 | sed 's/^/    /'
+  rm -f "$LIN_LOG"
+  exit 1
+fi
+rm -f "$LIN_LOG"
+echo "OK"
+
 echo ""
 echo "check-compile: ALL PASSED"

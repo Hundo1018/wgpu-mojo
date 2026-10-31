@@ -62,7 +62,7 @@ That is the whole install. The package ships both compiled C bridges and pulls
 `wgpu-native` and `glfw` in as ordinary conda dependencies, so there is no
 post-install script and nothing to download by hand.
 
-> Available from **0.2.1** (0.3.x requires Mojo 1.1.0). If `pixi add` reports no candidates, the release has
+> Available from **0.2.1** (0.3.x requires Mojo 1.1.0; `main` requires Mojo 1.2.0). If `pixi add` reports no candidates, the release has
 > not reached the channel yet — use Option B.
 
 ### Option B · from git (tracks `main`)
@@ -242,7 +242,7 @@ bridge pay for it:
 ```toml
 # your pixi.toml
 [feature.maxinterop.dependencies]
-max = ">=26.5,<27"
+max = ">=26.7,<27"
 
 [environments]
 maxinterop = ["maxinterop"]

@@ -211,6 +211,28 @@ def test_multiple_keys_same_frame() raises:
     _ = s^
 
 
+def test_unknown_event_type_ignored() raises:
+    """An event type outside InputEventType changes nothing.
+
+    Guards the `match` in `_process_event`: an unqualified name in a `case`
+    is a binding pattern that matches every value, which would route this
+    event into the first arm and press key A.
+    """
+    var s = InputState()
+    s.begin_frame()
+    s.process_event(MojoInputEvent(
+        type=Int32(99),
+        key_or_button=GLFW_KEY_A,
+        action=GLFW_PRESS,
+        mods=Int32(0),
+        x=5.0, y=7.0,
+    ))
+    assert_false(s.is_key_pressed(GLFW_KEY_A))
+    assert_equal(s.mouse_x, 0.0)
+    assert_equal(s.scroll_y, 0.0)
+    _ = s^
+
+
 def main() raises:
     test_initial_state()
     print("  PASS: test_initial_state")
@@ -228,4 +250,6 @@ def main() raises:
     print("  PASS: test_out_of_range_key")
     test_multiple_keys_same_frame()
     print("  PASS: test_multiple_keys_same_frame")
-    print("All test_input_state tests passed (8)")
+    test_unknown_event_type_ignored()
+    print("  PASS: test_unknown_event_type_ignored")
+    print("All test_input_state tests passed (9)")

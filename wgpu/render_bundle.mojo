@@ -71,8 +71,7 @@ struct RenderBundle(Movable, Boolable):
     def __bool__(self) -> Bool:
         return Int(self._handle) != 0
 
-@explicit_destroy("Must call finish() or abandon()")
-struct RenderBundleEncoder(Movable, Deinitable where False):
+struct RenderBundleEncoder(Movable, not Deinitable else "Must call finish() or abandon()"):
     """Records draw commands into a RenderBundle.
 
     Linear type: the compiler enforces that finish() or abandon() is called

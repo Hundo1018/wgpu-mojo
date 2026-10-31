@@ -187,32 +187,38 @@ struct InputState(Movable):
     # ------------------------------------------------------------------
 
     def _process_event(mut self, event: MojoInputEvent):
-        if event.type == InputEventType.KEY:
-            var idx = Int(event.key_or_button)
-            if idx >= 0 and idx < _MAX_KEYS:
-                if event.action == GLFW_PRESS:
-                    self._keys_pressed.unsafe_offset(idx)[]      = True
-                    self._keys_just_pressed.unsafe_offset(idx)[]  = True
-                elif event.action == GLFW_RELEASE:
-                    self._keys_pressed.unsafe_offset(idx)[]       = False
-                    self._keys_just_released.unsafe_offset(idx)[] = True
-                # GLFW_REPEAT: keys_pressed stays True, no just_pressed
-        elif event.type == InputEventType.MOUSE_BUTTON:
-            var idx = Int(event.key_or_button)
-            if idx >= 0 and idx < _MAX_MOUSE_BUTTONS:
-                if event.action == GLFW_PRESS:
-                    self._mouse_pressed.unsafe_offset(idx)[]      = True
-                    self._mouse_just_pressed.unsafe_offset(idx)[]  = True
-                elif event.action == GLFW_RELEASE:
-                    self._mouse_pressed.unsafe_offset(idx)[]       = False
-                    self._mouse_just_released.unsafe_offset(idx)[] = True
-        elif event.type == InputEventType.CURSOR_POS:
-            var old_x = self.mouse_x
-            var old_y = self.mouse_y
-            self.mouse_x = event.x
-            self.mouse_y = event.y
-            self.mouse_dx += event.x - old_x
-            self.mouse_dy += event.y - old_y
-        elif event.type == InputEventType.SCROLL:
-            self.scroll_x += event.x
-            self.scroll_y += event.y
+        # Cases must stay qualified (`InputEventType.X`): a bare name in a
+        # `case` is a binding pattern that matches every value, so the inner
+        # action checks stay `if`/`elif` on the module-level GLFW_* constants.
+        match event.type:
+            case InputEventType.KEY:
+                var idx = Int(event.key_or_button)
+                if idx >= 0 and idx < _MAX_KEYS:
+                    if event.action == GLFW_PRESS:
+                        self._keys_pressed.unsafe_offset(idx)[]      = True
+                        self._keys_just_pressed.unsafe_offset(idx)[]  = True
+                    elif event.action == GLFW_RELEASE:
+                        self._keys_pressed.unsafe_offset(idx)[]       = False
+                        self._keys_just_released.unsafe_offset(idx)[] = True
+                    # GLFW_REPEAT: keys_pressed stays True, no just_pressed
+            case InputEventType.MOUSE_BUTTON:
+                var idx = Int(event.key_or_button)
+                if idx >= 0 and idx < _MAX_MOUSE_BUTTONS:
+                    if event.action == GLFW_PRESS:
+                        self._mouse_pressed.unsafe_offset(idx)[]      = True
+                        self._mouse_just_pressed.unsafe_offset(idx)[]  = True
+                    elif event.action == GLFW_RELEASE:
+                        self._mouse_pressed.unsafe_offset(idx)[]       = False
+                        self._mouse_just_released.unsafe_offset(idx)[] = True
+            case InputEventType.CURSOR_POS:
+                var old_x = self.mouse_x
+                var old_y = self.mouse_y
+                self.mouse_x = event.x
+                self.mouse_y = event.y
+                self.mouse_dx += event.x - old_x
+                self.mouse_dy += event.y - old_y
+            case InputEventType.SCROLL:
+                self.scroll_x += event.x
+                self.scroll_y += event.y
+            case _:
+                pass  # unknown event type from the C bridge: ignore

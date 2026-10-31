@@ -114,9 +114,9 @@ struct Adapter(Movable):
                 feat_ptr[unsafe_offset=i] = required_features[i]
 
         var limits_p = null_ptr[WGPULimits]()
-        if required_limits:
+        if case .Some(limits) = required_limits:
             limits_p = raw_alloc[WGPULimits](1)
-            limits_p[] = required_limits.value()
+            limits_p[] = limits
 
         var desc_p = raw_alloc[WGPUDeviceDescriptor](1)
         desc_p[] = WGPUDeviceDescriptor(

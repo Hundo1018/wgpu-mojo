@@ -35,13 +35,13 @@ extra-args = ["-I", "$RECIPE_DIR", "-I", "$RECIPE_DIR/.."]
 compilers = ["c", "cxx", "gcc"]
 
 [package.host-dependencies]
-mojo-compiler = ">=1.0.0,<2"
+mojo-compiler = ">=1.2.0,<2"
 
 [package.build-dependencies]
-mojo-compiler = ">=1.0.0,<2"
+mojo-compiler = ">=1.2.0,<2"
 
 [package.run-dependencies]
-mojo-compiler = ">=1.0.0,<2"
+mojo-compiler = ">=1.2.0,<2"
 
 [activation]
 # Make ffi/lib discoverable when running from the repo (dev mode).
@@ -49,7 +49,7 @@ mojo-compiler = ">=1.0.0,<2"
 env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$DYLD_LIBRARY_PATH" }
 
 [dependencies]
-mojo = ">=1.0.0,<2"
+mojo = ">=1.2.0,<2"
 glfw = ">=3.4,<4"
 # wgpu-mojo is required at runtime for RenderCanvas (canvas.mojo imports wgpu types).
 # Uncomment once wgpu-mojo is published to a conda channel:

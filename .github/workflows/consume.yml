@@ -148,7 +148,7 @@ jobs:
           preview = ["pixi-build"]
 
           [dependencies]
-          mojo = ">=1.0.0,<2"
+          mojo = ">=1.2.0,<2"
           TOML
           cat > "$RUNNER_TEMP/consumer/app.mojo" <<'MOJO'
           from wgpu import Instance

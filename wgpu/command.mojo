@@ -82,8 +82,7 @@ struct CommandBuffer(Movable, Boolable):
         return Int(self._handle) != 0
 
 
-@explicit_destroy("Must call finish() or abandon()")
-struct CommandEncoder(Movable, Deinitable where False):
+struct CommandEncoder(Movable, not Deinitable else "Must call finish() or abandon()"):
     """RAII wrapper around a WGPUCommandEncoder.
 
     This is a linear type: the compiler enforces that you call `finish()`
@@ -398,7 +397,7 @@ struct CommandEncoder(Movable, Deinitable where False):
         desc_p[] = WGPUCommandBufferDescriptor(null_opaque(), label_sv)
         var result = self._lib[].command_encoder_finish(self._handle, desc_p)
         desc_p.unsafe_free()
-        # Release the encoder handle — no __del__ with @explicit_destroy.
+        # Release the encoder handle — no __del__ on a `not Deinitable` type.
         self._lib[].command_encoder_release(self._handle)
         return CommandBuffer(self._lib, result)
 
