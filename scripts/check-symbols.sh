@@ -138,6 +138,9 @@ else
 fi
 
 comm -23 "$TMP/bound_unimpl" "$TMP/allow" > "$TMP/new_unimpl"
+# The ratchet only turns one way: an entry whose binding is gone (or whose stub
+# upstream implemented) must be deleted, or the list stops meaning anything.
+comm -23 "$TMP/allow" "$TMP/bound_unimpl" > "$TMP/stale_allow"
 KNOWN_N=$(wc -l < "$TMP/bound_unimpl" | tr -d ' ')
 NEW_N=$(wc -l < "$TMP/new_unimpl" | tr -d ' ')
 
@@ -165,6 +168,16 @@ if [ "$NEW_N" -gt 0 ]; then
   exit 1
 fi
 
+if [ -s "$TMP/stale_allow" ]; then
+  echo ""
+  echo "  $(wc -l < "$TMP/stale_allow" | tr -d ' ') entr(y/ies) in $ALLOW no longer match a bound stub:"
+  sed 's/^/    - /' "$TMP/stale_allow"
+  echo ""
+  echo "check-symbols: FAILED — delete them from $ALLOW (the binding is gone,"
+  echo "  the name is misspelt, or upstream implemented the function)."
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # Third check: coverage against the surface we actually intend to bind.
 #
@@ -184,6 +197,26 @@ touch "$TMP/excluded"
 comm -23 "$TMP/exported" "$TMP/unimpl" > "$TMP/implemented"
 comm -23 "$TMP/implemented" "$TMP/excluded" > "$TMP/target"
 comm -13 "$TMP/expected" "$TMP/target" > "$TMP/unclassified"
+
+# An exclusion only means something if it names an implemented export we do
+# not bind. Anything else (misspelt, renamed or removed upstream, now a stub,
+# or bound after all) silently subtracts nothing and inflates the count below.
+comm -23 "$TMP/excluded" "$TMP/implemented" > "$TMP/stale_excl"
+comm -12 "$TMP/excluded" "$TMP/expected" > "$TMP/bound_excl"
+if [ -s "$TMP/stale_excl" ] || [ -s "$TMP/bound_excl" ]; then
+  echo ""
+  if [ -s "$TMP/stale_excl" ]; then
+    echo "  $(wc -l < "$TMP/stale_excl" | tr -d ' ') exclusion(s) name no implemented export (misspelt, renamed upstream, or now a stub):"
+    sed 's/^/    - /' "$TMP/stale_excl"
+  fi
+  if [ -s "$TMP/bound_excl" ]; then
+    echo "  $(wc -l < "$TMP/bound_excl" | tr -d ' ') exclusion(s) are bound anyway:"
+    sed 's/^/    - /' "$TMP/bound_excl"
+  fi
+  echo ""
+  echo "check-symbols: FAILED — fix or delete these entries in $EXCLUDE."
+  exit 1
+fi
 
 TARGET_N=$(wc -l < "$TMP/target" | tr -d ' ')
 UNCLASS_N=$(wc -l < "$TMP/unclassified" | tr -d ' ')

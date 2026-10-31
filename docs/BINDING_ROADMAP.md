@@ -53,7 +53,11 @@ Everything this binding names both resolves *and* works.
 
 3. **Classification.** Anything implemented upstream but neither bound nor
    listed in `scripts/excluded-symbols.txt` fails the gate. An upstream bump
-   therefore cannot silently widen the gap.
+   therefore cannot silently widen the gap. The lists are checked in the
+   other direction too: an exclusion that names no implemented export
+   (misspelt, renamed upstream, now a stub) or that is bound anyway fails, as
+   does a `known-unimplemented.txt` entry that no longer matches a bound stub.
+   Otherwise a stale entry subtracts nothing and inflates the reported counts.
 
 `scripts/check_struct_layout.py` (`pixi run check-struct-layout`) covers the
 struct side. For all 88 FFI structs present in both the Mojo layer and the
