@@ -17,6 +17,11 @@ gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c \
     -Iffi/include -Lffi/lib -L"$CONDA_PREFIX/lib" -lwgpu_native \
     -Wl,-rpath,'$ORIGIN' -Wl,-rpath,"$CONDA_PREFIX/lib"
 
+# Static counterpart for -D WGPU_LINK=static builds (see scripts/test-static.sh).
+gcc -c -fPIC -o ffi/lib/wgpu_callbacks.o ffi/wgpu_callbacks.c -Iffi/include
+ar rcs ffi/lib/libwgpu_mojo_cb.a ffi/lib/wgpu_callbacks.o
+rm ffi/lib/wgpu_callbacks.o
+
 gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so \
     rendercanvas-mojo/ffi/glfw_input_callbacks.c \
     -L"$CONDA_PREFIX/lib" -lglfw \

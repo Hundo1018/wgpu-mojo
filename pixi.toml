@@ -159,6 +159,16 @@ test-native-v29    = { cmd = "mojo run -I . tests/test_native_v29_0_1.mojo", dep
 # Callback ABI test (non-GPU)
 test-callback-abi   = { cmd = "mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callback-probe"] }
 
+# -D WGPU_LINK=static (issue #13): every wgpu call is an external_call and the
+# binary links libwgpu_native at build time. Built with `mojo build`, then run.
+test-static     = { cmd = "bash scripts/test-static.sh --non-gpu", depends-on = ["build-callbacks", "build-callback-probe"] }
+test-static-gpu = { cmd = "bash scripts/test-static.sh --gpu",     depends-on = ["build-callbacks"] }
+# Static-mode IR must declare the wgpu symbols and contain no dlopen path.
+check-static-ir = { cmd = "bash scripts/check-static-ir.sh" }
+# What c_fn_ptr yields on wasm64 (table index; by-value-struct callbacks mismatch
+# clang's wasm ABI). Pulls LLVM 23 + node 24 through `pixi exec`.
+check-wasm-fnptr = { cmd = "bash scripts/check-wasm-fnptr.sh" }
+
 # Hello Triangle quickstart
 hello             = { cmd = "mojo run -I . hello.mojo", depends-on = ["build-callbacks"] }
 

@@ -72,6 +72,14 @@ jobs:
       - name: Check FFI call signatures against the C headers
         run: pixi run check-signatures
 
+      # -D WGPU_LINK=static (issue #13): same tests, libwgpu_native linked at
+      # build time, and the IR must carry plain declares with no dlopen path.
+      - name: Run non-GPU tests in static link mode
+        run: pixi run test-static
+
+      - name: Check static-mode IR (wgpu declares, no dlopen)
+        run: pixi run check-static-ir
+
   # ---------------------------------------------------------------------------
   # Headless GPU tests on a free runner via Mesa lavapipe (software Vulkan).
   # No physical GPU and no display server are needed — only the compute/headless
@@ -132,6 +140,15 @@ jobs:
           pixi run test-render-pipeline
           pixi run test-native-v29
 
+      - name: Run the same headless GPU tests in static link mode
+        run: |
+          pixi run build-callbacks
+          pixi run bash scripts/test-static.sh \
+            tests/test_instance.mojo tests/test_device.mojo tests/test_buffer.mojo \
+            tests/test_compute_pipeline.mojo tests/test_add_ref.mojo tests/test_spirv.mojo \
+            tests/test_log_bridge.mojo tests/test_query_set.mojo \
+            tests/test_render_pipeline.mojo tests/test_native_v29_0_1.mojo
+
       # The documented examples, not just the tests. These are headless, so
       # lavapipe can run them. check-compile only ever compiled them, which is
       # how the README's headline example (compute_add_v2) came to be broken in
@@ -141,6 +158,28 @@ jobs:
           pixi run example-enumerate
           pixi run example-compute
           pixi run example-compute-v2
+
+  # ---------------------------------------------------------------------------
+  # c_fn_ptr on wasm64 (issue #13). Host IR retargeted, linked with wasm-ld,
+  # run under node 24. Pins that callback pointers are table indices and that
+  # by-value-struct callbacks still mismatch clang's wasm ABI.
+  # ---------------------------------------------------------------------------
+  wasm-fnptr:
+    name: wasm64 callback pointers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          cache: true
+
+      - name: Build the probe to wasm64 and run it under node
+        run: pixi run check-wasm-fnptr
 
   # ---------------------------------------------------------------------------
   # The conda package users actually install.

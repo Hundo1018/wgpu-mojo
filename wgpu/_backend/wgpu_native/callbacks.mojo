@@ -30,6 +30,14 @@ def c_fn_ptr[F: TrivialRegisterPassable](f: F) -> OpaquePointer[MutUntrackedOrig
     `rebind` refuses the conversion (a function value is a `!kgen.generator`,
     not a `!kgen.pointer`), but the value itself is the bare code address, so it
     is read back through memory instead.
+
+    On wasm64 (host IR retargeted, as in scripts/check-wasm-fnptr.sh) the value
+    is a function-table index, which is what a C function pointer is there, and
+    callbacks with scalar parameters work from both JS and C. The wgpu callbacks
+    below do NOT: Mojo lowers `abi("C")` for the host before retargeting, so
+    their by-value `WGPUStringView` arrives as two i64s (SysV), while clang's
+    wasm ABI passes it indirectly. The caller's `call_indirect` then fails its
+    signature check. That check pins this limitation.
     """
     comptime assert size_of[F]() == size_of[OpaquePointer[MutUntrackedOrigin]](), (
         "c_fn_ptr takes an abi(\"C\") function value"

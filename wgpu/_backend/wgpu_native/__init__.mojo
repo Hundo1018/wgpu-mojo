@@ -1,6 +1,6 @@
 """wgpu._backend.wgpu_native — Raw wgpu-native FFI layer."""
 
-from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.loader import WGPULib, WGPU_LINK_STATIC
 from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 from wgpu._backend.wgpu_native.handles import (

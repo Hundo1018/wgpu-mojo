@@ -4,9 +4,19 @@ wgpu._ffi.lib — Dynamic library loader and raw function dispatcher.
 Loads libwgpu_native.so (and libwgpu_mojo_cb.so, the C log bridge) at
 runtime and exposes every webgpu.h + wgpu.h function as a method call. The
 async completion callbacks are Mojo: see callbacks.mojo.
+
+Link mode is chosen at compile time with `-D WGPU_LINK=dynamic|static`:
+
+- `dynamic` (default): both libraries are dlopen'ed when `WGPULib()` is built.
+- `static`: every call is an `external_call`, so the IR holds a plain `declare`
+  per symbol the program actually uses and nothing calls dlopen. The program
+  must link libwgpu_native (and, if it uses the log bridge,
+  ffi/lib/libwgpu_mojo_cb.a) at build time. In a wasm build those declares
+  become module imports. See scripts/test-static.sh for the native link line.
 """
 
-from std.ffi import OwnedDLHandle
+from std.ffi import OwnedDLHandle, external_call
+from std.sys.defines import get_defined_string
 from std.os import getenv
 from std.sys import CompilationTarget
 from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
@@ -108,6 +118,10 @@ comptime _CB_LIB_NAME   = _cb_lib_name()
 comptime _WGPU_LIB_PATH = _wgpu_dev_path()
 comptime _CB_LIB_PATH   = _cb_dev_path()
 
+comptime _WGPU_LINK = get_defined_string["WGPU_LINK", "dynamic"]()
+comptime WGPU_LINK_STATIC = _WGPU_LINK == "static"
+"""True when built with `-D WGPU_LINK=static` (symbols resolved at link time)."""
+
 # Expected wgpu-native ABI version (matches ffi/wgpu-native-meta/wgpu-native-git-tag)
 comptime _WGPU_NATIVE_VERSION = "v29.0.1.1"
 
@@ -168,6 +182,65 @@ def _load_lib_with_fallback(lib_name: String, dev_path: String) raises -> OwnedD
     raise Error(msg)
 
 
+trait _LibBackend(Movable, Deinitable):
+    """One C library, reached either through dlopen or through the linker.
+
+    `call` has the same shape as `OwnedDLHandle.call`, so call sites read the
+    same in both modes.
+    """
+
+    def __init__(out self, lib_name: String, dev_path: String) raises: ...
+
+    def call[
+        name: StaticString, R: RegisterPassable = NoneType, *T: AnyType
+    ](self, *args: *T) -> R: ...
+
+    def has(self, name: StringSlice) -> Bool: ...
+
+
+struct _DynamicLib(_LibBackend):
+    var _h: OwnedDLHandle
+
+    def __init__(out self, lib_name: String, dev_path: String) raises:
+        self._h = _load_lib_with_fallback(lib_name, dev_path)
+
+    @always_inline
+    def call[
+        name: StaticString, R: RegisterPassable = NoneType, *T: AnyType
+    ](self, *args: *T) -> R:
+        return self._h.call[name, R](args)
+
+    def has(self, name: StringSlice) -> Bool:
+        return Bool(self._h.get_symbol[NoneType](name))
+
+
+struct _StaticLib(_LibBackend):
+    """No handle at all, so dlopen/dlsym/dlclose never reach the IR.
+
+    (An `Optional[OwnedDLHandle]` left at None still emits dlclose in its
+    destructor; the type itself has to be absent.)
+    """
+
+    def __init__(out self, lib_name: String, dev_path: String) raises:
+        pass
+
+    @always_inline
+    def call[
+        name: StaticString, R: RegisterPassable = NoneType, *T: AnyType
+    ](self, *args: *T) -> R:
+        # `*args`, not `args`: the bare pack would be passed as one pointer.
+        return external_call[name, R](*args)
+
+    def has(self, name: StringSlice) -> Bool:
+        # Every symbol the program calls was resolved by the linker; a runtime
+        # lookup by name has nothing to look in.
+        return True
+
+
+# A comptime type choice needs the trait bound; untyped, the alias has no members.
+comptime _Lib: _LibBackend = _StaticLib if WGPU_LINK_STATIC else _DynamicLib
+
+
 # ---------------------------------------------------------------------------
 # WGPULib — owns two DLHandles and dispatches all WGPU function calls
 # ---------------------------------------------------------------------------
@@ -175,8 +248,8 @@ def _load_lib_with_fallback(lib_name: String, dev_path: String) raises -> OwnedD
 struct WGPULib(Movable):
     """Loaded wgpu-native shared library + callback helpers."""
 
-    var _wgpu: OwnedDLHandle
-    var _cb:   OwnedDLHandle
+    var _wgpu: _Lib
+    var _cb:   _Lib
 
 
     def __init__(out self) raises:
@@ -185,8 +258,12 @@ struct WGPULib(Movable):
         #   2. $CONDA_PREFIX/lib/<name>  (conda-installed, pixi activation not needed)
         #   3. ffi/lib/<name>            (dev-tree, CWD = repo root)
         # All three failing raises a descriptive error listing searched paths.
-        self._wgpu = _load_lib_with_fallback(_WGPU_LIB_NAME, _WGPU_LIB_PATH)
-        self._cb   = _load_lib_with_fallback(_CB_LIB_NAME,   _CB_LIB_PATH)
+        comptime assert _WGPU_LINK == "dynamic" or _WGPU_LINK == "static", (
+            "-D WGPU_LINK must be `dynamic` or `static`"
+        )
+        # With -D WGPU_LINK=static nothing is loaded; see _StaticLib.
+        self._wgpu = _Lib(_WGPU_LIB_NAME, _WGPU_LIB_PATH)
+        self._cb   = _Lib(_CB_LIB_NAME,   _CB_LIB_PATH)
 
     def __init__(out self, *, deinit move: Self):
         self._wgpu = move._wgpu^
@@ -201,8 +278,9 @@ struct WGPULib(Movable):
         # Symbols are resolved lazily at each call site, so naming a symbol
         # upstream has renamed still compiles and only fails once that path
         # first runs. This is the null-safe probe used to catch that early;
-        # see wgpu.diagnostics and scripts/check-symbols.sh.
-        return Bool(self._wgpu.get_symbol[NoneType](name))
+        # see wgpu.diagnostics and scripts/check-symbols.sh. Always True in
+        # static mode, where the linker has already done this check.
+        return self._wgpu.has(name)
 
     # ------------------------------------------------------------------
     # Global functions

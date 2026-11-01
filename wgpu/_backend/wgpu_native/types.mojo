@@ -3,7 +3,6 @@ wgpu._backend.wgpu_native.types — Low-level C type aliases, enum constants, an
 mirroring webgpu.h for the wgpu-native v27 API.
 """
 
-from std.ffi import OwnedDLHandle
 
 # ---------------------------------------------------------------------------
 # Opaque handle types (all wgpu objects are pointer-sized)

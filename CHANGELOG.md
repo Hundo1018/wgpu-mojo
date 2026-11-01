@@ -11,6 +11,16 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+### Added
+
+- **Static link mode** (`-D WGPU_LINK=static`, #13). Every wgpu call becomes an
+  `external_call`, so the IR carries a plain `declare` per used symbol and no
+  dlopen path, and `libwgpu_native` is linked at build time. This is the
+  prerequisite for linking wgpu-mojo into a wasm module. The default dynamic
+  mode is unchanged. A static `ffi/lib/libwgpu_mojo_cb.a` log bridge was added,
+  along with the gates `test-static`, `test-static-gpu` and `check-static-ir`
+  (all in CI).
+
 ## [0.3.1] — 2026-10-09
 
 Bug-fix release; same toolchain and ABI pin as 0.3.0 (stable Mojo 1.1.0,

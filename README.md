@@ -279,6 +279,43 @@ pixi run -e maxinterop example-max-interop
 pixi run -e maxinterop test-max-interop
 ```
 
+## Static link mode (`-D WGPU_LINK=static`)
+
+By default `WGPULib()` dlopens `libwgpu_native` when it is created. Build with
+`-D WGPU_LINK=static` and every wgpu call becomes an `external_call`: the IR
+holds a plain `declare` for each wgpu symbol the program **actually uses**
+(unused API emits nothing), there is no dlopen path, and the library is linked
+at build time. The API is the same in both modes. Use this to link wgpu-mojo
+into one executable, or into a WebAssembly module whose `webgpu.h` imports the
+JS side supplies.
+
+```bash
+mojo build -D WGPU_LINK=static -I . \
+  -Xlinker "$CONDA_PREFIX/lib/libwgpu_native.so" \
+  -Xlinker -rpath -Xlinker "$CONDA_PREFIX/lib" \
+  -o app app.mojo
+```
+
+- Build with `mojo build`, not `mojo run`: the JIT can't resolve wgpu symbols
+  that nothing has loaded.
+- The log bridge (`wgpu.diagnostics` log functions) needs
+  `ffi/lib/libwgpu_mojo_cb.a` on the link line, which `pixi run build-callbacks`
+  produces. Programs that don't call it import none of its symbols.
+- Scope: this covers the wgpu-native path only. The GLFW canvas still dlopens
+  GLFW.
+- The define is read when the consumer compiles, so it also works through the
+  precompiled `wgpu` package.
+- **wasm callbacks:** `pixi run check-wasm-fnptr` builds a probe to wasm64
+  (host IR retargeted, the route ludens-engine measured) and checks the result.
+  A callback pointer is a function-table index, and scalar-parameter callbacks
+  work from JS and C. The wgpu callbacks don't yet: Mojo lowers their by-value
+  `WGPUStringView` for x86-64 before retargeting, so a clang-compiled caller
+  such as emdawnwebgpu hits a `call_indirect` signature mismatch. That's
+  tracked with the browser work in #14.
+- Gates: `pixi run test-static`, `pixi run test-static-gpu` (the same tests,
+  linked statically), and `pixi run check-static-ir` (declares present, no
+  `dlopen`/`dlsym`/`dlclose`).
+
 ---
 
 ## API reference
