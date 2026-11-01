@@ -39,3 +39,5 @@ for app in "${APPS[@]}"; do
   echo "build-web: $OUT/$app.wasm ($(stat -c %s "$OUT/$app.wasm") bytes)"
 done
 cp web/*.html web/*.mjs web/*.json scripts/webgpu_enum_strings.json "$OUT/"
+# The shared JS runtime (ludens-wasm-rt) comes from the optional pixi `wasm` environment.
+cp "$(pixi run -e wasm python3 -c 'import ludens_wasm_rt; print(ludens_wasm_rt.HOST_MJS)')" "$OUT/host.mjs"
