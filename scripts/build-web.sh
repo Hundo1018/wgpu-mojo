@@ -38,4 +38,4 @@ for app in "${APPS[@]}"; do
   fi
   echo "build-web: $OUT/$app.wasm ($(stat -c %s "$OUT/$app.wasm") bytes)"
 done
-cp web/*.html web/*.mjs web/*.json "$OUT/" 2>/dev/null || true
+cp web/*.html web/*.mjs web/*.json scripts/webgpu_enum_strings.json "$OUT/"

@@ -3,8 +3,7 @@
 <body><canvas id="canvas" width="64" height="48"></canvas><pre id="log"></pre>
 <script type="module">
 // Automated check for scripts/test-web.sh: the result goes into document.title.
-import createTriangle from './triangle.mjs';
-import createCompute from './compute.mjs';
+import { loadWasm } from './wgpu_loader.mjs';
 import { startApp, captureFrame } from './wgpu_host.mjs';
 
 // ?canvas-lost: headless Chrome destroys the GPUDevice right after a canvas is
@@ -20,22 +19,57 @@ try {
 
   // 1. Compute + non-blocking read-back. First: headless Chrome loses its
   // GPU instance once the triangle draws to a canvas (see ?canvas-lost).
-  const C = await createCompute();
-  const app = C._compute_start();
+  const C = await loadWasm('./compute.wasm');
+  const app = C.compute_start();
   if (!app) fail('compute_start');
   let st = 0, frames = 0;
-  while ((st = C._compute_step(app)) === 0 && frames < 600) { frames++; await frame(); }
+  while ((st = C.compute_step(app)) === 0 && frames < 600) { frames++; await frame(); }
   if (st !== 1) fail('compute_step=' + st);
-  const n = C._compute_len(app);
+  const n = C.compute_len(app);
   let bad = 0;
-  for (let i = 0; i < n; i++) if (C._compute_value(app, i) !== 3 * i) bad++;
-  log(`compute: n=${n} mismatches=${bad} polls=${C._compute_polls(app)} frames=${frames}`);
+  for (let i = 0; i < n; i++) if (C.compute_value(app, i) !== 3 * i) bad++;
+  log(`compute: n=${n} mismatches=${bad} polls=${C.compute_polls(app)} frames=${frames}`);
   if (n !== 1024 || bad) fail('compute result');
+
+  // 1b. Two mapAsync calls in one frame complete in call order (#19).
+  const before = C.rt.cbLog.length;
+  let two = 0;
+  for (let i = 0; two === 0 && i < 600; i++) { two = C.compute_two_maps(app); if (two === 0) await frame(); }
+  if (two !== 1) fail('compute_two_maps=' + two);
+  const order = C.rt.cbLog.slice(before);
+  log('two mapAsync callbacks ran in future order: ' + order);
+  if (order.length !== 2 || order[0] >= order[1]) fail('mapAsync callback order ' + order);
+
+  // 1c. JS must not re-enter wasm from a microtask (#19): the runtime refuses.
+  let reentry = null;
+  await Promise.resolve().then(() => { try { C.rt.call_fn(1n); } catch (e) { reentry = e; } });
+  log('re-entry from a microtask: ' + (reentry ? 'refused' : 'ALLOWED'));
+  if (!reentry || !/re-entry/.test(reentry.message)) fail('microtask re-entry was not refused');
+
+  // 1d. Every TextureFormat string is one the browser accepts (#18).
+  const enums = await (await fetch('./webgpu_enum_strings.json')).json();
+  const adapter = await navigator.gpu.requestAdapter();
+  const dev = await adapter.requestDevice({ requiredFeatures: [...adapter.features] });
+  const rejected = [];
+  for (const f of Object.values(enums.TextureFormat)) {
+    dev.pushErrorScope('validation');
+    let t = null, threw = false;
+    try { t = dev.createTexture({ size: [120, 120], format: f, usage: GPUTextureUsage.TEXTURE_BINDING }); }
+    catch (e) { threw = true; }   // a TypeError: the browser does not know this format string at all
+    const err = await dev.popErrorScope();
+    t?.destroy();
+    if (err || threw) rejected.push(f);
+  }
+  log(`texture formats: ${Object.keys(enums.TextureFormat).length} strings, rejected by this browser: ${rejected.join(',') || 'none'}`);
+  // Formats a browser may lack for want of a feature; anything else rejected is a table bug.
+  const KNOWN = /^(bc|etc2|eac|astc)|^(r|rg|rgba)16(unorm|snorm)$|^depth32float-stencil8$/;
+  const unexpected = rejected.filter((f) => !KNOWN.test(f));
+  if (unexpected.length) fail('texture format strings rejected: ' + unexpected);
 
   // 2. Clear + triangle on a canvas, checked through the frame-capture hook.
   const canvas = document.getElementById('canvas');
-  const host = await startApp(createTriangle, canvas);
-  for (let i = 0; host.M._wgpu_app_frames(host.app) < 3; i++) {
+  const host = await startApp(await loadWasm('./triangle.wasm'), canvas);
+  for (let i = 0; host.M.wgpu_app_frames(host.app) < 3; i++) {
     if (host.error()) fail('frame loop: ' + host.error());
     if (i > 600) fail('no frame drawn after 600 animation frames');
     await frame();
@@ -67,7 +101,7 @@ try {
   // 3. DOM input reaches the Mojo InputState.
   canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: canvas.getBoundingClientRect().left + 17, bubbles: true }));
   await frame();
-  const mx = host.M._wgpu_app_mouse_x(host.app);
+  const mx = host.M.wgpu_app_mouse_x(host.app);
   log(`input: mouse_x=${mx}`);
   if (mx !== 17) fail('mousemove did not reach InputState: ' + mx);
 

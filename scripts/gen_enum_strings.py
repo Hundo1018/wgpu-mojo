@@ -11,7 +11,6 @@ value in types.mojo has no string, or if the table has an entry types.mojo lacks
 Bitflags are passed through as integers and are not in the table.
 """
 import json, os, re, sys
-import yaml
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "scripts/webgpu_enum_strings.json")
@@ -39,8 +38,30 @@ def js_name(enum, entry):
     return low.replace("_", "-")
 
 
+def parse_enums(text):
+    """The `enums:` section of webgpu.yml, without a YAML library (the pixi
+    environment has none): [{name, entries: [{name} | None]}]."""
+    out, inside = [], False
+    for line in text.splitlines():
+        if re.match(r"^\S", line):
+            inside = line.startswith("enums:")
+            continue
+        if not inside:
+            continue
+        m = re.match(r"^  - name: \"?([^\s\"]+)\"?\s*$", line)
+        if m:
+            out.append({"name": m.group(1), "entries": []})
+        elif re.match(r"^      - null\s*$", line):
+            out[-1]["entries"].append(None)
+        else:
+            m = re.match(r"^      - name: \"?([^\s\"]+)\"?\s*$", line)
+            if m:
+                out[-1]["entries"].append({"name": m.group(1)})
+    return out
+
+
 def build():
-    meta = yaml.safe_load(open(os.path.join(ROOT, "ffi/wgpu-native-meta/webgpu.yml")))
+    meta = {"enums": parse_enums(open(os.path.join(ROOT, "ffi/wgpu-native-meta/webgpu.yml")).read())}
     header = open(os.path.join(ROOT, "ffi/include/webgpu/webgpu.h")).read()
     table, problems = {}, []
     for e in meta["enums"]:

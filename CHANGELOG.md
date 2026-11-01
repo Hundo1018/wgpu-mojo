@@ -43,8 +43,15 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   layer. Removed: `setup-emsdk`, `check-web-struct-layout`, `StringViewArg` /
   `sv_arg` (callbacks take `WGPUStringView` again), and the Emscripten canvas
   struct (replaced by `WGPUSurfaceSourceCanvasHTMLSelector`, SType `0x00050000`).
-  `build-web` produces wasm64 IR only until #16/#17 land the link step and the
-  translator, so `test-web` does not run yet.
+- **Web target runs without Emscripten** (#16–#20). `wasm.toml` + `build-web`
+  link wasm64 with `llc`/`wasm-ld` and `ffi/wasm/wasm_rt.c`; `web/` holds a JS
+  translation layer generated from `webgpu.h` (`scripts/gen_webgpu_js.py`),
+  with the 58 functions the examples need implemented and every other import
+  trapping by name. Enum values map to browser strings through
+  `scripts/webgpu_enum_strings.json`. `test-web` passes in headless Firefox and
+  Chrome. New gates: `check-enum-strings`, `check-webgpu-js`; `check-web-imports`
+  also audits import signatures. `WGPULib` value `WGPUWGSLLanguageFeatureName.LinearIndexing`
+  (10) was missing and is added.
 
 ## [0.4.0] — 2026-11-01
 

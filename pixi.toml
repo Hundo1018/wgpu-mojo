@@ -172,15 +172,17 @@ check-static-ir = { cmd = "bash scripts/check-static-ir.sh" }
 check-wasm-fnptr = { cmd = "bash scripts/check-wasm-fnptr.sh" }
 
 # Browser target, -D WGPU_TARGET=web: wasm64 IR for the shared wasm-ld toolchain
-# (issue #15). Linking and the JS translation layer follow in #16/#17.
+# (#15), linked with wasm-ld (#16); web/ holds the JS translation layer (#17).
 build-web   = { cmd = "bash scripts/build-web.sh" }
-# Headless Firefox and/or Chrome run build/web/test.html (Node >= 22). Needs the
-# linked module, which arrives with #16/#17.
-test-web    = { cmd = "bash scripts/test-web.sh" }
+# Headless Firefox and/or Chrome run build/web/test.html (Node >= 22).
+test-web    = { cmd = "bash scripts/test-web.sh", depends-on = ["build-web"] }
 serve-web   = { cmd = "python3 -m http.server 8000 --bind 127.0.0.1 --directory build/web" }
 # The web IR calls only standard webgpu.h; target.mojo's native-only list is current.
 check-web-imports = { cmd = "python3 scripts/check_web_imports.py build/web/triangle.ll build/web/compute.ll", depends-on = ["build-web"] }
 
+# Regenerate / verify web/webgpu_layout.json and web/webgpu_host.mjs from webgpu.h + web/implemented.txt.
+gen-webgpu-js   = { cmd = "python3 scripts/gen_webgpu_js.py" }
+check-webgpu-js = { cmd = "python3 scripts/gen_webgpu_js.py --check" }
 # JS strings for the enum values the web translator passes to the browser.
 check-enum-strings = { cmd = "python3 scripts/gen_enum_strings.py --check" }
 

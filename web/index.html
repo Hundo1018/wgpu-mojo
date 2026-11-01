@@ -3,8 +3,8 @@
 <style>body{margin:0;background:#111;display:grid;place-items:center;height:100vh}</style></head>
 <body><canvas id="canvas" width="640" height="480"></canvas>
 <script type="module">
-import createModule from './triangle.mjs';
+import { loadWasm } from './wgpu_loader.mjs';
 import { startApp } from './wgpu_host.mjs';
 if (!navigator.gpu) document.body.textContent = 'This browser has no WebGPU.';
-else startApp(createModule, document.getElementById('canvas')).catch((e) => document.body.textContent = e);
+else loadWasm('./triangle.wasm').then((M) => startApp(M, document.getElementById('canvas')))).catch((e) => document.body.textContent = e);
 </script></body></html>

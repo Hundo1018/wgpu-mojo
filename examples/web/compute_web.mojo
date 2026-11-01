@@ -53,6 +53,11 @@ struct WebCompute(Movable):
     var req: Optional[MapRequest]
     var result: List[Float32]
     var polls: Int
+    var two: Optional[Buffer]
+    var two2: Optional[Buffer]
+    var two_a: Optional[MapRequest]
+    var two_b: Optional[MapRequest]
+    var two_done: Bool
 
     def __init__(out self) raises:
         self.boot = GPUBoot("compute")
@@ -60,6 +65,11 @@ struct WebCompute(Movable):
         self.req = None
         self.result = List[Float32]()
         self.polls = 0
+        self.two = None
+        self.two2 = None
+        self.two_a = None
+        self.two_b = None
+        self.two_done = False
 
     def __init__(out self, *, deinit move: Self):
         self.boot = move.boot^
@@ -67,6 +77,11 @@ struct WebCompute(Movable):
         self.req = move.req^
         self.result = move.result^
         self.polls = move.polls
+        self.two = move.two^
+        self.two2 = move.two2^
+        self.two_a = move.two_a^
+        self.two_b = move.two_b^
+        self.two_done = move.two_done
 
     def dispatch(mut self) raises:
         ref device = self.boot.device()
@@ -134,6 +149,33 @@ struct WebCompute(Movable):
         self.readback.value().unmap()
         return 1
 
+    def two_maps(mut self) raises -> Int32:
+        """Two mapAsync calls in one frame (#19). 0 = pending, 1 = both done.
+        The host checks the callbacks ran in call order."""
+        if self.two_done:
+            return 1
+        ref device = self.boot.device()
+        if not self.two_a:
+            var buf = device.create_buffer(
+                UInt64(16), WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST, label="two"
+            )
+            var buf2 = device.create_buffer(
+                UInt64(16), WGPUBufferUsage.MAP_READ | WGPUBufferUsage.COPY_DST, label="two2"
+            )
+            self.two_a = buf.map_async(WGPUMapMode.READ)
+            self.two_b = buf2.map_async(WGPUMapMode.READ)
+            self.two = buf^
+            self.two2 = buf2^
+            return 0
+        if not (self.two_a.value().ready() and self.two_b.value().ready()):
+            return 0
+        _ = self.two_a.take()
+        _ = self.two_b.take()
+        self.two.value().unmap()
+        self.two2.value().unmap()
+        self.two_done = True
+        return 1
+
 
 def _app(handle: UInt64) -> Pointer[WebCompute, MutUntrackedOrigin]:
     return Pointer[WebCompute, MutUntrackedOrigin](unsafe_from_address=Int(handle))
@@ -157,6 +199,15 @@ def compute_step(app: UInt64) abi("C") -> Int32:
         return _app(app)[].step()
     except e:
         print("compute_step:", e)
+        return -1
+
+
+@export
+def compute_two_maps(app: UInt64) abi("C") -> Int32:
+    try:
+        return _app(app)[].two_maps()
+    except e:
+        print("compute_two_maps:", e)
         return -1
 
 

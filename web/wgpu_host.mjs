@@ -12,18 +12,16 @@ const keyCode = (code) => KEYS[code]
 const BUTTONS = [0, 2, 1];  // DOM left/middle/right -> GLFW left/middle/right
 const EV = { KEY: 1, MOUSE_BUTTON: 2, CURSOR_POS: 3, SCROLL: 4 };
 
-export async function startApp(createModule, canvas) {
-  const M = await createModule();
-  const selector = '#' + canvas.id;
-  const len = M.lengthBytesUTF8(selector);
-  const sel = M.stringToNewUTF8(selector);
+// M comes from loadWasm() in wgpu_loader.mjs.
+export async function startApp(M, canvas) {
+  const [sel, len] = M.rt.str_in('#' + canvas.id);
   // u64 parameters are BigInt on wasm64; the handle comes back as a BigInt too.
-  const app = M._wgpu_app_init(BigInt(sel), BigInt(len), canvas.width, canvas.height);
-  M._free?.(sel);
+  const app = M.wgpu_app_init(sel, BigInt(len), canvas.width, canvas.height);
+  M.rt.free(sel);
   if (!app) throw new Error('wgpu_app_init failed');
 
   const input = (kind, key, action, x = 0, y = 0) =>
-    M._wgpu_app_input(app, kind, key, action, 0, x, y);
+    M.wgpu_app_input(app, kind, key, action, 0, x, y);
   addEventListener('keydown', (e) => input(EV.KEY, keyCode(e.code), e.repeat ? 2 : 1));
   addEventListener('keyup', (e) => input(EV.KEY, keyCode(e.code), 0));
   canvas.addEventListener('mousedown', (e) => input(EV.MOUSE_BUTTON, BUTTONS[e.button] ?? e.button, 1));
@@ -33,7 +31,7 @@ export async function startApp(createModule, canvas) {
 
   let last = performance.now(), failed = null;
   const loop = (now) => {
-    const status = M._wgpu_app_frame(app, (now - last) / 1000);
+    const status = M.wgpu_app_frame(app, (now - last) / 1000);
     last = now;
     if (status < 0) { failed = new Error('wgpu_app_frame failed'); return; }
     requestAnimationFrame(loop);
@@ -45,15 +43,15 @@ export async function startApp(createModule, canvas) {
 // Pixels of the next drawn frame, as {width, height, pitch, format, bytes}.
 // For video: feed `bytes` to a WebCodecs VideoFrame or MediaRecorder canvas.
 export async function captureFrame({ M, app }, width, height) {
-  M._wgpu_app_request_capture(app);
+  M.wgpu_app_request_capture(app);
   for (;;) {
     await new Promise((r) => requestAnimationFrame(r));
-    const ptr = Number(M._wgpu_app_capture_ptr(app));
+    const ptr = Number(M.wgpu_app_capture_ptr(app));
     if (ptr) {
-      const pitch = M._wgpu_app_capture_pitch(app);
-      const bytes = M.HEAPU8.slice(ptr, ptr + pitch * height);
-      M._wgpu_app_capture_release(app);
-      return { width, height, pitch, format: M._wgpu_app_format(app), bytes };
+      const pitch = M.wgpu_app_capture_pitch(app);
+      const bytes = M.rt.u8.slice(ptr, ptr + pitch * height);
+      M.wgpu_app_capture_release(app);
+      return { width, height, pitch, format: M.wgpu_app_format(app), bytes };
     }
   }
 }

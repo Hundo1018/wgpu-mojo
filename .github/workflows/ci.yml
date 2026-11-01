@@ -163,11 +163,13 @@ jobs:
           pixi run example-compute-v2
 
   # ---------------------------------------------------------------------------
-  # Browser target (issues #14, #15): -D WGPU_TARGET=web -> wasm64 IR. The
-  # linked module and the browser run return with the JS translator (#16/#17).
+  # Browser target (issues #14-#20): -D WGPU_TARGET=web -> wasm64, linked with
+  # wasm-ld, run against the JS translation layer in headless Firefox (full
+  # pixel checks) and Chrome (swiftshader; no canvas read-back, see
+  # scripts/test-web.sh).
   # ---------------------------------------------------------------------------
   web:
-    name: Browser target (wasm64 IR)
+    name: Browser target (wasm64)
     if: >-
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
@@ -183,8 +185,24 @@ jobs:
         with:
           cache: true
 
-      - name: Build the web examples to wasm64 IR and check their imports
+      - name: Setup Node 24 (global WebSocket/fetch for the test drivers)
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install Mesa Vulkan (WebGPU backend for Firefox)
+        run: sudo apt-get update -q && sudo apt-get install -y -q mesa-vulkan-drivers
+
+      - name: Generated tables are current
+        run: |
+          pixi run check-enum-strings
+          pixi run check-webgpu-js
+
+      - name: Build the web examples and check their imports
         run: pixi run check-web-imports
+
+      - name: Run them in headless browsers
+        run: pixi run test-web
 
   # ---------------------------------------------------------------------------
   # c_fn_ptr on wasm64 (issue #13). Host IR retargeted, linked with wasm-ld,
