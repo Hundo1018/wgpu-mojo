@@ -32,6 +32,43 @@ def functions(header):
     return set(re.findall(r"\b(wgpu[A-Z]\w*)\s*\(", flat))
 
 
+def split_params(text):
+    out, depth, cur = [], 0, ""
+    for ch in text:
+        if ch in "({<[": depth += 1
+        elif ch in ")}>]": depth -= 1
+        if ch == "," and depth == 0:
+            out.append(cur.strip()); cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        out.append(cur.strip())
+    return out
+
+
+SCALAR = re.compile(r"^(i32|i64|float|double|ptr)\b")
+
+
+def audit_signatures(ll):
+    """A JS import takes i32/i64/f32/f64 (ptr is i64 on wasm64) and returns at
+    most one scalar. A by-value struct <= 16 B with floats would be lowered to a
+    vector register; a larger one arrives as a `byval` pointer, which is fine."""
+    bad = []
+    for m in re.finditer(r"^declare ([^@]*)@(wgpu[A-Z]\w*)\((.*)\)", read(ll), re.M):
+        ret, name, params = m.group(1).split(), m.group(2), split_params(m.group(3))
+        rt = [t for t in ret if SCALAR.match(t) or t == "void"]
+        if not rt or any(c in m.group(1) for c in "<{["):
+            bad.append("%s: return type `%s` is not a scalar" % (name, m.group(1).strip()))
+        for p in params:
+            if p == "...":
+                bad.append("%s: variadic import" % name)
+            elif "byval" in p:
+                continue
+            elif not SCALAR.match(p) or any(c in p.split()[0] for c in "<{["):
+                bad.append("%s: parameter `%s` is not a JS-importable scalar" % (name, p))
+    return bad
+
+
 def main():
     hdr = os.path.join(ROOT, "ffi/include/webgpu/webgpu.h")
     lls = sys.argv[1:]
@@ -47,6 +84,7 @@ def main():
         missing = sorted(called - web_fns)
         bad += ["%s calls %s, which the browser's WebGPU has no counterpart for" % (os.path.basename(ll), f)
                 for f in missing]
+        bad += audit_signatures(ll)
         print("  %s: %d wgpu imports, all standard webgpu.h: %s" % (os.path.basename(ll), len(called), not missing))
 
     loader = read(os.path.join(ROOT, "wgpu/_backend/wgpu_native/loader.mojo"))

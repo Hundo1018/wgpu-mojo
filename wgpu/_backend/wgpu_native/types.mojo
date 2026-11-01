@@ -575,6 +575,7 @@ struct WGPUWGSLLanguageFeatureName:
     comptime ChromiumTestingExperimental: UInt32 = 7
     comptime ChromiumTestingShippedWithKillswitch: UInt32 = 8
     comptime ChromiumTestingShipped: UInt32 = 9
+    comptime LinearIndexing: UInt32 = 10
 
 # ---------------------------------------------------------------------------
 # Bitflags — structs wrapping UInt64, supporting |, &, ~

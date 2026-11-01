@@ -181,6 +181,9 @@ serve-web   = { cmd = "python3 -m http.server 8000 --bind 127.0.0.1 --directory 
 # The web IR calls only standard webgpu.h; target.mojo's native-only list is current.
 check-web-imports = { cmd = "python3 scripts/check_web_imports.py build/web/triangle.ll build/web/compute.ll", depends-on = ["build-web"] }
 
+# JS strings for the enum values the web translator passes to the browser.
+check-enum-strings = { cmd = "python3 scripts/gen_enum_strings.py --check" }
+
 # Hello Triangle quickstart
 hello             = { cmd = "mojo run -I . hello.mojo", depends-on = ["build-callbacks"] }
 

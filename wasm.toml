@@ -1,0 +1,14 @@
+# Build manifest for the wasm64 route (issues #15, #16). Passive: it does nothing
+# for users who do not build for the browser. scripts/build-web.sh reads it;
+# a shared driver (ludens-wasm-rt) can read the same file.
+[lib]
+name = "wgpu"
+mojo_defines = ["WGPU_TARGET=web"]
+include = ["."]
+c_sources = ["ffi/wasm/wasm_rt.c"]
+js = "web/webgpu_host.mjs"          # exports createImports(rt) -> object
+host_imports = ["wgpu*"]            # import names the lib's JS provides
+
+[toolchain]
+llvm = "23.1.4"                     # llc / wasm-ld / clang share a major
+target_cpu = "x86-64"

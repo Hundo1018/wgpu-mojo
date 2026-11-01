@@ -1,0 +1,490 @@
+{
+ "AdapterType": {
+  "1": "discrete-gpu",
+  "2": "integrated-gpu",
+  "3": "cpu",
+  "4": "unknown"
+ },
+ "AddressMode": {
+  "1": "clamp-to-edge",
+  "2": "repeat",
+  "3": "mirror-repeat"
+ },
+ "BackendType": {
+  "1": "null",
+  "2": "webgpu",
+  "3": "d3d11",
+  "4": "d3d12",
+  "5": "metal",
+  "6": "vulkan",
+  "7": "opengl",
+  "8": "opengles"
+ },
+ "BlendFactor": {
+  "1": "zero",
+  "10": "one-minus-dst-alpha",
+  "11": "src-alpha-saturated",
+  "12": "constant",
+  "13": "one-minus-constant",
+  "14": "src1",
+  "15": "one-minus-src1",
+  "16": "src1-alpha",
+  "17": "one-minus-src1-alpha",
+  "2": "one",
+  "3": "src",
+  "4": "one-minus-src",
+  "5": "src-alpha",
+  "6": "one-minus-src-alpha",
+  "7": "dst",
+  "8": "one-minus-dst",
+  "9": "dst-alpha"
+ },
+ "BlendOperation": {
+  "1": "add",
+  "2": "subtract",
+  "3": "reverse-subtract",
+  "4": "min",
+  "5": "max"
+ },
+ "BufferBindingType": {
+  "0": "binding-not-used",
+  "2": "uniform",
+  "3": "storage",
+  "4": "read-only-storage"
+ },
+ "BufferMapState": {
+  "1": "unmapped",
+  "2": "pending",
+  "3": "mapped"
+ },
+ "CallbackMode": {
+  "1": "wait-any-only",
+  "2": "allow-process-events",
+  "3": "allow-spontaneous"
+ },
+ "CompareFunction": {
+  "1": "never",
+  "2": "less",
+  "3": "equal",
+  "4": "less-equal",
+  "5": "greater",
+  "6": "not-equal",
+  "7": "greater-equal",
+  "8": "always"
+ },
+ "CompilationInfoRequestStatus": {
+  "1": "success",
+  "2": "callback-cancelled"
+ },
+ "CompilationMessageType": {
+  "1": "error",
+  "2": "warning",
+  "3": "info"
+ },
+ "ComponentSwizzle": {
+  "1": "zero",
+  "2": "one",
+  "3": "r",
+  "4": "g",
+  "5": "b",
+  "6": "a"
+ },
+ "CompositeAlphaMode": {
+  "0": "auto",
+  "1": "opaque",
+  "2": "premultiplied",
+  "3": "unpremultiplied",
+  "4": "inherit"
+ },
+ "CreatePipelineAsyncStatus": {
+  "1": "success",
+  "2": "callback-cancelled",
+  "3": "validation-error",
+  "4": "internal-error"
+ },
+ "CullMode": {
+  "1": "none",
+  "2": "front",
+  "3": "back"
+ },
+ "DeviceLostReason": {
+  "1": "unknown",
+  "2": "destroyed",
+  "3": "callback-cancelled",
+  "4": "failed-creation"
+ },
+ "ErrorFilter": {
+  "1": "validation",
+  "2": "out-of-memory",
+  "3": "internal"
+ },
+ "ErrorType": {
+  "1": "no-error",
+  "2": "validation",
+  "3": "out-of-memory",
+  "4": "internal",
+  "5": "unknown"
+ },
+ "FeatureLevel": {
+  "1": "compatibility",
+  "2": "core"
+ },
+ "FeatureName": {
+  "1": "core-features-and-limits",
+  "10": "indirect-first-instance",
+  "11": "shader-f16",
+  "12": "rg11b10-ufloat-renderable",
+  "13": "bgra8-unorm-storage",
+  "14": "float32-filterable",
+  "15": "float32-blendable",
+  "16": "clip-distances",
+  "17": "dual-source-blending",
+  "18": "subgroups",
+  "19": "texture-formats-tier-1",
+  "2": "depth-clip-control",
+  "20": "texture-formats-tier-2",
+  "21": "primitive-index",
+  "22": "texture-component-swizzle",
+  "3": "depth32-float-stencil8",
+  "4": "texture-compression-bc",
+  "5": "texture-compression-bc-sliced-3d",
+  "6": "texture-compression-etc2",
+  "7": "texture-compression-astc",
+  "8": "texture-compression-astc-sliced-3d",
+  "9": "timestamp-query"
+ },
+ "FilterMode": {
+  "1": "nearest",
+  "2": "linear"
+ },
+ "FrontFace": {
+  "1": "ccw",
+  "2": "cw"
+ },
+ "IndexFormat": {
+  "1": "uint16",
+  "2": "uint32"
+ },
+ "InstanceFeatureName": {
+  "1": "timed-wait-any",
+  "2": "shader-source-spirv",
+  "3": "multiple-devices-per-adapter"
+ },
+ "LoadOp": {
+  "1": "load",
+  "2": "clear"
+ },
+ "MapAsyncStatus": {
+  "1": "success",
+  "2": "callback-cancelled",
+  "3": "error",
+  "4": "aborted"
+ },
+ "MipmapFilterMode": {
+  "1": "nearest",
+  "2": "linear"
+ },
+ "OptionalBool": {
+  "0": "false",
+  "1": "true"
+ },
+ "PopErrorScopeStatus": {
+  "1": "success",
+  "2": "callback-cancelled",
+  "3": "error"
+ },
+ "PowerPreference": {
+  "1": "low-power",
+  "2": "high-performance"
+ },
+ "PredefinedColorSpace": {
+  "1": "srgb",
+  "2": "display-p3"
+ },
+ "PresentMode": {
+  "1": "fifo",
+  "2": "fifo-relaxed",
+  "3": "immediate",
+  "4": "mailbox"
+ },
+ "PrimitiveTopology": {
+  "1": "point-list",
+  "2": "line-list",
+  "3": "line-strip",
+  "4": "triangle-list",
+  "5": "triangle-strip"
+ },
+ "QueryType": {
+  "1": "occlusion",
+  "2": "timestamp"
+ },
+ "QueueWorkDoneStatus": {
+  "1": "success",
+  "2": "callback-cancelled",
+  "3": "error"
+ },
+ "RequestAdapterStatus": {
+  "1": "success",
+  "2": "callback-cancelled",
+  "3": "unavailable",
+  "4": "error"
+ },
+ "RequestDeviceStatus": {
+  "1": "success",
+  "2": "callback-cancelled",
+  "3": "error"
+ },
+ "SType": {
+  "1": "shader-source-spirv",
+  "10": "surface-color-management",
+  "11": "request-adapter-webxr-options",
+  "12": "texture-component-swizzle-descriptor",
+  "13": "external-texture-binding-layout",
+  "14": "external-texture-binding-entry",
+  "15": "compatibility-mode-limits",
+  "16": "texture-binding-view-dimension",
+  "2": "shader-source-wgsl",
+  "3": "render-pass-max-draw-count",
+  "4": "surface-source-metal-layer",
+  "5": "surface-source-windows-hwnd",
+  "6": "surface-source-xlib-window",
+  "7": "surface-source-wayland-surface",
+  "8": "surface-source-android-native-window",
+  "9": "surface-source-xcb-window"
+ },
+ "SamplerBindingType": {
+  "0": "binding-not-used",
+  "2": "filtering",
+  "3": "non-filtering",
+  "4": "comparison"
+ },
+ "Status": {
+  "1": "success",
+  "2": "error"
+ },
+ "StencilOperation": {
+  "1": "keep",
+  "2": "zero",
+  "3": "replace",
+  "4": "invert",
+  "5": "increment-clamp",
+  "6": "decrement-clamp",
+  "7": "increment-wrap",
+  "8": "decrement-wrap"
+ },
+ "StorageTextureAccess": {
+  "0": "binding-not-used",
+  "2": "write-only",
+  "3": "read-only",
+  "4": "read-write"
+ },
+ "StoreOp": {
+  "1": "store",
+  "2": "discard"
+ },
+ "SurfaceGetCurrentTextureStatus": {
+  "1": "success-optimal",
+  "2": "success-suboptimal",
+  "3": "timeout",
+  "4": "outdated",
+  "5": "lost",
+  "6": "error"
+ },
+ "TextureAspect": {
+  "1": "all",
+  "2": "stencil-only",
+  "3": "depth-only"
+ },
+ "TextureDimension": {
+  "1": "1d",
+  "2": "2d",
+  "3": "3d"
+ },
+ "TextureFormat": {
+  "1": "r8unorm",
+  "10": "rg8unorm",
+  "100": "astc-12x12-unorm",
+  "101": "astc-12x12-unorm-srgb",
+  "11": "rg8snorm",
+  "12": "rg8uint",
+  "13": "rg8sint",
+  "14": "r32float",
+  "15": "r32uint",
+  "16": "r32sint",
+  "17": "rg16unorm",
+  "18": "rg16snorm",
+  "19": "rg16uint",
+  "2": "r8snorm",
+  "20": "rg16sint",
+  "21": "rg16float",
+  "22": "rgba8unorm",
+  "23": "rgba8unorm-srgb",
+  "24": "rgba8snorm",
+  "25": "rgba8uint",
+  "26": "rgba8sint",
+  "27": "bgra8unorm",
+  "28": "bgra8unorm-srgb",
+  "29": "rgb10a2uint",
+  "3": "r8uint",
+  "30": "rgb10a2unorm",
+  "31": "rg11b10ufloat",
+  "32": "rgb9e5ufloat",
+  "33": "rg32float",
+  "34": "rg32uint",
+  "35": "rg32sint",
+  "36": "rgba16unorm",
+  "37": "rgba16snorm",
+  "38": "rgba16uint",
+  "39": "rgba16sint",
+  "4": "r8sint",
+  "40": "rgba16float",
+  "41": "rgba32float",
+  "42": "rgba32uint",
+  "43": "rgba32sint",
+  "44": "stencil8",
+  "45": "depth16unorm",
+  "46": "depth24plus",
+  "47": "depth24plus-stencil8",
+  "48": "depth32float",
+  "49": "depth32float-stencil8",
+  "5": "r16unorm",
+  "50": "bc1-rgba-unorm",
+  "51": "bc1-rgba-unorm-srgb",
+  "52": "bc2-rgba-unorm",
+  "53": "bc2-rgba-unorm-srgb",
+  "54": "bc3-rgba-unorm",
+  "55": "bc3-rgba-unorm-srgb",
+  "56": "bc4-r-unorm",
+  "57": "bc4-r-snorm",
+  "58": "bc5-rg-unorm",
+  "59": "bc5-rg-snorm",
+  "6": "r16snorm",
+  "60": "bc6h-rgb-ufloat",
+  "61": "bc6h-rgb-float",
+  "62": "bc7-rgba-unorm",
+  "63": "bc7-rgba-unorm-srgb",
+  "64": "etc2-rgb8unorm",
+  "65": "etc2-rgb8unorm-srgb",
+  "66": "etc2-rgb8a1unorm",
+  "67": "etc2-rgb8a1unorm-srgb",
+  "68": "etc2-rgba8unorm",
+  "69": "etc2-rgba8unorm-srgb",
+  "7": "r16uint",
+  "70": "eac-r11unorm",
+  "71": "eac-r11snorm",
+  "72": "eac-rg11unorm",
+  "73": "eac-rg11snorm",
+  "74": "astc-4x4-unorm",
+  "75": "astc-4x4-unorm-srgb",
+  "76": "astc-5x4-unorm",
+  "77": "astc-5x4-unorm-srgb",
+  "78": "astc-5x5-unorm",
+  "79": "astc-5x5-unorm-srgb",
+  "8": "r16sint",
+  "80": "astc-6x5-unorm",
+  "81": "astc-6x5-unorm-srgb",
+  "82": "astc-6x6-unorm",
+  "83": "astc-6x6-unorm-srgb",
+  "84": "astc-8x5-unorm",
+  "85": "astc-8x5-unorm-srgb",
+  "86": "astc-8x6-unorm",
+  "87": "astc-8x6-unorm-srgb",
+  "88": "astc-8x8-unorm",
+  "89": "astc-8x8-unorm-srgb",
+  "9": "r16float",
+  "90": "astc-10x5-unorm",
+  "91": "astc-10x5-unorm-srgb",
+  "92": "astc-10x6-unorm",
+  "93": "astc-10x6-unorm-srgb",
+  "94": "astc-10x8-unorm",
+  "95": "astc-10x8-unorm-srgb",
+  "96": "astc-10x10-unorm",
+  "97": "astc-10x10-unorm-srgb",
+  "98": "astc-12x10-unorm",
+  "99": "astc-12x10-unorm-srgb"
+ },
+ "TextureSampleType": {
+  "0": "binding-not-used",
+  "2": "float",
+  "3": "unfilterable-float",
+  "4": "depth",
+  "5": "sint",
+  "6": "uint"
+ },
+ "TextureViewDimension": {
+  "1": "1d",
+  "2": "2d",
+  "3": "2d-array",
+  "4": "cube",
+  "5": "cube-array",
+  "6": "3d"
+ },
+ "ToneMappingMode": {
+  "1": "standard",
+  "2": "extended"
+ },
+ "VertexFormat": {
+  "1": "uint8",
+  "10": "snorm8",
+  "11": "snorm8x2",
+  "12": "snorm8x4",
+  "13": "uint16",
+  "14": "uint16x2",
+  "15": "uint16x4",
+  "16": "sint16",
+  "17": "sint16x2",
+  "18": "sint16x4",
+  "19": "unorm16",
+  "2": "uint8x2",
+  "20": "unorm16x2",
+  "21": "unorm16x4",
+  "22": "snorm16",
+  "23": "snorm16x2",
+  "24": "snorm16x4",
+  "25": "float16",
+  "26": "float16x2",
+  "27": "float16x4",
+  "28": "float32",
+  "29": "float32x2",
+  "3": "uint8x4",
+  "30": "float32x3",
+  "31": "float32x4",
+  "32": "uint32",
+  "33": "uint32x2",
+  "34": "uint32x3",
+  "35": "uint32x4",
+  "36": "sint32",
+  "37": "sint32x2",
+  "38": "sint32x3",
+  "39": "sint32x4",
+  "4": "sint8",
+  "40": "unorm10--10--10--2",
+  "41": "unorm8x4-b-g-r-a",
+  "5": "sint8x2",
+  "6": "sint8x4",
+  "7": "unorm8",
+  "8": "unorm8x2",
+  "9": "unorm8x4"
+ },
+ "VertexStepMode": {
+  "1": "vertex",
+  "2": "instance"
+ },
+ "WGSLLanguageFeatureName": {
+  "1": "readonly-and-readwrite-storage-textures",
+  "10": "linear-indexing",
+  "2": "packed4x8-integer-dot-product",
+  "3": "unrestricted-pointer-parameters",
+  "4": "pointer-composite-access",
+  "5": "uniform-buffer-standard-layout",
+  "6": "subgroup-id",
+  "7": "texture-and-sampler-let",
+  "8": "subgroup-uniformity",
+  "9": "texture-formats-tier1"
+ },
+ "WaitStatus": {
+  "1": "success",
+  "2": "timed-out",
+  "3": "error"
+ }
+}
