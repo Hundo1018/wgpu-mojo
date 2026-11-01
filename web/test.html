@@ -5,6 +5,7 @@
 // Automated check for scripts/test-web.sh: the result goes into document.title.
 import { loadWasm } from './wgpu_loader.mjs';
 import { startApp, captureFrame } from './wgpu_host.mjs';
+import { impl } from './webgpu_impl.mjs';
 
 // ?canvas-lost: headless Chrome destroys the GPUDevice right after a canvas is
 // drawn to (a plain-JS page does the same), so pixel checks are skipped there.
@@ -65,6 +66,25 @@ try {
   const KNOWN = /^(bc|etc2|eac|astc)|^(r|rg|rgba)16(unorm|snorm)$|^depth32float-stencil8$/;
   const unexpected = rejected.filter((f) => !KNOWN.test(f));
   if (unexpected.length) fail('texture format strings rejected: ' + unexpected);
+
+  // 1e. Render-pass calls that carry data forward their arguments unchanged (#B2).
+  {
+    const rt = C.rt, calls = [];
+    const rec = new Proxy({}, { get: (_, n) => (...a) => calls.push([n, ...a]) });
+    const pass = rt.put({ kind: 'rpass', pass: rec });
+    const buf = rt.put({ kind: 'buffer', buffer: 'BUF' });
+    const bg = rt.put({ kind: 'bg', group: 'BG' });
+    const WHOLE = 0xFFFFFFFFFFFFFFFFn;
+    impl.wgpuRenderPassEncoderSetVertexBuffer(rt, pass, 2, buf, 16n, WHOLE);
+    impl.wgpuRenderPassEncoderSetIndexBuffer(rt, pass, buf, 2, 8n, 64n);
+    impl.wgpuRenderPassEncoderSetBindGroup(rt, pass, 1, bg, 0n, 0n);
+    impl.wgpuRenderPassEncoderDrawIndexed(rt, pass, 6, 3, 1, -2, 4);
+    const want = JSON.stringify([['setVertexBuffer', 2, 'BUF', 16, null], ['setIndexBuffer', 'BUF', 'uint32', 8, 64],
+      ['setBindGroup', 1, 'BG', []], ['drawIndexed', 6, 3, 1, -2, 4]]);
+    const got = JSON.stringify(calls.map((c) => c.map((x) => (x === undefined ? null : x))));
+    log('render data calls: ' + got);
+    if (got !== want) fail('render data calls forwarded wrongly: ' + got);
+  }
 
   // 2. Clear + triangle on a canvas, checked through the frame-capture hook.
   const canvas = document.getElementById('canvas');
