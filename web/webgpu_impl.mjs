@@ -286,7 +286,7 @@ function renderPipelineDesc(rt, d) {
     multisample: { count: m.count || 1, mask: m.mask, alphaToCoverageEnabled: !!m.alphaToCoverageEnabled } };
   if (d.depthStencil) {
     const ds = rt.read('WGPUDepthStencilState', d.depthStencil);
-    desc.depthStencil = { format: rt.enumStr('TextureFormat', ds.format), depthWriteEnabled: !!ds.depthWriteEnabled,
+    desc.depthStencil = { format: rt.enumStr('TextureFormat', ds.format), depthWriteEnabled: ds.depthWriteEnabled === 2 ? undefined : !!ds.depthWriteEnabled,   // OptionalBool: 2 = Undefined
       depthCompare: rt.optEnum('CompareFunction', ds.depthCompare) ?? 'always',
       stencilFront: stencilFace(rt, ds.stencilFront), stencilBack: stencilFace(rt, ds.stencilBack),
       stencilReadMask: ds.stencilReadMask, stencilWriteMask: ds.stencilWriteMask,
@@ -407,7 +407,6 @@ Object.assign(impl, {
 
   wgpuCommandEncoderBeginRenderPass(rt, enc, ptr) {
     const d = rt.read('WGPURenderPassDescriptor', ptr);
-    if (d.depthStencilAttachment) rt.trap('wgpuCommandEncoderBeginRenderPass: depth/stencil attachments are not implemented on web');
     const colorAttachments = rt.array('WGPURenderPassColorAttachment', d.colorAttachments, d.colorAttachmentCount).map((a) => {
       if (!a.view) return null;
       const out = { view: rt.get(a.view).view, loadOp: rt.optEnum('LoadOp', a.loadOp) ?? 'clear',
@@ -418,9 +417,35 @@ Object.assign(impl, {
       if (def(a.depthSlice) !== undefined) out.depthSlice = a.depthSlice;
       return out;
     });
-    return rt.put({ kind: 'rpass', pass: rt.get(enc).encoder.beginRenderPass({ ...lbl(d.label), colorAttachments }) });
+    const desc = { ...lbl(d.label), colorAttachments };
+    if (d.depthStencilAttachment) {
+      const a = rt.read('WGPURenderPassDepthStencilAttachment', d.depthStencilAttachment);
+      const ds = { view: rt.get(a.view).view };
+      const dl = rt.optEnum('LoadOp', a.depthLoadOp), dsO = rt.optEnum('StoreOp', a.depthStoreOp);
+      if (a.depthReadOnly) ds.depthReadOnly = true;
+      else { if (dl) ds.depthLoadOp = dl; if (dsO) ds.depthStoreOp = dsO; }
+      if (dl === 'clear') ds.depthClearValue = a.depthClearValue;
+      const sl = rt.optEnum('LoadOp', a.stencilLoadOp), ss = rt.optEnum('StoreOp', a.stencilStoreOp);
+      if (a.stencilReadOnly) ds.stencilReadOnly = true;
+      else { if (sl) ds.stencilLoadOp = sl; if (ss) ds.stencilStoreOp = ss; }
+      if (sl === 'clear') ds.stencilClearValue = a.stencilClearValue;
+      desc.depthStencilAttachment = ds;
+    }
+    return rt.put({ kind: 'rpass', pass: rt.get(enc).encoder.beginRenderPass(desc) });
   },
   wgpuRenderPassEncoderSetPipeline(rt, pass, pl) { rt.get(pass).pass.setPipeline(rt.get(pl).pipeline); },
+  wgpuRenderPassEncoderSetBindGroup(rt, pass, index, bg, dynCount, dynPtr) {
+    const dyn = [];
+    for (let i = 0; i < Number(dynCount); i++) dyn.push(rt.view.getUint32(Number(dynPtr) + i * 4, true));
+    rt.get(pass).pass.setBindGroup(index, bg ? rt.get(bg).group : null, dyn);
+  },
+  wgpuRenderPassEncoderSetVertexBuffer(rt, pass, slot, buf, off, size) {
+    rt.get(pass).pass.setVertexBuffer(slot, buf ? bufferOf(rt, buf) : null, Number(off), size === WHOLE_SIZE ? undefined : Number(size));
+  },
+  wgpuRenderPassEncoderSetIndexBuffer(rt, pass, buf, format, off, size) {
+    rt.get(pass).pass.setIndexBuffer(bufferOf(rt, buf), rt.enumStr('IndexFormat', format), Number(off), size === WHOLE_SIZE ? undefined : Number(size));
+  },
+  wgpuRenderPassEncoderDrawIndexed(rt, pass, ic, inst, first, base, firstInst) { rt.get(pass).pass.drawIndexed(ic, inst, first, base, firstInst); },
   wgpuRenderPassEncoderDraw(rt, pass, vc, ic, fv, fi) { rt.get(pass).pass.draw(vc, ic, fv, fi); },
   wgpuRenderPassEncoderEnd(rt, pass) { rt.get(pass).pass.end(); },
   wgpuRenderPassEncoderRelease(rt, h) { rt.drop(h); },

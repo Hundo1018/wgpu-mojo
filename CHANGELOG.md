@@ -46,7 +46,7 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 - **Web target runs without Emscripten** (#16–#20). `wasm.toml` + `build-web`
   link wasm64 with `llc`/`wasm-ld` and `ffi/wasm/wasm_rt.c`; `web/` holds a JS
   translation layer generated from `webgpu.h` (`scripts/gen_webgpu_js.py`),
-  with the 58 functions the examples need implemented and every other import
+  with 62 functions implemented (the examples' needs, plus `SetBindGroup`/`SetVertexBuffer`/`SetIndexBuffer`/`DrawIndexed` on render passes and depth/stencil attachments) and every other import
   trapping by name. Enum values map to browser strings through
   `scripts/webgpu_enum_strings.json`. `test-web` passes in headless Firefox and
   Chrome. New gates: `check-enum-strings`, `check-webgpu-js`; `check-web-imports`
