@@ -11,6 +11,24 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-11-01
+
+Requires **Mojo 1.2.0** (was 1.1.0), so this is a minor bump; the wgpu-native
+ABI pin is unchanged at v29.0.1.1. The headline is static link mode, the
+groundwork for a wasm build (#14).
+
+### Changed
+
+- **Mojo 1.2.0 is now the minimum** (`mojo`/`mojo-compiler >=1.2.0`, `max
+  >=26.7`; the conda package pins `mojo-compiler =1.2.0`, #12). Projects still
+  on 1.1.0 should stay on 0.3.1: the shipped `.mojoc` does not load across
+  compiler versions.
+- The five encoder types now declare themselves linear with 1.2.0's
+  `not Deinitable else "..."` instead of `@explicit_destroy`. Dropping an
+  encoder without `.finish()`/`.end()`/`.abandon()` is still a compile error;
+  `check-compile` now builds `tests/compile_fail/linear_encoders.mojo` to keep
+  it that way.
+
 ### Added
 
 - **Static link mode** (`-D WGPU_LINK=static`, #13). Every wgpu call becomes an
@@ -19,7 +37,18 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   prerequisite for linking wgpu-mojo into a wasm module. The default dynamic
   mode is unchanged. A static `ffi/lib/libwgpu_mojo_cb.a` log bridge was added,
   along with the gates `test-static`, `test-static-gpu` and `check-static-ir`
-  (all in CI).
+  (all in CI). `check-wasm-fnptr` pins how `c_fn_ptr` behaves on wasm64: scalar
+  callbacks work through the function table, but wgpu's by-value
+  `WGPUStringView` callbacks hit an ABI mismatch, which is tracked in #14. The
+  conda package still ships only the shared bridge; static linking against
+  `libwgpu_mojo_cb.a` needs a source checkout.
+
+### Fixed
+
+- Removed a no-op `cmd^` transfer into the borrowing `queue_submit`. Mojo 1.2.0
+  warns about it, and packaged builds treat warnings as errors.
+- `check-symbols` now fails on stale `excluded-symbols.txt` /
+  `known-unimplemented.txt` entries instead of silently counting them.
 
 ## [0.3.1] — 2026-10-09
 
@@ -272,7 +301,8 @@ Unchanged in 0.2.1:
 - **`linux-aarch64` is not published.** Nothing in the binding is x86-specific
   and conda-forge ships wgpu-native for it, but it is untested here.
 
-[Unreleased]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Hundo1018/wgpu-mojo/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/Hundo1018/wgpu-mojo/releases/tag/v0.2.1
