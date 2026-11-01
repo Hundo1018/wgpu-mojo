@@ -5,7 +5,7 @@
 name = "wgpu"
 mojo_defines = ["WGPU_TARGET=web"]
 include = ["."]
-c_sources = ["ffi/wasm/wasm_rt.c"]
+c_sources = []                     # the shared runtime provides KGEN/libc; scripts/build-web.sh adds ffi/wasm/wasm_rt.c itself
 js = "web/webgpu_host.mjs"          # exports createImports(rt) -> object
 host_imports = ["wgpu*"]            # import names the lib's JS provides
 
