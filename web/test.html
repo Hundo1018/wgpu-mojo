@@ -86,6 +86,34 @@ try {
     if (got !== want) fail('render data calls forwarded wrongly: ' + got);
   }
 
+  // 1f. QueueWriteBuffer hands the browser a view onto wasm memory, no JS copy (B3),
+  // and the bytes still arrive.
+  {
+    const rt = C.rt, n = 64;
+    const src = rt.alloc(n);
+    for (let i = 0; i < n; i++) rt.u8[Number(src) + i] = (i * 7 + 1) & 0xFF;
+    const seen = [];
+    const spy = { writeBuffer: (b, o, d) => seen.push(d) };
+    const spyQ = rt.put({ kind: 'queue', queue: spy }), spyB = rt.put({ kind: 'buffer', buffer: 'B' });
+    impl.wgpuQueueWriteBuffer(rt, spyQ, spyB, 0n, src, BigInt(n));
+    if (seen[0].buffer !== rt.view.buffer) fail('QueueWriteBuffer copied the data (not a view onto wasm memory)');
+
+    const up = dev.createBuffer({ size: n, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
+    const rb = dev.createBuffer({ size: n, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    impl.wgpuQueueWriteBuffer(rt, rt.put({ kind: 'queue', queue: dev.queue }), rt.put({ kind: 'buffer', buffer: up }), 0n, src, BigInt(n));
+    rt.u8.fill(0, Number(src), Number(src) + n);          // the source may change right after the call
+    const enc = dev.createCommandEncoder();
+    enc.copyBufferToBuffer(up, 0, rb, 0, n);
+    dev.queue.submit([enc.finish()]);
+    await rb.mapAsync(GPUMapMode.READ);
+    const got = new Uint8Array(rb.getMappedRange());
+    let bad = 0;
+    for (let i = 0; i < n; i++) if (got[i] !== ((i * 7 + 1) & 0xFF)) bad++;
+    log('QueueWriteBuffer without a JS copy: ' + n + ' bytes, mismatches=' + bad);
+    if (bad) fail('QueueWriteBuffer bytes did not arrive');
+    rt.free(src);
+  }
+
   // 2. Clear + triangle on a canvas, checked through the frame-capture hook.
   const canvas = document.getElementById('canvas');
   const host = await startApp(await loadWasm('./triangle.wasm'), canvas);
