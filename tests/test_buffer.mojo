@@ -98,7 +98,7 @@ def test_queue_on_submitted_work_done_waits() raises:
     enc.copy_buffer_to_buffer(src, UInt64(0), dst, UInt64(0), n)
     device.queue_submit(enc^.finish())
     var status = device._lib[].queue_on_submitted_work_done_sync(
-        device.handle().raw, device.queue().raw
+        device._instance, device.handle().raw, device.queue().raw
     )
     assert_equal(status, WGPUQueueWorkDoneStatus.Success)
     _ = src^

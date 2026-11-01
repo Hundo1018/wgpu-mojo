@@ -13,6 +13,66 @@ from wgpu._ffi.types import (
 )
 from wgpu._ffi.structs import WGPUStringView, str_to_sv
 from wgpu._ffi.handles import BufferHandle
+from wgpu.pending import Pending
+from wgpu._backend.wgpu_native.callbacks import _MapResult
+
+
+struct MapRequest(Movable):
+    """A buffer map in flight; see `Buffer.map_async`.
+
+    Holds the buffer's raw handle, not the Buffer: keep the Buffer alive until
+    `take()`.
+    """
+
+    var _req: Pending[_MapResult]
+    var _lib: ArcPointer[WGPULib]
+    var _buffer: WGPUBufferHandle
+    var _mode: UInt64
+    var _offset: UInt
+    var _size: UInt
+
+    def __init__(
+        out self,
+        var req: Pending[_MapResult],
+        lib: ArcPointer[WGPULib],
+        buffer: WGPUBufferHandle,
+        mode: UInt64,
+        offset: UInt,
+        size: UInt,
+    ):
+        self._req = req^
+        self._lib = lib
+        self._buffer = buffer
+        self._mode = mode
+        self._offset = offset
+        self._size = size
+
+    def __init__(out self, *, deinit move: Self):
+        self._req = move._req^
+        self._lib = move._lib^
+        self._buffer = move._buffer
+        self._mode = move._mode
+        self._offset = move._offset
+        self._size = move._size
+
+    def ready(self) -> Bool:
+        return self._req.ready()
+
+    def wait(self) raises:
+        self._req.wait()
+
+    def take(self) raises -> Pointer[NoneType, MutUntrackedOrigin]:
+        """The mapped range. Raises if still pending or if mapping failed.
+        Call `Buffer.unmap()` when done with it."""
+        var status = self._req.result().status
+        if status != WGPUMapAsyncStatus.Success:
+            raise Error("Buffer map failed, status=" + String(status))
+        if self._mode == WGPUMapMode.READ.value:
+            return self._lib[].buffer_get_const_mapped_range(self._buffer, self._offset, self._size)
+        return self._lib[].buffer_get_mapped_range(self._buffer, self._offset, self._size)
+
+    def size(self) -> UInt:
+        return self._size
 
 
 
@@ -82,6 +142,20 @@ struct Buffer(Movable, Boolable):
     # ------------------------------------------------------------------
     # Mapping
     # ------------------------------------------------------------------
+
+    def map_async(
+        self,
+        mode: WGPUMapMode = WGPUMapMode.READ,
+        offset: UInt64 = 0,
+        size: UInt64 = WGPU_WHOLE_SIZE,
+    ) -> MapRequest:
+        """Start mapping without blocking; poll the request's `ready()`."""
+        var byte_size = UInt(size) if size != WGPU_WHOLE_SIZE else UInt(self._size - offset)
+        var slot = self._lib[].buffer_map_start(self._handle, mode.value, UInt(offset), byte_size)
+        return MapRequest(
+            Pending[_MapResult](self._lib, self._instance, self._device, slot),
+            self._lib, self._handle, mode.value, UInt(offset), byte_size,
+        )
 
     def map_read(self, offset: UInt64 = 0, size: UInt64 = WGPU_WHOLE_SIZE) raises -> Pointer[NoneType, MutUntrackedOrigin]:
         """Block until mapped for reading, return raw pointer."""

@@ -46,9 +46,8 @@ from wgpu._ffi.structs import (
 )
 from wgpu._ffi.types import WGPUCallbackMode, WGPUErrorFilter, WGPUErrorType
 from wgpu._ffi.alloc_guard import AllocGuard
-from wgpu._backend.wgpu_native.callbacks import (
-    _PopErrorResult, pop_error_scope_callback,
-)
+from wgpu._backend.wgpu_native.callbacks import _PopErrorResult, _WorkDoneResult
+from wgpu.pending import Pending
 from wgpu._ffi.types import WGPUSType
 from wgpu.buffer import Buffer
 from wgpu.instance_owner import InstanceOwner
@@ -62,6 +61,69 @@ from wgpu.command import CommandEncoder, CommandBuffer
 from wgpu.query_set import QuerySet
 from wgpu.render_bundle import RenderBundle, RenderBundleEncoder
 from wgpu._ffi.structs import WGPURenderBundleEncoderDescriptor
+
+
+struct ErrorScopeRequest(Movable):
+    """An error-scope pop in flight; see `Device.pop_error_scope_async`."""
+
+    var _req: Pending[_PopErrorResult]
+
+    def __init__(out self, var req: Pending[_PopErrorResult]):
+        self._req = req^
+
+    def __init__(out self, *, deinit move: Self):
+        self._req = move._req^
+
+    def ready(self) -> Bool:
+        return self._req.ready()
+
+    def wait(self) raises:
+        self._req.wait()
+
+    def take(self) raises -> String:
+        """The captured error message, or "" when the scope caught nothing.
+        Raises if still pending or if the pop failed. Call once: the message
+        copy is freed here."""
+        var r = self._req.result()
+        var n = Int(r.message_len)
+        if r.status != UInt32(1):  # WGPUPopErrorScopeStatus.Success == 1
+            if n > 0:
+                r.message_data.unsafe_bitcast[UInt8]().unsafe_free()
+            raise Error("pop_error_scope failed, status=" + String(r.status))
+        if n == 0:
+            return String("")
+        # The callback copied the message (wgpu's view dies when the callback
+        # returns); the copy is ours to free.
+        var p = r.message_data.unsafe_bitcast[UInt8]()
+        var out = String(StringSlice(unsafe_from_utf8=Span(unsafe_ptr=p, length=n)))
+        p.unsafe_free()
+        if r.type == WGPUErrorType.NoError:
+            return String("")
+        return out
+
+
+struct WorkDoneRequest(Movable):
+    """Queue completion in flight; see `Device.on_submitted_work_done_async`."""
+
+    var _req: Pending[_WorkDoneResult]
+
+    def __init__(out self, var req: Pending[_WorkDoneResult]):
+        self._req = req^
+
+    def __init__(out self, *, deinit move: Self):
+        self._req = move._req^
+
+    def ready(self) -> Bool:
+        return self._req.ready()
+
+    def wait(self) raises:
+        self._req.wait()
+
+    def take(self) raises:
+        """Raises if still pending or if the queue reported failure."""
+        var status = self._req.result().status
+        if status != UInt32(1):  # WGPUQueueWorkDoneStatus.Success == 1
+            raise Error("queue work-done failed, status=" + String(status))
 
 
 struct Device(Movable, Boolable):
@@ -710,37 +772,23 @@ struct Device(Movable, Boolable):
         Returns an empty string when no error was captured since the last push.
         Raises if the pop fails (e.g. scope stack is empty or device is lost).
         """
-        with AllocGuard[_PopErrorResult](1) as result:
-            result[] = _PopErrorResult(UInt32(0), UInt32(0), null_opaque(), UInt(0))
-            self._lib[].device_pop_error_scope(
-                self._handle,
-                WGPUPopErrorScopeCallbackInfo(
-                    null_opaque(),
-                    WGPUCallbackMode.AllowSpontaneous,
-                    pop_error_scope_callback(),
-                    result.unsafe_bitcast[NoneType](),
-                    null_opaque(),
-                ),
-            )
-            self._lib[].instance_process_events(self._instance)
+        var req = self.pop_error_scope_async()
+        req.wait()
+        return req.take()
 
-            var status = result[].status
-            var err_type = result[].type
-            var n = Int(result[].message_len)
-            if status != UInt32(1):  # WGPUPopErrorScopeStatus.Success == 1
-                if n > 0:
-                    result[].message_data.unsafe_bitcast[UInt8]().unsafe_free()
-                raise Error("pop_error_scope failed, status=" + String(status))
-            if n == 0:
-                return String("")
-            # The callback copied the message (wgpu-native's view dies when
-            # the callback returns); the copy is ours to free.
-            var p = result[].message_data.unsafe_bitcast[UInt8]()
-            var out = String(StringSlice(unsafe_from_utf8=Span(unsafe_ptr=p, length=n)))
-            p.unsafe_free()
-            if err_type == WGPUErrorType.NoError:
-                return String("")
-            return out
+    def pop_error_scope_async(self) -> ErrorScopeRequest:
+        """Pop the top error scope without blocking; see `pop_error_scope`."""
+        var slot = self._lib[].device_pop_error_scope_start(self._handle)
+        return ErrorScopeRequest(
+            Pending[_PopErrorResult](self._lib, self._instance, self._handle, slot)
+        )
+
+    def on_submitted_work_done_async(self) -> WorkDoneRequest:
+        """Completes once all work submitted so far has finished on the GPU."""
+        var slot = self._lib[].queue_on_submitted_work_done_start(self._queue)
+        return WorkDoneRequest(
+            Pending[_WorkDoneResult](self._lib, self._instance, self._handle, slot)
+        )
 
     # ------------------------------------------------------------------
     # Labels

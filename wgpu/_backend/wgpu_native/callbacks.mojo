@@ -19,9 +19,38 @@ from std.sys import size_of
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu._backend.wgpu_native.nulls import null_opaque
 from wgpu._backend.wgpu_native.structs import WGPUStringView
+from wgpu._backend.wgpu_native.target import WGPU_TARGET_WEB
 from wgpu._backend.wgpu_native.types import (
     WGPUAdapterHandle, WGPUDeviceHandle, WGPU_STRLEN,
 )
+
+
+# A by-value WGPUStringView, as the C ABI of the build target passes it. Mojo
+# lowers `abi("C")` for the host (two i64s, SysV) before the IR is retargeted;
+# emscripten's wasm64 ABI passes a 16-byte struct by pointer instead. So on the
+# web the callbacks below receive, and calls like PushDebugGroup send, a pointer.
+comptime StringViewArg: TrivialRegisterPassable = (
+    Pointer[WGPUStringView, MutUntrackedOrigin] if WGPU_TARGET_WEB else WGPUStringView
+)
+
+
+def sv_arg(ref label: WGPUStringView) -> StringViewArg:
+    """`label` as a by-value C argument. On the web this points at `label`, so
+    `label` must outlive the call (a parameter of the caller does)."""
+    comptime if WGPU_TARGET_WEB:
+        return rebind[StringViewArg](
+            Pointer(to=label).unsafe_mut_cast[True]().unsafe_origin_cast[MutUntrackedOrigin]()
+        )
+    else:
+        return rebind[StringViewArg](label)
+
+
+def sv_value(arg: StringViewArg) -> WGPUStringView:
+    """The WGPUStringView a callback received."""
+    comptime if WGPU_TARGET_WEB:
+        return rebind[Pointer[WGPUStringView, MutUntrackedOrigin]](arg)[]
+    else:
+        return rebind[WGPUStringView](arg)
 
 
 def c_fn_ptr[F: TrivialRegisterPassable](f: F) -> OpaquePointer[MutUntrackedOrigin]:
@@ -32,12 +61,10 @@ def c_fn_ptr[F: TrivialRegisterPassable](f: F) -> OpaquePointer[MutUntrackedOrig
     is read back through memory instead.
 
     On wasm64 (host IR retargeted, as in scripts/check-wasm-fnptr.sh) the value
-    is a function-table index, which is what a C function pointer is there, and
-    callbacks with scalar parameters work from both JS and C. The wgpu callbacks
-    below do NOT: Mojo lowers `abi("C")` for the host before retargeting, so
-    their by-value `WGPUStringView` arrives as two i64s (SysV), while clang's
-    wasm ABI passes it indirectly. The caller's `call_indirect` then fails its
-    signature check. That check pins this limitation.
+    is a function-table index, which is what a C function pointer is there. The
+    wgpu callbacks below take their `message` as `StringViewArg`, a pointer on
+    the web target, which is how clang's wasm ABI passes a 16-byte struct; the
+    host-lowered by-value form would fail the caller's `call_indirect` check.
     """
     comptime assert size_of[F]() == size_of[OpaquePointer[MutUntrackedOrigin]](), (
         "c_fn_ptr takes an abi(\"C\") function value"
@@ -48,38 +75,83 @@ def c_fn_ptr[F: TrivialRegisterPassable](f: F) -> OpaquePointer[MutUntrackedOrig
 
 # ---------------------------------------------------------------------------
 # Result structs, written through userdata1
+#
+# A status of 0 means "callback not called yet": every webgpu.h status enum
+# starts at 1, so a callback always overwrites it.
 # ---------------------------------------------------------------------------
 
+trait CallbackResult(TrivialRegisterPassable):
+    @staticmethod
+    def pending() -> Self: ...
+
+    def done(self) -> Bool: ...
+
+
 @fieldwise_init
-struct _AdapterResult(TrivialRegisterPassable):
+struct _AdapterResult(CallbackResult):
     var adapter: WGPUAdapterHandle
     var status: UInt32
 
+    @staticmethod
+    def pending() -> Self:
+        return Self(null_opaque(), 0)
+
+    def done(self) -> Bool:
+        return self.status != 0
+
 
 @fieldwise_init
-struct _DeviceResult(TrivialRegisterPassable):
+struct _DeviceResult(CallbackResult):
     var device: WGPUDeviceHandle
     var status: UInt32
 
+    @staticmethod
+    def pending() -> Self:
+        return Self(null_opaque(), 0)
+
+    def done(self) -> Bool:
+        return self.status != 0
+
 
 @fieldwise_init
-struct _MapResult(TrivialRegisterPassable):
+struct _MapResult(CallbackResult):
     var status: UInt32
 
+    @staticmethod
+    def pending() -> Self:
+        return Self(0)
+
+    def done(self) -> Bool:
+        return self.status != 0
+
 
 @fieldwise_init
-struct _WorkDoneResult(TrivialRegisterPassable):
+struct _WorkDoneResult(CallbackResult):
     var status: UInt32
 
+    @staticmethod
+    def pending() -> Self:
+        return Self(0)
+
+    def done(self) -> Bool:
+        return self.status != 0
+
 
 @fieldwise_init
-struct _PopErrorResult(TrivialRegisterPassable):
+struct _PopErrorResult(CallbackResult):
     """`message_data` is a heap copy the caller owns (null when empty): the
     view wgpu-native passes is only valid until the callback returns."""
     var status: UInt32
     var type: UInt32
     var message_data: OpaquePointer[MutUntrackedOrigin]
     var message_len: UInt
+
+    @staticmethod
+    def pending() -> Self:
+        return Self(0, 0, null_opaque(), 0)
+
+    def done(self) -> Bool:
+        return self.status != 0
 
 
 # ---------------------------------------------------------------------------
@@ -90,7 +162,7 @@ struct _PopErrorResult(TrivialRegisterPassable):
 def _on_request_adapter(
     status: UInt32,
     adapter: WGPUAdapterHandle,
-    message: WGPUStringView,
+    message: StringViewArg,
     userdata1: OpaquePointer[MutUntrackedOrigin],
     userdata2: OpaquePointer[MutUntrackedOrigin],
 ) abi("C"):
@@ -101,7 +173,7 @@ def _on_request_adapter(
 def _on_request_device(
     status: UInt32,
     device: WGPUDeviceHandle,
-    message: WGPUStringView,
+    message: StringViewArg,
     userdata1: OpaquePointer[MutUntrackedOrigin],
     userdata2: OpaquePointer[MutUntrackedOrigin],
 ) abi("C"):
@@ -111,7 +183,7 @@ def _on_request_device(
 # C typedef: WGPUBufferMapCallback
 def _on_buffer_map(
     status: UInt32,
-    message: WGPUStringView,
+    message: StringViewArg,
     userdata1: OpaquePointer[MutUntrackedOrigin],
     userdata2: OpaquePointer[MutUntrackedOrigin],
 ) abi("C"):
@@ -121,7 +193,7 @@ def _on_buffer_map(
 # C typedef: WGPUQueueWorkDoneCallback
 def _on_queue_work_done(
     status: UInt32,
-    message: WGPUStringView,
+    message: StringViewArg,
     userdata1: OpaquePointer[MutUntrackedOrigin],
     userdata2: OpaquePointer[MutUntrackedOrigin],
 ) abi("C"):
@@ -132,12 +204,13 @@ def _on_queue_work_done(
 def _on_pop_error_scope(
     status: UInt32,
     type: UInt32,
-    message: WGPUStringView,
+    message: StringViewArg,
     userdata1: OpaquePointer[MutUntrackedOrigin],
     userdata2: OpaquePointer[MutUntrackedOrigin],
 ) abi("C"):
-    var src = message.data.unsafe_bitcast[UInt8]()
-    var n = message.length if Int(message.data) != 0 else UInt(0)
+    var msg = sv_value(message)
+    var src = msg.data.unsafe_bitcast[UInt8]()
+    var n = msg.length if Int(msg.data) != 0 else UInt(0)
     if n == WGPU_STRLEN:
         n = 0
         while src[unsafe_offset=Int(n)] != 0:

@@ -47,13 +47,16 @@ FILES=(
   examples/texture_sample.mojo
   examples/input_demo.mojo
   examples/native_extensions.mojo
+  examples/web/triangle_native.mojo
+  tests/test_async.mojo
+  tests/test_capture.mojo
   hello.mojo
 )
 
 FAILED=0
 for f in "${FILES[@]}"; do
   printf "  check %-50s" "$f"
-  if mojo build -I . "$f" -o /dev/null 2>/tmp/cc_err; then
+  if mojo build -I . -I examples/web "$f" -o /dev/null 2>/tmp/cc_err; then
     echo "OK"
   else
     echo "FAIL"

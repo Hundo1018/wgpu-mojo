@@ -36,9 +36,11 @@ trap 'rm -rf "$TMP"' EXIT
 #   - the C bridge calls them directly, e.g. wgpuXxx(...)
 # The `wgpu[A-Z]` shape matches the C API only: it skips WGPU* type names and
 # the bridge's own wgpu_mojo_* exports.
+# target.mojo is skipped: its strings name the functions the web target
+# forbids, not ones the binding calls.
 # `|| true` throughout: grep exits 1 on no matches, which under `set -e`
 # would kill the script instead of reporting an empty set.
-grep -rhoE '"wgpu[A-Z][A-Za-z0-9_]*"' wgpu/ wgpu_max/ 2>/dev/null \
+grep -rhoE --exclude=target.mojo '"wgpu[A-Z][A-Za-z0-9_]*"' wgpu/ wgpu_max/ 2>/dev/null \
   | tr -d '"' > "$TMP/expected.raw" || true
 grep -ohE '\bwgpu[A-Z][A-Za-z0-9_]*[[:space:]]*\(' ffi/*.c 2>/dev/null \
   | sed 's/[[:space:]]*($//; s/($//' | tr -d '(' >> "$TMP/expected.raw" || true

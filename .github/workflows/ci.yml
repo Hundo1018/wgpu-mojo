@@ -139,6 +139,8 @@ jobs:
           pixi run test-query-set
           pixi run test-render-pipeline
           pixi run test-native-v29
+          pixi run test-async
+          pixi run test-capture
 
       - name: Run the same headless GPU tests in static link mode
         run: |
@@ -147,7 +149,8 @@ jobs:
             tests/test_instance.mojo tests/test_device.mojo tests/test_buffer.mojo \
             tests/test_compute_pipeline.mojo tests/test_add_ref.mojo tests/test_spirv.mojo \
             tests/test_log_bridge.mojo tests/test_query_set.mojo \
-            tests/test_render_pipeline.mojo tests/test_native_v29_0_1.mojo
+            tests/test_render_pipeline.mojo tests/test_native_v29_0_1.mojo \
+            tests/test_async.mojo tests/test_capture.mojo
 
       # The documented examples, not just the tests. These are headless, so
       # lavapipe can run them. check-compile only ever compiled them, which is
@@ -158,6 +161,58 @@ jobs:
           pixi run example-enumerate
           pixi run example-compute
           pixi run example-compute-v2
+
+  # ---------------------------------------------------------------------------
+  # Browser target (issue #14): -D WGPU_TARGET=web -> wasm64 + emdawnwebgpu,
+  # then the web examples in headless Firefox (full pixel checks) and Chrome
+  # (swiftshader; no canvas read-back, see scripts/test-web.sh).
+  # ---------------------------------------------------------------------------
+  web:
+    name: Browser target (wasm64)
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          cache: true
+
+      - name: Setup Node 24 (global WebSocket/fetch for the test drivers)
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install Mesa Vulkan (WebGPU backend for Firefox)
+        run: sudo apt-get update -q && sudo apt-get install -y -q mesa-vulkan-drivers
+
+      - name: Cache Emscripten
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/emsdk
+            build/em-cache
+          key: emsdk-${{ hashFiles('scripts/web-env.sh') }}
+
+      - name: Install the pinned Emscripten
+        run: pixi run setup-emsdk
+
+      - name: Build the web examples
+        run: pixi run build-web
+
+      - name: Check web imports and struct layouts against emdawnwebgpu's webgpu.h
+        run: |
+          pixi run check-web-imports
+          pixi run check-web-struct-layout
+
+      - name: Run them in headless browsers
+        run: pixi run test-web
 
   # ---------------------------------------------------------------------------
   # c_fn_ptr on wasm64 (issue #13). Host IR retargeted, linked with wasm-ld,

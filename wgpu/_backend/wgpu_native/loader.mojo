@@ -19,11 +19,14 @@ from std.ffi import OwnedDLHandle, external_call
 from std.sys.defines import get_defined_string
 from std.os import getenv
 from std.sys import CompilationTarget
-from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.alloc_guard import AllocGuard, raw_alloc
+from wgpu._backend.wgpu_native.target import (
+    _WGPU_LINK, _WGPU_TARGET, WGPU_LINK_STATIC, WGPU_TARGET_WEB, native_only,
+)
 from wgpu._backend.wgpu_native.callbacks import (
-    _AdapterResult, _DeviceResult, _MapResult, _WorkDoneResult, _PopErrorResult,
+    CallbackResult, _AdapterResult, _DeviceResult, _MapResult, _WorkDoneResult, _PopErrorResult,
     request_adapter_callback, request_device_callback, buffer_map_callback,
-    queue_work_done_callback, pop_error_scope_callback,
+    queue_work_done_callback, pop_error_scope_callback, sv_arg,
 )
 from wgpu._backend.wgpu_native.native_ext import WGPUImageSubresourceRange
 from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
@@ -118,9 +121,6 @@ comptime _CB_LIB_NAME   = _cb_lib_name()
 comptime _WGPU_LIB_PATH = _wgpu_dev_path()
 comptime _CB_LIB_PATH   = _cb_dev_path()
 
-comptime _WGPU_LINK = get_defined_string["WGPU_LINK", "dynamic"]()
-comptime WGPU_LINK_STATIC = _WGPU_LINK == "static"
-"""True when built with `-D WGPU_LINK=static` (symbols resolved at link time)."""
 
 # Expected wgpu-native ABI version (matches ffi/wgpu-native-meta/wgpu-native-git-tag)
 comptime _WGPU_NATIVE_VERSION = "v29.0.1.1"
@@ -228,6 +228,9 @@ struct _StaticLib(_LibBackend):
     def call[
         name: StaticString, R: RegisterPassable = NoneType, *T: AnyType
     ](self, *args: *T) -> R:
+        comptime assert not (WGPU_TARGET_WEB and native_only(name)), (
+            name + " is a wgpu-native extension; the web target has only webgpu.h"
+        )
         # `*args`, not `args`: the bare pack would be passed as one pointer.
         return external_call[name, R](*args)
 
@@ -260,6 +263,9 @@ struct WGPULib(Movable):
         # All three failing raises a descriptive error listing searched paths.
         comptime assert _WGPU_LINK == "dynamic" or _WGPU_LINK == "static", (
             "-D WGPU_LINK must be `dynamic` or `static`"
+        )
+        comptime assert _WGPU_TARGET == "native" or _WGPU_TARGET == "web", (
+            "-D WGPU_TARGET must be `native` or `web`"
         )
         # With -D WGPU_LINK=static nothing is loaded; see _StaticLib.
         self._wgpu = _Lib(_WGPU_LIB_NAME, _WGPU_LIB_PATH)
@@ -306,28 +312,76 @@ struct WGPULib(Movable):
             instance, options, adapters
         )
 
+    # ------------------------------------------------------------------
+    # Non-blocking requests
+    #
+    # Each *_start fires a request and returns the heap slot its callback
+    # writes into (status 0 until then). The slot must stay allocated until
+    # done() — the callback writes into it whenever it fires — so whoever holds
+    # it frees it only after that. `pump` lets callbacks run without blocking;
+    # `wait_for` blocks (native only: a browser's main thread cannot block,
+    # and its callbacks only run once control returns to the event loop).
+    # ------------------------------------------------------------------
+
+    def pump(self, instance: WGPUInstanceHandle, device: WGPUDeviceHandle, wait: Bool):
+        """Give pending callbacks a chance to run. `device` may be null."""
+        comptime if not WGPU_TARGET_WEB:
+            if Int(device) != 0:
+                # The WGPUBool says whether the queue drained, which is not what
+                # decides any request's outcome; its callback status is.
+                _ = self._wgpu.call["wgpuDevicePoll", UInt32](
+                    device, WGPU_TRUE if wait else WGPU_FALSE, null_opaque()
+                )
+        self._wgpu.call["wgpuInstanceProcessEvents"](instance)
+
+    def wait_for[R: CallbackResult](
+        self,
+        slot: Pointer[R, MutUntrackedOrigin],
+        instance: WGPUInstanceHandle,
+        device: WGPUDeviceHandle,
+    ) raises:
+        """Block until the request behind `slot` completes."""
+        comptime assert not WGPU_TARGET_WEB, (
+            "blocking waits are native-only; on the web poll the request's ready() each frame"
+        )
+        # A blocking poll returns once the queue is idle, by which point the
+        # callback has fired; the bound only turns a lost callback into an error.
+        for _ in range(10_000):
+            if slot[].done():
+                return
+            self.pump(instance, device, True)
+        raise Error("wgpu request never completed (callback did not fire)")
+
+    def instance_request_adapter_start(
+        self,
+        instance: WGPUInstanceHandle,
+        options: Pointer[WGPURequestAdapterOptions, MutUntrackedOrigin],
+    ) -> Pointer[_AdapterResult, MutUntrackedOrigin]:
+        var slot = raw_alloc[_AdapterResult](1)
+        slot[] = _AdapterResult.pending()
+        var cb_info = WGPURequestAdapterCallbackInfo(
+            null_opaque(),
+            WGPUCallbackMode.AllowSpontaneous,
+            request_adapter_callback(),
+            slot.unsafe_bitcast[NoneType](),
+            null_opaque(),
+        )
+        _ = self._wgpu.call["wgpuInstanceRequestAdapter", WGPUFuture](
+            instance, options, cb_info
+        )
+        return slot
+
     def instance_request_adapter_sync(
         self,
         instance: WGPUInstanceHandle,
         options: Pointer[WGPURequestAdapterOptions, MutUntrackedOrigin],
     ) raises -> _AdapterResult:
-        """Synchronously request an adapter via AllowSpontaneous callback."""
-        with AllocGuard[_AdapterResult](1) as result:
-            result[] = _AdapterResult(null_opaque(), 0)
-
-            var cb_info = WGPURequestAdapterCallbackInfo(
-                null_opaque(),
-                WGPUCallbackMode.AllowSpontaneous,
-                request_adapter_callback(),
-                result.unsafe_bitcast[NoneType](),
-                null_opaque(),
-            )
-            _ = self._wgpu.call["wgpuInstanceRequestAdapter", WGPUFuture](
-                instance, options, cb_info
-            )
-
-            self._wgpu.call["wgpuInstanceProcessEvents"](instance)
-            return _AdapterResult(result[].adapter, result[].status)
+        """Request an adapter and block until it arrives."""
+        var slot = self.instance_request_adapter_start(instance, options)
+        self.wait_for(slot, instance, null_opaque())
+        var r = slot[]
+        slot.unsafe_free()
+        return r
 
     def instance_process_events(self, instance: WGPUInstanceHandle):
         self._wgpu.call["wgpuInstanceProcessEvents"](instance)
@@ -357,23 +411,31 @@ struct WGPULib(Movable):
         adapter: WGPUAdapterHandle,
         desc: Pointer[WGPUDeviceDescriptor, MutUntrackedOrigin],
     ) raises -> _DeviceResult:
-        """Synchronously request a device via AllowSpontaneous callback."""
-        with AllocGuard[_DeviceResult](1) as result:
-            result[] = _DeviceResult(null_opaque(), 0)
+        """Request a device and block until it arrives."""
+        var slot = self.adapter_request_device_start(adapter, desc)
+        self.wait_for(slot, instance, null_opaque())
+        var r = slot[]
+        slot.unsafe_free()
+        return r
 
-            var cb_info = WGPURequestDeviceCallbackInfo(
-                null_opaque(),
-                WGPUCallbackMode.AllowSpontaneous,
-                request_device_callback(),
-                result.unsafe_bitcast[NoneType](),
-                null_opaque(),
-            )
-            _ = self._wgpu.call["wgpuAdapterRequestDevice", WGPUFuture](
-                adapter, desc, cb_info
-            )
-
-            self._wgpu.call["wgpuInstanceProcessEvents"](instance)
-            return _DeviceResult(result[].device, result[].status)
+    def adapter_request_device_start(
+        self,
+        adapter: WGPUAdapterHandle,
+        desc: Pointer[WGPUDeviceDescriptor, MutUntrackedOrigin],
+    ) -> Pointer[_DeviceResult, MutUntrackedOrigin]:
+        var slot = raw_alloc[_DeviceResult](1)
+        slot[] = _DeviceResult.pending()
+        var cb_info = WGPURequestDeviceCallbackInfo(
+            null_opaque(),
+            WGPUCallbackMode.AllowSpontaneous,
+            request_device_callback(),
+            slot.unsafe_bitcast[NoneType](),
+            null_opaque(),
+        )
+        _ = self._wgpu.call["wgpuAdapterRequestDevice", WGPUFuture](
+            adapter, desc, cb_info
+        )
+        return slot
 
     def adapter_get_info(
         self,
@@ -574,25 +636,32 @@ struct WGPULib(Movable):
         size: UInt,
     ) raises -> UInt32:
         """Map a buffer and block until mapping is complete. Returns status."""
-        with AllocGuard[_MapResult](1) as result:
-            result[] = _MapResult(0)
+        var slot = self.buffer_map_start(buffer, mode, offset, size)
+        self.wait_for(slot, instance, device)
+        var status = slot[].status
+        slot.unsafe_free()
+        return status
 
-            var cb_info = WGPUBufferMapCallbackInfo(
-                null_opaque(),
-                WGPUCallbackMode.AllowSpontaneous,
-                buffer_map_callback(),
-                result.unsafe_bitcast[NoneType](),
-                null_opaque(),
-            )
-            _ = self._wgpu.call["wgpuBufferMapAsync", WGPUFuture](
-                buffer, mode, offset, size, cb_info
-            )
-
-            # Blocking poll: the WGPUBool it returns reports whether the queue
-            # drained, which is not what decides the outcome here — the map
-            # callback's status is. Discarded deliberately.
-            _ = self._wgpu.call["wgpuDevicePoll", UInt32](device, WGPU_TRUE, null_opaque())
-            return result[].status
+    def buffer_map_start(
+        self,
+        buffer: WGPUBufferHandle,
+        mode: UInt64,
+        offset: UInt,
+        size: UInt,
+    ) -> Pointer[_MapResult, MutUntrackedOrigin]:
+        var slot = raw_alloc[_MapResult](1)
+        slot[] = _MapResult.pending()
+        var cb_info = WGPUBufferMapCallbackInfo(
+            null_opaque(),
+            WGPUCallbackMode.AllowSpontaneous,
+            buffer_map_callback(),
+            slot.unsafe_bitcast[NoneType](),
+            null_opaque(),
+        )
+        _ = self._wgpu.call["wgpuBufferMapAsync", WGPUFuture](
+            buffer, mode, offset, size, cb_info
+        )
+        return slot
 
     def buffer_get_mapped_range(
         self,
@@ -1158,6 +1227,23 @@ struct WGPULib(Movable):
     ):
         _ = self._wgpu.call["wgpuDevicePopErrorScope", WGPUFuture](device, callback_info)
 
+    def device_pop_error_scope_start(
+        self, device: WGPUDeviceHandle
+    ) -> Pointer[_PopErrorResult, MutUntrackedOrigin]:
+        var slot = raw_alloc[_PopErrorResult](1)
+        slot[] = _PopErrorResult.pending()
+        self.device_pop_error_scope(
+            device,
+            WGPUPopErrorScopeCallbackInfo(
+                null_opaque(),
+                WGPUCallbackMode.AllowSpontaneous,
+                pop_error_scope_callback(),
+                slot.unsafe_bitcast[NoneType](),
+                null_opaque(),
+            ),
+        )
+        return slot
+
     def device_create_render_bundle_encoder(
         self,
         device: WGPUDeviceHandle,
@@ -1189,14 +1275,14 @@ struct WGPULib(Movable):
         encoder: WGPUCommandEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuCommandEncoderInsertDebugMarker"](encoder, label)
+        self._wgpu.call["wgpuCommandEncoderInsertDebugMarker"](encoder, sv_arg(label))
 
     def command_encoder_push_debug_group(
         self,
         encoder: WGPUCommandEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuCommandEncoderPushDebugGroup"](encoder, label)
+        self._wgpu.call["wgpuCommandEncoderPushDebugGroup"](encoder, sv_arg(label))
 
     def command_encoder_pop_debug_group(self, encoder: WGPUCommandEncoderHandle):
         self._wgpu.call["wgpuCommandEncoderPopDebugGroup"](encoder)
@@ -1218,14 +1304,14 @@ struct WGPULib(Movable):
         pass_enc: WGPUComputePassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuComputePassEncoderInsertDebugMarker"](pass_enc, label)
+        self._wgpu.call["wgpuComputePassEncoderInsertDebugMarker"](pass_enc, sv_arg(label))
 
     def compute_pass_push_debug_group(
         self,
         pass_enc: WGPUComputePassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuComputePassEncoderPushDebugGroup"](pass_enc, label)
+        self._wgpu.call["wgpuComputePassEncoderPushDebugGroup"](pass_enc, sv_arg(label))
 
     def compute_pass_pop_debug_group(self, pass_enc: WGPUComputePassEncoderHandle):
         self._wgpu.call["wgpuComputePassEncoderPopDebugGroup"](pass_enc)
@@ -1273,14 +1359,14 @@ struct WGPULib(Movable):
         pass_enc: WGPURenderPassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderPassEncoderInsertDebugMarker"](pass_enc, label)
+        self._wgpu.call["wgpuRenderPassEncoderInsertDebugMarker"](pass_enc, sv_arg(label))
 
     def render_pass_push_debug_group(
         self,
         pass_enc: WGPURenderPassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderPassEncoderPushDebugGroup"](pass_enc, label)
+        self._wgpu.call["wgpuRenderPassEncoderPushDebugGroup"](pass_enc, sv_arg(label))
 
     def render_pass_pop_debug_group(self, pass_enc: WGPURenderPassEncoderHandle):
         self._wgpu.call["wgpuRenderPassEncoderPopDebugGroup"](pass_enc)
@@ -1298,28 +1384,36 @@ struct WGPULib(Movable):
 
     def queue_on_submitted_work_done_sync(
         self,
+        instance: WGPUInstanceHandle,
         device: WGPUDeviceHandle,
         queue: WGPUQueueHandle,
     ) raises -> UInt32:
         """Block until submitted queue work is done. Returns status.
 
-        The wait is a blocking device poll. A non-blocking
-        wgpuInstanceProcessEvents (what this used to do) returns before
-        in-flight work finishes, the guard below is freed, and the callback
-        later writes into freed memory.
+        The slot is freed only once the callback has fired: freeing it after a
+        non-blocking pump (what this once did) let the callback write into
+        freed memory.
         """
-        with AllocGuard[_WorkDoneResult](1) as result:
-            result[] = _WorkDoneResult(0)
-            var cb_info = WGPUQueueWorkDoneCallbackInfo(
-                null_opaque(),
-                WGPUCallbackMode.AllowSpontaneous,
-                queue_work_done_callback(),
-                result.unsafe_bitcast[NoneType](),
-                null_opaque(),
-            )
-            _ = self._wgpu.call["wgpuQueueOnSubmittedWorkDone", WGPUFuture](queue, cb_info)
-            _ = self._wgpu.call["wgpuDevicePoll", UInt32](device, WGPU_TRUE, null_opaque())
-            return result[].status
+        var slot = self.queue_on_submitted_work_done_start(queue)
+        self.wait_for(slot, instance, device)
+        var status = slot[].status
+        slot.unsafe_free()
+        return status
+
+    def queue_on_submitted_work_done_start(
+        self, queue: WGPUQueueHandle
+    ) -> Pointer[_WorkDoneResult, MutUntrackedOrigin]:
+        var slot = raw_alloc[_WorkDoneResult](1)
+        slot[] = _WorkDoneResult.pending()
+        var cb_info = WGPUQueueWorkDoneCallbackInfo(
+            null_opaque(),
+            WGPUCallbackMode.AllowSpontaneous,
+            queue_work_done_callback(),
+            slot.unsafe_bitcast[NoneType](),
+            null_opaque(),
+        )
+        _ = self._wgpu.call["wgpuQueueOnSubmittedWorkDone", WGPUFuture](queue, cb_info)
+        return slot
 
     # ------------------------------------------------------------------
     # Missing Texture methods
@@ -1453,14 +1547,14 @@ struct WGPULib(Movable):
         encoder: WGPURenderBundleEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderBundleEncoderInsertDebugMarker"](encoder, label)
+        self._wgpu.call["wgpuRenderBundleEncoderInsertDebugMarker"](encoder, sv_arg(label))
 
     def render_bundle_encoder_push_debug_group(
         self,
         encoder: WGPURenderBundleEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderBundleEncoderPushDebugGroup"](encoder, label)
+        self._wgpu.call["wgpuRenderBundleEncoderPushDebugGroup"](encoder, sv_arg(label))
 
     def render_bundle_encoder_pop_debug_group(self, encoder: WGPURenderBundleEncoderHandle):
         self._wgpu.call["wgpuRenderBundleEncoderPopDebugGroup"](encoder)

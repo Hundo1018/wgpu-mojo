@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>PENDING</title></head>
+<body><canvas id="canvas" width="64" height="48"></canvas><pre id="log"></pre>
+<script type="module">
+// Automated check for scripts/test-web.sh: the result goes into document.title.
+import createTriangle from './triangle.mjs';
+import createCompute from './compute.mjs';
+import { startApp, captureFrame } from './wgpu_host.mjs';
+
+// ?canvas-lost: headless Chrome destroys the GPUDevice right after a canvas is
+// drawn to (a plain-JS page does the same), so pixel checks are skipped there.
+const canvasLost = new URLSearchParams(location.search).has('canvas-lost');
+const lines = [];
+const log = (s) => { lines.push(s); document.getElementById('log').textContent = lines.join('\n'); };
+const fail = (s) => { log('FAIL ' + s); document.title = 'FAIL ' + s; throw new Error(s); };
+const frame = () => new Promise((r) => requestAnimationFrame(r));
+
+try {
+  if (!navigator.gpu) fail('no navigator.gpu');
+
+  // 1. Clear + triangle on a canvas, checked through the frame-capture hook.
+  const canvas = document.getElementById('canvas');
+  const host = await startApp(createTriangle, canvas);
+  for (let i = 0; host.M._wgpu_app_frames(host.app) < 3; i++) {
+    if (host.error()) fail('frame loop: ' + host.error());
+    if (i > 600) fail('no frame drawn after 600 animation frames');
+    await frame();
+  }
+  log('triangle: 3 frames drawn');
+  if (canvasLost) log('triangle: pixel checks skipped (canvas-lost)');
+  else {
+  // What the canvas shows, read through a 2D context.
+  const c2 = new OffscreenCanvas(canvas.width, canvas.height).getContext('2d');
+  c2.drawImage(canvas, 0, 0);
+  const shown = (x, y) => Array.from(c2.getImageData(x, y, 1, 1).data);
+  log(`canvas: corner=${shown(1, 1)} centre=${shown(32, 24)}`);
+  if (shown(1, 1).join() !== '0,0,255,255') fail('canvas corner is not the clear colour: ' + shown(1, 1));
+  if (shown(32, 24).join() !== '255,255,0,255') fail('canvas centre is not the triangle colour: ' + shown(32, 24));
+
+  // The frame-capture hook (offscreen target, mapped without blocking).
+  const cap = await captureFrame(host, canvas.width, canvas.height);
+  const px = (x, y) => {
+    const i = y * cap.pitch + x * 4, b = cap.bytes;
+    // BGRA8Unorm = 0x1B, RGBA8Unorm = 0x16
+    return cap.format === 0x1B ? [b[i + 2], b[i + 1], b[i], b[i + 3]] : [b[i], b[i + 1], b[i + 2], b[i + 3]];
+  };
+  const corner = px(1, 1), centre = px(32, 24);
+  log(`triangle: format=0x${cap.format.toString(16)} corner=${corner} centre=${centre}`);
+  if (corner.join() !== '0,0,255,255') fail('corner is not the clear colour (0,0,255,255): ' + corner);
+  if (centre.join() !== '255,255,0,255') fail('centre is not the triangle colour (255,255,0,255): ' + centre);
+  }
+
+  // 2. DOM input reaches the Mojo InputState.
+  canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: canvas.getBoundingClientRect().left + 17, bubbles: true }));
+  await frame();
+  const mx = host.M._wgpu_app_mouse_x(host.app);
+  log(`input: mouse_x=${mx}`);
+  if (mx !== 17) fail('mousemove did not reach InputState: ' + mx);
+
+  // 3. Compute + non-blocking read-back.
+  const C = await createCompute();
+  const app = C._compute_start();
+  if (!app) fail('compute_start');
+  let st = 0, frames = 0;
+  while ((st = C._compute_step(app)) === 0 && frames < 600) { frames++; await frame(); }
+  if (st !== 1) fail('compute_step=' + st);
+  const n = C._compute_len(app);
+  let bad = 0;
+  for (let i = 0; i < n; i++) if (C._compute_value(app, i) !== 3 * i) bad++;
+  log(`compute: n=${n} mismatches=${bad} polls=${C._compute_polls(app)} frames=${frames}`);
+  if (n !== 1024 || bad) fail('compute result');
+
+  log('PASS');
+  document.title = 'PASS';
+} catch (e) {
+  if (!document.title.startsWith('FAIL')) { log('FAIL ' + e + '\n' + e.stack); document.title = 'FAIL ' + e; }
+}
+</script></body></html>

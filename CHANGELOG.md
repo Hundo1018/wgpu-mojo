@@ -11,6 +11,34 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+### Added
+
+- **Browser target** (`-D WGPU_TARGET=web`, #14): wasm64 + emdawnwebgpu.
+  `pixi run setup-emsdk`, `build-web`, `test-web`. The clear + triangle and
+  compute examples run in headless Firefox 157 (pixel-checked) and Chrome 156.
+  Calls to wgpu-native extensions are compile errors on this target.
+- **Non-blocking requests**, natively too: `Instance.request_adapter_async`,
+  `Adapter.request_device_async`, `Buffer.map_async`,
+  `Device.on_submitted_work_done_async` and `Device.pop_error_scope_async`
+  return requests with a non-blocking `ready()`. `wgpu.web.boot.GPUBoot` does
+  adapter and device setup one frame at a time. `tests/test_async.mojo` checks
+  each against its blocking twin.
+- `wgpu.capture.FrameCapture`: non-blocking frame read-back, for video export.
+- `wgpu.surface.create_surface_canvas` (web), and `Surface.configure(extra_usage=)`.
+- Gates: `check-web-imports`, `check-web-struct-layout`, and
+  `check-wasm-fnptr`, which now also builds the web callbacks and checks they
+  match clang's wasm64 C ABI.
+
+### Changed
+
+- The blocking request paths (adapter, device, buffer map, work-done, error
+  scope) are now built on the non-blocking requests and wait until the
+  callback fires. Before, they pumped once.
+  `WGPULib.queue_on_submitted_work_done_sync` takes the instance as its first
+  argument.
+- Async callbacks take their message as `StringViewArg`. That is still
+  `WGPUStringView` natively, and a pointer on the web.
+
 ## [0.4.0] — 2026-11-01
 
 Requires **Mojo 1.2.0** (was 1.1.0), so this is a minor bump; the wgpu-native

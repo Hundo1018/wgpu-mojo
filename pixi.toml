@@ -155,6 +155,8 @@ test-render-pipeline = { cmd = "mojo run -I . tests/test_render_pipeline.mojo", 
 test-gpu-compile    = { cmd = "mojo run -I . tests/test_gpu_compile.mojo",   depends-on = ["build-callbacks"] }
 test-render-bundle  = { cmd = "mojo run -I . tests/test_render_bundle.mojo", depends-on = ["build-callbacks"] }
 test-native-v29    = { cmd = "mojo run -I . tests/test_native_v29_0_1.mojo", depends-on = ["build-callbacks"] }
+test-async         = { cmd = "mojo run -I . tests/test_async.mojo",         depends-on = ["build-callbacks"] }
+test-capture       = { cmd = "mojo run -I . tests/test_capture.mojo",       depends-on = ["build-callbacks"] }
 
 # Callback ABI test (non-GPU)
 test-callback-abi   = { cmd = "mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callback-probe"] }
@@ -168,6 +170,18 @@ check-static-ir = { cmd = "bash scripts/check-static-ir.sh" }
 # What c_fn_ptr yields on wasm64 (table index; by-value-struct callbacks mismatch
 # clang's wasm ABI). Pulls LLVM 23 + node 24 through `pixi exec`.
 check-wasm-fnptr = { cmd = "bash scripts/check-wasm-fnptr.sh" }
+
+# Browser target, -D WGPU_TARGET=web (issue #14): wasm64 + emdawnwebgpu.
+# setup-emsdk downloads the pinned Emscripten (~1.5 GB) into build/emsdk.
+setup-emsdk = { cmd = "bash scripts/setup-emsdk.sh" }
+build-web   = { cmd = "bash scripts/build-web.sh" }
+# Headless Firefox and/or Chrome run build/web/test.html (Node >= 22).
+test-web    = { cmd = "bash scripts/test-web.sh" }
+serve-web   = { cmd = "python3 -m http.server 8000 --bind 127.0.0.1 --directory build/web" }
+# The web IR calls only emdawnwebgpu's webgpu.h; target.mojo's native-only list is current.
+check-web-imports = { cmd = "bash -c 'source scripts/web-env.sh && python3 scripts/check_web_imports.py \"$DAWN_INCLUDE\" build/web/triangle.ll build/web/compute.ll'" }
+# structs.mojo + web_structs.mojo against emdawnwebgpu's webgpu.h.
+check-web-struct-layout = { cmd = "bash -c 'source scripts/web-env.sh && python3 scripts/check_struct_layout.py --web \"$DAWN_INCLUDE\"'" }
 
 # Hello Triangle quickstart
 hello             = { cmd = "mojo run -I . hello.mojo", depends-on = ["build-callbacks"] }
@@ -189,5 +203,7 @@ render-gifs = { cmd = "mojo run -I . tools/render_shader_gif.mojo && bash script
 
 # New Layer 3 GPU facade examples
 example-compute-v2 = { cmd = "mojo run -I . examples/compute_add_v2.mojo", depends-on = ["build-callbacks"] }
+# The web triangle app, natively (GLFW window); the browser build is `build-web`.
+example-web-triangle-native = { cmd = "mojo run -I . -I examples/web examples/web/triangle_native.mojo", depends-on = ["build-callbacks"] }
 examples-input    = { cmd = "pixi run example-input" }
 

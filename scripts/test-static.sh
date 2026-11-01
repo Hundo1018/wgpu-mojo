@@ -26,7 +26,7 @@ GPU=(
   tests/test_spirv.mojo tests/test_log_bridge.mojo tests/test_debug_groups.mojo
   tests/test_query_set.mojo tests/test_render_pipeline.mojo
   tests/test_gpu_compile.mojo tests/test_render_bundle.mojo
-  tests/test_native_v29_0_1.mojo
+  tests/test_native_v29_0_1.mojo tests/test_async.mojo tests/test_capture.mojo
 )
 
 case "${1:-}" in

@@ -18,3 +18,12 @@ void call_map_cb(WGPUBufferMapCallback cb, void *userdata1) {
     WGPUStringView msg = { 0, 0 };
     cb(WGPUMapAsyncStatus_Success, msg, userdata1, 0);
 }
+
+// Where a callback's userdata1 points: a _MapResult-sized slot in wasm memory.
+static uint32_t slot[4];
+
+__attribute__((export_name("slot_addr")))
+uint32_t *slot_addr(void) { return slot; }
+
+__attribute__((export_name("slot_status")))
+uint32_t slot_status(void) { return slot[0]; }

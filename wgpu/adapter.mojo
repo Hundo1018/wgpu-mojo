@@ -19,7 +19,41 @@ from wgpu._ffi.structs import (
 )
 from wgpu.device import Device
 from wgpu.instance_owner import InstanceOwner
+from wgpu.pending import Pending
+from wgpu._backend.wgpu_native.callbacks import _DeviceResult
 from wgpu.surface import Surface, create_surface_wayland, create_surface_xlib
+
+
+struct DeviceRequest(Movable):
+    """A device request in flight; see `Adapter.request_device_async`."""
+
+    var _owner: ArcPointer[InstanceOwner]
+    var _req: Pending[_DeviceResult]
+
+    def __init__(out self, owner: ArcPointer[InstanceOwner], var req: Pending[_DeviceResult]):
+        self._owner = owner
+        self._req = req^
+
+    def __init__(out self, *, deinit move: Self):
+        self._owner = move._owner^
+        self._req = move._req^
+
+    def ready(self) -> Bool:
+        return self._req.ready()
+
+    def wait(self) raises:
+        self._req.wait()
+
+    def take(self) raises -> Device:
+        """The device. Raises if still pending or if the request failed."""
+        var r = self._req.result()
+        if r.status != WGPURequestDeviceStatus.Success:
+            raise Error("wgpuAdapterRequestDevice failed, status=" + String(r.status))
+        if r.device == null_opaque():
+            raise Error("wgpuAdapterRequestDevice returned null device")
+        var lib = self._owner[].lib()
+        var queue = lib[].device_get_queue(r.device)
+        return Device(self._owner, lib, self._owner[].handle(), r.device, queue)
 
 
 struct Adapter(Movable):
@@ -87,6 +121,17 @@ struct Adapter(Movable):
     ) raises -> Device:
         """`required_limits`: start from `wgpu_limits_default()` (every field
         undefined = use the default) and raise only what you need."""
+        var req = self.request_device_async(label, required_features, required_limits)
+        req.wait()
+        return req.take()
+
+    def request_device_async(
+        self,
+        label: String = "",
+        required_features: List[UInt32] = [],
+        required_limits: Optional[WGPULimits] = None,
+    ) -> DeviceRequest:
+        """Request a device without blocking; see `request_device`."""
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
 
         var lost_cb = WGPUDeviceLostCallbackInfo(
@@ -129,26 +174,18 @@ struct Adapter(Movable):
             lost_cb,
             err_cb,
         )
-        var dev_result = self._lib[].adapter_request_device_sync(
-            self._inst,
-            self._handle,
-            desc_p,
-        )
+        # The descriptor only has to outlive the call itself.
+        var slot = self._lib[].adapter_request_device_start(self._handle, desc_p)
         desc_p.unsafe_free()
         if len(required_features) > 0:
             feat_ptr.unsafe_free()
         if required_limits:
             limits_p.unsafe_free()
-
-        var device = dev_result.device
-        var status = dev_result.status
-        if status != WGPURequestDeviceStatus.Success:
-            raise Error("wgpuAdapterRequestDevice failed, status=" + String(status))
-        if device == null_opaque():
-            raise Error("wgpuAdapterRequestDevice returned null device")
-
-        var queue = self._lib[].device_get_queue(device)
-        return Device(self._owner, self._lib, self._inst, device, queue)
+        _ = label_sv
+        _ = label
+        return DeviceRequest(
+            self._owner, Pending[_DeviceResult](self._lib, self._inst, null_opaque(), slot)
+        )
 
     def create_surface_wayland(
         self,

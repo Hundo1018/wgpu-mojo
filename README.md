@@ -305,16 +305,78 @@ mojo build -D WGPU_LINK=static -I . \
   GLFW.
 - The define is read when the consumer compiles, so it also works through the
   precompiled `wgpu` package.
-- **wasm callbacks:** `pixi run check-wasm-fnptr` builds a probe to wasm64
-  (host IR retargeted, the route ludens-engine measured) and checks the result.
-  A callback pointer is a function-table index, and scalar-parameter callbacks
-  work from JS and C. The wgpu callbacks don't yet: Mojo lowers their by-value
-  `WGPUStringView` for x86-64 before retargeting, so a clang-compiled caller
-  such as emdawnwebgpu hits a `call_indirect` signature mismatch. That's
-  tracked with the browser work in #14.
+- For the browser, use `-D WGPU_TARGET=web` (next section), which implies this
+  mode.
 - Gates: `pixi run test-static`, `pixi run test-static-gpu` (the same tests,
   linked statically), and `pixi run check-static-ir` (declares present, no
   `dlopen`/`dlsym`/`dlclose`).
+
+## Browser target (`-D WGPU_TARGET=web`)
+
+wgpu-mojo builds to a wasm64 module that runs on the browser's WebGPU, through
+[emdawnwebgpu](https://dawn.googlesource.com/dawn/+/refs/heads/main/src/emdawnwebgpu/)
+(Dawn's `webgpu.h` for Emscripten). Measured in headless Firefox 157 and Chrome
+156 (`pixi run test-web`). wasm64 needs memory64: Chrome/Edge 133+, Firefox
+134+, not Safari yet.
+
+```bash
+pixi run setup-emsdk   # pinned Emscripten 6.0.13 -> build/emsdk (~1.5 GB, once)
+pixi run build-web     # examples/web/*_web.mojo -> build/web/*.{mjs,wasm}
+pixi run serve-web     # http://127.0.0.1:8000/  (the triangle)
+pixi run test-web      # headless Firefox + Chrome check the results
+```
+
+What changes on the web:
+
+- **Only standard `webgpu.h`.** A call to a wgpu-native extension
+  (`wgpuDevicePoll`, `wgpuInstanceEnumerateAdapters`, push constants, ...) fails
+  to compile, naming the function. `Instance.request_adapter`, `Device.poll`,
+  `GPU.read`/`dispatch` and the log bridge are native-only.
+- **Nothing blocks.** Every async request has a non-blocking form:
+  `Instance.request_adapter_async`, `Adapter.request_device_async`,
+  `Buffer.map_async`, `Device.on_submitted_work_done_async` and
+  `Device.pop_error_scope_async`. Each returns a request with `ready()`, which
+  never blocks, and `take()`. The blocking calls are built on the same requests;
+  on the web they are compile errors that name the async replacement.
+  `wgpu.web.boot.GPUBoot` steps adapter and device setup one frame at a time.
+- **Canvas surface.** `wgpu.surface.create_surface_canvas(lib, instance, "#canvas")`.
+  `Surface.present()` does nothing there: the browser presents when control
+  returns to it.
+- **The host owns the loop.** Mojo has no globals, so the app exports
+  `init() -> handle` and `frame(handle, dt)`. `web/wgpu_host.mjs` calls `frame`
+  on each `requestAnimationFrame` and forwards DOM keyboard and mouse events to
+  `InputState`. See `examples/web/triangle_web.mojo`.
+  `examples/web/triangle_native.mojo` runs the same app in a GLFW window.
+- **Frame capture.** `wgpu.capture.FrameCapture` copies a texture to a
+  readback buffer and maps it without blocking, so the host can pass the pixels
+  to WebCodecs or ffmpeg. It works natively too. To capture the surface itself,
+  configure it with `extra_usage=WGPUTextureUsage.COPY_SRC`. The web triangle
+  captures from its own render target instead.
+- **Testing caveat.** Headless Chrome 156 destroys the `GPUDevice` right after
+  a canvas draw (a plain-JS page does the same), so `test-web` checks pixels
+  in Firefox. In Chrome it checks the frame loop, input and compute.
+
+How the build works: `mojo build -D WGPU_TARGET=web --emit llvm`, then
+`scripts/wasm_retarget.py` (wasm64-emscripten triple and datalayout), then
+`emcc -sMEMORY64` and `em++ --use-port=emdawnwebgpu`.
+
+Mojo lowers C calls for the host before the IR is retargeted, so a 16-byte
+struct passed by value comes out as two i64s, while emscripten's wasm64 ABI
+passes it by pointer. That affects only `WGPUStringView`: on the web, callbacks
+take it as a pointer (`StringViewArg`) and `PushDebugGroup` and friends pass it
+through `sv_arg`. A wasm-ld signature-mismatch warning fails `build-web`.
+
+Gates:
+
+- `check-web-imports`: every import is declared in emdawnwebgpu's `webgpu.h`,
+  the native-only list is current, and no `WGPUStringView` is passed by value.
+- `check-web-struct-layout`: the bound structs match emdawnwebgpu's header. Its
+  86 shared structs and 493 enum values are identical to wgpu-native
+  v29.0.1.1's, which is why one set of structs serves both.
+- `check-wasm-fnptr`: the callback ABI on wasm64, host build versus web build.
+
+The emdawnwebgpu version (fixed by the Emscripten pin in `scripts/web-env.sh`)
+is part of the ABI contract, like wgpu-native's.
 
 ---
 

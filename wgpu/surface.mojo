@@ -26,7 +26,12 @@ from wgpu._ffi.structs import (
     WGPUChainedStruct, WGPUStringView,
     WGPUSurfaceDescriptor, WGPUSurfaceCapabilities, WGPUSurfaceConfiguration,
     WGPUSurfaceTexture,
-    WGPUSurfaceSourceWaylandSurface, WGPUSurfaceSourceXlibWindow,
+    WGPUSurfaceSourceWaylandSurface, WGPUSurfaceSourceXlibWindow, str_to_sv,
+)
+from wgpu._backend.wgpu_native.target import WGPU_TARGET_WEB
+from wgpu._backend.wgpu_native.web_structs import (
+    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector,
+    WGPU_STYPE_EMSCRIPTEN_SURFACE_SOURCE_CANVAS_HTML_SELECTOR,
 )
 
 
@@ -130,8 +135,12 @@ struct Surface(Movable):
         width: UInt32,
         height: UInt32,
         present_mode: UInt32 = WGPUPresentMode.Fifo,
+        extra_usage: WGPUTextureUsage = WGPUTextureUsage(0),
     ):
-        """Configure the swap chain. Must be called before get_current_texture()."""
+        """Configure the swap chain. Must be called before get_current_texture().
+
+        `extra_usage` is OR-ed onto RENDER_ATTACHMENT; pass COPY_SRC to read
+        frames back (see wgpu.capture)."""
         # Query supported formats; use first (preferred) or fall back to Bgra8Unorm.
         var fmt: UInt32 = 0x1B  # Bgra8Unorm fallback
         with AllocGuard[WGPUSurfaceCapabilities](1) as caps_p:
@@ -155,7 +164,7 @@ struct Surface(Movable):
                 null_opaque(),
                 device,
                 fmt,
-                UInt64(WGPUTextureUsage.RENDER_ATTACHMENT.value),
+                UInt64((WGPUTextureUsage.RENDER_ATTACHMENT | extra_usage).value),
                 width,
                 height,
                 UInt(0),
@@ -191,8 +200,13 @@ struct Surface(Movable):
         outdated (a resize, typically), and a render loop should respond by
         reconfiguring, not by unwinding. Callers that need it can read the
         status through the loader directly.
+
+        On the web this does nothing: the browser presents the canvas when
+        control returns to its event loop (emdawnwebgpu aborts on
+        wgpuSurfacePresent).
         """
-        _ = self._lib[].surface_present(self._handle)
+        comptime if not WGPU_TARGET_WEB:
+            _ = self._lib[].surface_present(self._handle)
 
 # ------------------------------------------------------------------
 # Factory functions — platform-specific surface creation
@@ -248,4 +262,29 @@ def create_surface_xlib(
             h = lib[].instance_create_surface(inst, desc)
     if h == null_opaque():
         raise Error("wgpuInstanceCreateSurface returned null (X11)")
+    return Surface(lib, h)
+
+
+def create_surface_canvas(
+    lib: ArcPointer[WGPULib],
+    inst: WGPUInstanceHandle,
+    selector: String,
+) raises -> Surface:
+    """Create a surface from an HTML canvas, by CSS selector (e.g. "#canvas").
+    Web target only."""
+    comptime assert WGPU_TARGET_WEB, "create_surface_canvas needs -D WGPU_TARGET=web"
+    var h: WGPUSurfaceHandle
+    with AllocGuard[WGPUEmscriptenSurfaceSourceCanvasHTMLSelector](1) as src:
+        src[] = WGPUEmscriptenSurfaceSourceCanvasHTMLSelector(
+            WGPUChainedStruct(null_opaque(), WGPU_STYPE_EMSCRIPTEN_SURFACE_SOURCE_CANVAS_HTML_SELECTOR),
+            str_to_sv(selector),
+        )
+        with AllocGuard[WGPUSurfaceDescriptor](1) as desc:
+            desc[] = WGPUSurfaceDescriptor(
+                src.unsafe_bitcast[NoneType](), WGPUStringView.null_view()
+            )
+            h = lib[].instance_create_surface(inst, desc)
+    _ = selector
+    if h == null_opaque():
+        raise Error("wgpuInstanceCreateSurface returned null (canvas " + selector + ")")
     return Surface(lib, h)

@@ -13,8 +13,40 @@ from wgpu._ffi.structs import (
     WGPUInstanceDescriptor,
     WGPUInstanceLimits,
 )
+from wgpu._ffi.structs import WGPURequestAdapterOptions
 from wgpu.instance_owner import InstanceOwner
+from wgpu.pending import Pending
 from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.callbacks import _AdapterResult
+from wgpu._ffi.types import WGPURequestAdapterStatus
+
+
+struct AdapterRequest(Movable):
+    """An adapter request in flight; see `Instance.request_adapter_async`."""
+
+    var _owner: ArcPointer[InstanceOwner]
+    var _req: Pending[_AdapterResult]
+
+    def __init__(out self, owner: ArcPointer[InstanceOwner], var req: Pending[_AdapterResult]):
+        self._owner = owner
+        self._req = req^
+
+    def __init__(out self, *, deinit move: Self):
+        self._owner = move._owner^
+        self._req = move._req^
+
+    def ready(self) -> Bool:
+        return self._req.ready()
+
+    def wait(self) raises:
+        self._req.wait()
+
+    def take(self) raises -> Adapter:
+        """The adapter. Raises if still pending or if the request failed."""
+        var r = self._req.result()
+        if r.status != WGPURequestAdapterStatus.Success or r.adapter == null_opaque():
+            raise Error("wgpuInstanceRequestAdapter failed, status=" + String(r.status))
+        return Adapter(self._owner, r.adapter)
 
 
 struct Instance(Movable):
@@ -55,6 +87,20 @@ struct Instance(Movable):
 
     def get_version(self) -> UInt32:
         return self._owner[].lib()[].get_version()
+
+    def request_adapter_async(self) -> AdapterRequest:
+        """Request the default adapter without blocking.
+
+        The only way to get an adapter on the web target, where
+        `request_adapter` (wgpuInstanceEnumerateAdapters) does not exist.
+        """
+        var lib = self._owner[].lib()
+        var slot = lib[].instance_request_adapter_start(
+            self._owner[].handle(), null_ptr[WGPURequestAdapterOptions]()
+        )
+        return AdapterRequest(
+            self._owner, Pending[_AdapterResult](lib, self._owner[].handle(), null_opaque(), slot)
+        )
 
     def request_adapter(self, index: Int = 0) raises -> Adapter:
         var count = self._owner[].lib()[].enumerate_adapters(
