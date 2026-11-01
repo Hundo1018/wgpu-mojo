@@ -16,7 +16,7 @@ context:
   # and before the tag; release.yml then refuses to build unless the source at
   # this revision matches the tagged source outside conda.recipe/. See
   # CONTRIBUTING.md, "Releasing".
-  rev: "8cac0dd8e88532cf1d4da54463bed4c581e70d1e"
+  rev: "c9eb27f86fa0e28de49f58e3f5cb6ba9a087cd83"
 
   # Exact, not a range. wgpu-native renumbered the whole 0x0003xxxx SType enum
   # in the v29.0.0.0 -> v29.0.1.1 *patch* release, so a "compatible" newer patch
