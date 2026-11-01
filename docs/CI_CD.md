@@ -27,7 +27,7 @@ runners**, and how to set up the missing pieces yourself.
 
 | Concern | GitHub-hosted free runner | Self-hosted / local only |
 |---|---|---|
-| Non-GPU unit tests (`pixi run test`) | ✅ ubuntu + macos-14 | — |
+| Non-GPU unit tests (`pixi run test`) | ✅ ubuntu + macos-15 | — |
 | Compile-check / API drift (`check-compile`) | ✅ | — |
 | Package consume test (`pixi add`) | ✅ `consume.yml` | — |
 | Headless GPU compute (instance/device/buffer/compute) | ✅ via **lavapipe** (software Vulkan, Linux) | also real GPU |
@@ -232,11 +232,11 @@ declines the platforms this project does not test.
 2. **Branch protection** (Settings → Branches → add rule for `main`), require these
    status checks before merge:
    - `Test (ubuntu-latest)`
-   - `Test (macos-14)`
+   - `Test (macos-15)`
    - `Consume path (ubuntu-latest)`
-   - `Consume path (macos-14)`
+   - `Consume path (macos-15)`
    - `Conda package (ubuntu-latest)`
-   - `Conda package (macos-14)`
+   - `Conda package (macos-15)`
 
    Add `Headless GPU (lavapipe)` once it is consistently green.
 3. **Stable-tracking workflow permissions:** `stable-tracking.yml` already declares

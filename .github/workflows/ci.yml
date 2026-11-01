@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]   # linux-64 and osx-arm64 — the declared platforms
+        os: [ubuntu-latest, macos-15]   # linux-64 and osx-arm64 — the declared platforms
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -260,7 +260,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]   # the two platforms the recipe publishes
+        os: [ubuntu-latest, macos-15]   # the two platforms the recipe publishes
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout

@@ -32,7 +32,7 @@ jobs:
         include:
           - os: ubuntu-latest
             target: linux-64
-          - os: macos-14
+          - os: macos-15
             target: osx-arm64
     runs-on: ${{ matrix.os }}
     steps:
