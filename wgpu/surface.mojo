@@ -30,8 +30,8 @@ from wgpu._ffi.structs import (
 )
 from wgpu._backend.wgpu_native.target import WGPU_TARGET_WEB
 from wgpu._backend.wgpu_native.web_structs import (
-    WGPUEmscriptenSurfaceSourceCanvasHTMLSelector,
-    WGPU_STYPE_EMSCRIPTEN_SURFACE_SOURCE_CANVAS_HTML_SELECTOR,
+    WGPUSurfaceSourceCanvasHTMLSelector,
+    WGPU_STYPE_SURFACE_SOURCE_CANVAS_HTML_SELECTOR,
 )
 
 
@@ -202,8 +202,8 @@ struct Surface(Movable):
         status through the loader directly.
 
         On the web this does nothing: the browser presents the canvas when
-        control returns to its event loop (emdawnwebgpu aborts on
-        wgpuSurfacePresent).
+        control returns to its event loop (there is no
+        wgpuSurfacePresent in the browser).
         """
         comptime if not WGPU_TARGET_WEB:
             _ = self._lib[].surface_present(self._handle)
@@ -274,9 +274,9 @@ def create_surface_canvas(
     Web target only."""
     comptime assert WGPU_TARGET_WEB, "create_surface_canvas needs -D WGPU_TARGET=web"
     var h: WGPUSurfaceHandle
-    with AllocGuard[WGPUEmscriptenSurfaceSourceCanvasHTMLSelector](1) as src:
-        src[] = WGPUEmscriptenSurfaceSourceCanvasHTMLSelector(
-            WGPUChainedStruct(null_opaque(), WGPU_STYPE_EMSCRIPTEN_SURFACE_SOURCE_CANVAS_HTML_SELECTOR),
+    with AllocGuard[WGPUSurfaceSourceCanvasHTMLSelector](1) as src:
+        src[] = WGPUSurfaceSourceCanvasHTMLSelector(
+            WGPUChainedStruct(null_opaque(), WGPU_STYPE_SURFACE_SOURCE_CANVAS_HTML_SELECTOR),
             str_to_sv(selector),
         )
         with AllocGuard[WGPUSurfaceDescriptor](1) as desc:

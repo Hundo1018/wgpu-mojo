@@ -3,7 +3,7 @@ built to a wasm module by scripts/check-wasm-fnptr.sh and driven by
 fnptr_probe.mjs.
 
 On wasm a C function pointer is an index into the module's function table, not
-a code address. The host (emscripten / emdawnwebgpu) calls a callback through
+a code address. The host (the JS translation layer) calls a callback through
 that table, so this checks the value is such an index and that the table entry
 behind it is the Mojo function.
 """

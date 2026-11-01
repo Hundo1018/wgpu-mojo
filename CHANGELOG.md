@@ -38,6 +38,13 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   argument.
 - Async callbacks take their message as `StringViewArg`. That is still
   `WGPUStringView` natively, and a pointer on the web.
+- **Web target leaves Emscripten / emdawnwebgpu** (#15). `-D WGPU_TARGET=web` now
+  means standard `webgpu.h`, non-blocking, imports supplied by a JS translation
+  layer. Removed: `setup-emsdk`, `check-web-struct-layout`, `StringViewArg` /
+  `sv_arg` (callbacks take `WGPUStringView` again), and the Emscripten canvas
+  struct (replaced by `WGPUSurfaceSourceCanvasHTMLSelector`, SType `0x00050000`).
+  `build-web` produces wasm64 IR only until #16/#17 land the link step and the
+  translator, so `test-web` does not run yet.
 
 ## [0.4.0] — 2026-11-01
 

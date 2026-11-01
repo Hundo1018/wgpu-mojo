@@ -26,7 +26,7 @@ from wgpu._backend.wgpu_native.target import (
 from wgpu._backend.wgpu_native.callbacks import (
     CallbackResult, _AdapterResult, _DeviceResult, _MapResult, _WorkDoneResult, _PopErrorResult,
     request_adapter_callback, request_device_callback, buffer_map_callback,
-    queue_work_done_callback, pop_error_scope_callback, sv_arg,
+    queue_work_done_callback, pop_error_scope_callback,
 )
 from wgpu._backend.wgpu_native.native_ext import WGPUImageSubresourceRange
 from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
@@ -1275,14 +1275,14 @@ struct WGPULib(Movable):
         encoder: WGPUCommandEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuCommandEncoderInsertDebugMarker"](encoder, sv_arg(label))
+        self._wgpu.call["wgpuCommandEncoderInsertDebugMarker"](encoder, label)
 
     def command_encoder_push_debug_group(
         self,
         encoder: WGPUCommandEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuCommandEncoderPushDebugGroup"](encoder, sv_arg(label))
+        self._wgpu.call["wgpuCommandEncoderPushDebugGroup"](encoder, label)
 
     def command_encoder_pop_debug_group(self, encoder: WGPUCommandEncoderHandle):
         self._wgpu.call["wgpuCommandEncoderPopDebugGroup"](encoder)
@@ -1304,14 +1304,14 @@ struct WGPULib(Movable):
         pass_enc: WGPUComputePassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuComputePassEncoderInsertDebugMarker"](pass_enc, sv_arg(label))
+        self._wgpu.call["wgpuComputePassEncoderInsertDebugMarker"](pass_enc, label)
 
     def compute_pass_push_debug_group(
         self,
         pass_enc: WGPUComputePassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuComputePassEncoderPushDebugGroup"](pass_enc, sv_arg(label))
+        self._wgpu.call["wgpuComputePassEncoderPushDebugGroup"](pass_enc, label)
 
     def compute_pass_pop_debug_group(self, pass_enc: WGPUComputePassEncoderHandle):
         self._wgpu.call["wgpuComputePassEncoderPopDebugGroup"](pass_enc)
@@ -1359,14 +1359,14 @@ struct WGPULib(Movable):
         pass_enc: WGPURenderPassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderPassEncoderInsertDebugMarker"](pass_enc, sv_arg(label))
+        self._wgpu.call["wgpuRenderPassEncoderInsertDebugMarker"](pass_enc, label)
 
     def render_pass_push_debug_group(
         self,
         pass_enc: WGPURenderPassEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderPassEncoderPushDebugGroup"](pass_enc, sv_arg(label))
+        self._wgpu.call["wgpuRenderPassEncoderPushDebugGroup"](pass_enc, label)
 
     def render_pass_pop_debug_group(self, pass_enc: WGPURenderPassEncoderHandle):
         self._wgpu.call["wgpuRenderPassEncoderPopDebugGroup"](pass_enc)
@@ -1547,14 +1547,14 @@ struct WGPULib(Movable):
         encoder: WGPURenderBundleEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderBundleEncoderInsertDebugMarker"](encoder, sv_arg(label))
+        self._wgpu.call["wgpuRenderBundleEncoderInsertDebugMarker"](encoder, label)
 
     def render_bundle_encoder_push_debug_group(
         self,
         encoder: WGPURenderBundleEncoderHandle,
         label: WGPUStringView,
     ):
-        self._wgpu.call["wgpuRenderBundleEncoderPushDebugGroup"](encoder, sv_arg(label))
+        self._wgpu.call["wgpuRenderBundleEncoderPushDebugGroup"](encoder, label)
 
     def render_bundle_encoder_pop_debug_group(self, encoder: WGPURenderBundleEncoderHandle):
         self._wgpu.call["wgpuRenderBundleEncoderPopDebugGroup"](encoder)

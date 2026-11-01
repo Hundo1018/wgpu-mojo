@@ -1,17 +1,14 @@
 """Retarget Modular host IR to wasm for a recent llc (LLVM >= 23). From ludens-engine tools/wasm/poc.
-usage: python3 -I retarget.py in.ll out.ll [wasm64|wasm32|emscripten]
+usage: python3 -I retarget.py in.ll out.ll [wasm64|wasm32]
 Only: triple/datalayout swap, strip x86 target-cpu/features, stub x86 MXCSR intrinsics.
-`emscripten` is wasm64 for emcc: its clang rejects the IR unless the triple is
-wasm64-unknown-emscripten and the datalayout carries f128:64."""
+"""
 import re, sys
 
 src, dst = sys.argv[1], sys.argv[2]
 arch = sys.argv[3] if len(sys.argv) > 3 else "wasm64"
 DL = {"wasm64": "e-m:e-p:64:64-p10:8:8-p20:8:8-i64:64-i128:128-n32:64-S128-ni:1:10:20",
-      "wasm32": "e-m:e-p:32:32-p10:8:8-p20:8:8-i64:64-i128:128-n32:64-S128-ni:1:10:20",
-      "emscripten": "e-m:e-p:64:64-p10:8:8-p20:8:8-i64:64-i128:128-f128:64-n32:64-S128-ni:1:10:20"}[arch]
-TRIPLE = {"wasm64": "wasm64-unknown-unknown", "wasm32": "wasm32-unknown-unknown",
-          "emscripten": "wasm64-unknown-emscripten"}[arch]
+      "wasm32": "e-m:e-p:32:32-p10:8:8-p20:8:8-i64:64-i128:128-n32:64-S128-ni:1:10:20"}[arch]
+TRIPLE = {"wasm64": "wasm64-unknown-unknown", "wasm32": "wasm32-unknown-unknown"}[arch]
 n_mx = 0
 with open(src) as fi, open(dst, "w") as fo:
     for line in fi:

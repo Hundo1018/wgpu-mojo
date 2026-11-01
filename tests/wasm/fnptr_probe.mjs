@@ -17,30 +17,19 @@ const check = (ok, msg) => { console.log(`${ok ? "PASS" : "FAIL"} ${msg}`); if (
 const idx = x.fnptr_add1();
 check(typeof idx === "bigint" && idx > 0n && idx < BigInt(table.length),
       `c_fn_ptr(add1) = ${idx}: a function-table index (table length ${table.length})`);
-check(table.get(idx)(41) === 42, "table.get(c_fn_ptr(add1))(41) === 42 (host-side call, emscripten getWasmTableEntry)");
+check(table.get(idx)(41) === 42, "table.get(c_fn_ptr(add1))(41) === 42 (host-side call)");
 check(x.call_int_cb(idx, 41) === 42, "C call_indirect through c_fn_ptr(add1) returns 42");
 
-// 2. A real wgpu callback, which takes a WGPUStringView message (16 B).
-// Mojo lowers abi("C") for the host (x86-64 SysV) before the IR is retargeted,
-// so a by-value struct arrives as two i64s; clang's wasm C ABI passes it by
-// pointer. `-D WGPU_TARGET=web` (#14) declares the parameter as a pointer, which
-// is what makes the browser's call_indirect match.
-//   host build: 5 wasm params, the C call traps (why the web flag exists)
-//   web build:  4 wasm params, the C call runs and stores the status
-const web = process.argv[3] === "web";
+// 2. A real wgpu callback, which takes a WGPUStringView message (16 B). Mojo
+// lowers abi("C") for the host (x86-64 SysV), so the struct arrives as two i64s
+// (pointer, length). The JS translation layer calls the table entry that way:
+// call_fn(cb, status, msgPtr, msgLen, userdata1, userdata2).
 const cb = x.fnptr_buffer_map_callback();
 check(cb > 0n && cb < BigInt(table.length), `buffer_map_callback() = ${cb}: a table index`);
-const want = web ? 4 : 5;
-check(table.get(cb).length === want,
-      `buffer_map_callback() entry has ${want} wasm params (${web ? "web: message by pointer, as clang" : "host SysV split"}), got ${table.get(cb).length}`);
-if (web) {
-  let err = null;
-  try { x.call_map_cb(cb, x.slot_addr()); } catch (e) { err = e; }
-  check(err === null && x.slot_status() === 1,
-        `C call through WGPUBufferMapCallback runs and writes status 1 (got ${err ?? x.slot_status()})`);
-} else {
-  let trapped = false;
-  try { x.call_map_cb(cb, 0n); } catch (e) { trapped = /signature mismatch/.test(String(e.message ?? e)); }
-  check(trapped, "C call through WGPUBufferMapCallback traps with a signature mismatch (host-lowered build)");
-}
+check(table.get(cb).length === 5,
+      `buffer_map_callback() entry has 5 wasm params (status, msg ptr, msg len, ud1, ud2), got ${table.get(cb).length}`);
+let err = null;
+try { table.get(cb)(1, 0n, 0n, x.slot_addr(), 0n); } catch (e) { err = e; }
+check(err === null && x.slot_status() === 1,
+      `host-side call through WGPUBufferMapCallback runs and writes status 1 (got ${err ?? x.slot_status()})`);
 process.exitCode = failed ? 1 : 0;

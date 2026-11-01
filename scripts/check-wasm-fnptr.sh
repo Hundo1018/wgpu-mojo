@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pin what `c_fn_ptr` yields on a wasm64 build (issue #13, request item 3),
-# and that the web target's callbacks match clang's wasm C ABI (#14).
+# and that the callbacks' import-facing signature is what the JS side calls (#15).
 #
 # Route (measured in ludens-engine tools/wasm/poc/FINDINGS.md): Mojo host IR ->
 # scripts/wasm_retarget.py -> llc -> wasm-ld -mwasm64, then run under node.
@@ -13,11 +13,11 @@ OUT=build/wasm
 mkdir -p "$OUT"
 TOOLS=(pixi exec --spec llvm-tools=23.1.4 --spec lld=23.1.4 --spec clang=23.1.4 --spec nodejs=24 --)
 
-# Twice: a host build pins the by-value WGPUStringView mismatch, the web build
-# (-D WGPU_TARGET=web, #14) shows the pointer-taking callback matching clang.
-for mode in host web; do
-  flags=()
-  [ "$mode" = web ] && flags=(-D WGPU_TARGET=web)
+# The web build (-D WGPU_TARGET=web): a callback's WGPUStringView message is two
+# i64s, which is how the JS translation layer calls it through the table.
+mode=web
+{
+  flags=(-D WGPU_TARGET=web)
   echo "== $mode build"
   pixi run mojo build "${flags[@]}" --emit llvm -I . -o "$OUT/fnptr_$mode.ll" tests/wasm/fnptr_probe.mojo
   "${TOOLS[@]}" bash -c "
@@ -32,4 +32,4 @@ for mode in host web; do
         -o $OUT/fnptr_$mode.wasm $OUT/fnptr_$mode.o $OUT/fnptr_caller.o
     node tests/wasm/fnptr_probe.mjs $OUT/fnptr_$mode.wasm $mode
   "
-done
+}

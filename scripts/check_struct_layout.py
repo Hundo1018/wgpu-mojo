@@ -19,12 +19,6 @@ headers:
     would not, since swapping two same-sized fields leaves every offset
     unchanged.
 
-`--web DIR` checks the web target instead (#14): structs.mojo and
-web_structs.mojo against emdawnwebgpu's webgpu.h under DIR (the directory
-holding webgpu/webgpu.h), plus the SType constants web_structs.mojo copies.
-That header is Dawn's, generated from its own webgpu-headers snapshot; it
-matching wgpu-native's is what lets the web build reuse these structs.
-
 Size alone would miss two same-size fields merged into one; field count alone
 would miss a wrong field type. Together they catch both.
 
@@ -53,15 +47,7 @@ def read(p):
 
 
 def main():
-    global STRUCT_SOURCES, HEADERS
     web = None
-    if len(sys.argv) == 3 and sys.argv[1] == "--web":
-        web = os.path.abspath(sys.argv[2])
-        STRUCT_SOURCES = [
-            STRUCT_SOURCES[0],
-            ("wgpu/_backend/wgpu_native/web_structs.mojo", "wgpu._backend.wgpu_native.web_structs"),
-        ]
-        HEADERS = [os.path.join(web, "webgpu/webgpu.h")]
     sources = [(read(os.path.join(ROOT, p)), mod) for p, mod in STRUCT_SOURCES]
     mojo = "\n".join(src for src, _ in sources)
     module_of = {}
@@ -102,15 +88,14 @@ def main():
     csrc = os.path.join(tmp, "sz.c")
     with open(csrc, "w") as f:
         f.write('#include <stdio.h>\n#include "webgpu/webgpu.h"\n')
-        if not web:
-            f.write('#include "webgpu/wgpu.h"\n')
+        f.write('#include "webgpu/wgpu.h"\n')
         f.write('int main(void){\n')
         for n in names:
             f.write('  printf("%s %%zu\\n", sizeof(%s));\n' % (n, n))
         f.write("  return 0;\n}\n")
     exe = os.path.join(tmp, "sz")
     # gcc's LP64 layout is wasm64's too (8-byte pointers and size_t, 4-byte enums).
-    r = subprocess.run(["gcc", "-I", web or os.path.join(ROOT, "ffi/include"), csrc, "-o", exe],
+    r = subprocess.run(["gcc", "-I", os.path.join(ROOT, "ffi/include"), csrc, "-o", exe],
                        capture_output=True, text=True)
     if r.returncode:
         print("check-struct-layout: C probe failed to build:\n" + r.stderr, file=sys.stderr)
@@ -159,21 +144,9 @@ def main():
     # value still compiles and still runs; it just tags a chain as the wrong
     # struct. So compare each constant against the header by name.
     n_enum = 0
-    if web:
-        cvals = {k: int(v, 16) for k, v in
-                 re.findall(r"^\s*WGPUSType_(\w+)\s*=\s*(0x[0-9A-Fa-f]+)", hdr, re.M)}
-        web_src = read(os.path.join(ROOT, STRUCT_SOURCES[1][0]))
-        for k, v in re.findall(r"^comptime WGPU_STYPE_(\w+)\s*:\s*UInt32\s*=\s*(0x[0-9A-Fa-f]+)", web_src, re.M):
-            n_enum += 1
-            match = [c for c in cvals if c.upper() == k.replace("_", "").upper() or
-                     re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", c).upper() == k]
-            if not match:
-                bad.append((f"SType {k}", "no-enum", v, "absent"))
-            elif cvals[match[0]] != int(v, 16):
-                bad.append((f"SType {k}", "value", v, "0x%08X" % cvals[match[0]]))
     native_src = read(NATIVE_EXT)
-    for mstruct, cprefix in () if web else (("WGPUNativeSType", "WGPUSType_"),
-                                            ("WGPUNativeFeature", "WGPUNativeFeature_")):
+    for mstruct, cprefix in (("WGPUNativeSType", "WGPUSType_"),
+                                 ("WGPUNativeFeature", "WGPUNativeFeature_")):
         body = re.search(r"^struct %s\b[^\n]*:\n((?:(?:    [^\n]*)?\n)*?)(?=\S|\Z)" % mstruct,
                          native_src, re.M)
         if not body:

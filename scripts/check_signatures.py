@@ -211,7 +211,6 @@ def measure_mojo_sizes(types):
         f.write("from wgpu._ffi.nulls import null_ptr\n")
         f.write("from wgpu._backend.wgpu_native.types import *\n")
         f.write("from wgpu._backend.wgpu_native.structs import *\n")
-        f.write("from wgpu._backend.wgpu_native.callbacks import StringViewArg\n")
         f.write("\ndef _sz[T: AnyType]() -> Int:\n    var p = null_ptr[T]()\n    return Int(p.unsafe_offset(1)) - Int(p)\n\ndef main() raises:\n")
         for i, t in enumerate(concrete):
             f.write('    print("%d", _sz[%s]())\n' % (i, t))

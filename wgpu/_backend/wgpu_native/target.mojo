@@ -1,8 +1,9 @@
 """wgpu._backend.wgpu_native.target — compile-time build target.
 
 `-D WGPU_LINK=static` resolves every wgpu call at link time (#13).
-`-D WGPU_TARGET=web` builds for the browser (#14): wasm64 + emdawnwebgpu. It
-implies static linking, and only standard `webgpu.h` is available, so a call to
+`-D WGPU_TARGET=web` builds for the browser (#14): wasm64, with the `wgpu*`
+imports supplied by a JS translation layer. It implies static linking, and only
+standard `webgpu.h` is available, so a call to
 a wgpu-native extension fails to compile instead of trapping in the browser.
 """
 
@@ -20,7 +21,7 @@ comptime WGPU_LINK_STATIC = _WGPU_LINK == "static" or WGPU_TARGET_WEB
 
 # Functions bound in loader.mojo that the browser does not have: everything
 # declared in ffi/include/webgpu/wgpu.h, plus the `*SetImmediates` calls that
-# wgpu-native's webgpu.h has and emdawnwebgpu's does not.
+# wgpu-native's webgpu.h has and the WebGPU API does not.
 # scripts/check-web-imports.sh keeps this list equal to that definition.
 comptime _NATIVE_ONLY = (
     "wgpuCommandEncoderClearTexture",

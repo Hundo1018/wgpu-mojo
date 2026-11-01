@@ -171,17 +171,15 @@ check-static-ir = { cmd = "bash scripts/check-static-ir.sh" }
 # clang's wasm ABI). Pulls LLVM 23 + node 24 through `pixi exec`.
 check-wasm-fnptr = { cmd = "bash scripts/check-wasm-fnptr.sh" }
 
-# Browser target, -D WGPU_TARGET=web (issue #14): wasm64 + emdawnwebgpu.
-# setup-emsdk downloads the pinned Emscripten (~1.5 GB) into build/emsdk.
-setup-emsdk = { cmd = "bash scripts/setup-emsdk.sh" }
+# Browser target, -D WGPU_TARGET=web: wasm64 IR for the shared wasm-ld toolchain
+# (issue #15). Linking and the JS translation layer follow in #16/#17.
 build-web   = { cmd = "bash scripts/build-web.sh" }
-# Headless Firefox and/or Chrome run build/web/test.html (Node >= 22).
+# Headless Firefox and/or Chrome run build/web/test.html (Node >= 22). Needs the
+# linked module, which arrives with #16/#17.
 test-web    = { cmd = "bash scripts/test-web.sh" }
 serve-web   = { cmd = "python3 -m http.server 8000 --bind 127.0.0.1 --directory build/web" }
-# The web IR calls only emdawnwebgpu's webgpu.h; target.mojo's native-only list is current.
-check-web-imports = { cmd = "bash -c 'source scripts/web-env.sh && python3 scripts/check_web_imports.py \"$DAWN_INCLUDE\" build/web/triangle.ll build/web/compute.ll'" }
-# structs.mojo + web_structs.mojo against emdawnwebgpu's webgpu.h.
-check-web-struct-layout = { cmd = "bash -c 'source scripts/web-env.sh && python3 scripts/check_struct_layout.py --web \"$DAWN_INCLUDE\"'" }
+# The web IR calls only standard webgpu.h; target.mojo's native-only list is current.
+check-web-imports = { cmd = "python3 scripts/check_web_imports.py build/web/triangle.ll build/web/compute.ll", depends-on = ["build-web"] }
 
 # Hello Triangle quickstart
 hello             = { cmd = "mojo run -I . hello.mojo", depends-on = ["build-callbacks"] }
