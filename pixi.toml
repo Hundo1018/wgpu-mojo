@@ -90,6 +90,7 @@ check-compile-max   = { cmd = "bash scripts/check-compile-max.sh", depends-on = 
 
 [environments]
 maxinterop = ["maxinterop"]
+wasm = { features = ["wasm"], no-default-feature = true }
 
 [tasks]
 # Build the C callback bridge (must be run before any GPU test/example)
@@ -210,3 +211,11 @@ example-compute-v2 = { cmd = "mojo run -I . examples/compute_add_v2.mojo", depen
 example-web-triangle-native = { cmd = "mojo run -I . -I examples/web examples/web/triangle_native.mojo", depends-on = ["build-callbacks"] }
 examples-input    = { cmd = "pixi run example-input" }
 
+
+# --- Browser build: the shared wasm64 JS runtime. A dev dependency of build-web only; the default
+# environment, the package and every native task never touch it.
+[feature.wasm.dependencies]
+python = ">=3.11"
+
+[feature.wasm.pypi-dependencies]
+ludens-wasm-rt = { git = "https://github.com/Hundo1018/ludens-wasm-rt", rev = "644e1f87cbabce30b52525accff3f0d538bd6fb1" }

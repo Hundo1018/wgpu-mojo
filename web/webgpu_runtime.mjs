@@ -16,8 +16,6 @@ export class Runtime {
     this.enums = enums;
     this.handles = new Map();
     this.nextHandle = 1n;
-    this.queue = [];
-    this.depth = 0;          // >0 while a Mojo export (or import) is running
     this.errors = [];
     this.unimplemented = new Set();
     this.mapped = new Map(); // buffer handle -> {ptr, ab, offset, size, write}
@@ -25,40 +23,41 @@ export class Runtime {
     this.cbLog = [];          // futures in the order their callbacks ran
   }
 
-  attach(exports) {
-    this.exports = exports;
-    this.memory = exports.memory;
-    this.table = exports.__indirect_function_table;
+  // `host` is the ludens-wasm-rt runtime from host.mjs: linear memory, the allocator exports,
+  // strings, deferred work and table calls all go through its API.
+  attach(host) {
+    this.host = host;
   }
 
   // ---- wasm memory ----
   get view() {
-    if (this._buf !== this.memory.buffer) {
-      this._buf = this.memory.buffer;
-      this._dv = new DataView(this._buf);
-      this._u8 = new Uint8Array(this._buf);
+    const buf = this.host.mem();
+    if (this._buf !== buf) {
+      this._buf = buf;
+      this._dv = new DataView(buf);
+      this._u8 = new Uint8Array(buf);
     }
     return this._dv;
   }
   get u8() { this.view; return this._u8; }
-  bytes(ptr, n) { return this.u8.subarray(Number(ptr), Number(ptr) + Number(n)); }
-  alloc(n) { return this.exports.mw_alloc(BigInt(n)); }
-  free(p) { this.exports.mw_free(p); }
+  bytes(ptr, n) { return this.host.bytes(ptr, n); }
+  alloc(n) { return this.host.alloc(n); }
+  free(p) { this.host.free(p); }
 
-  // A JS string in wasm memory: [ptr, len]. Caller frees ptr.
+  // A JS string in wasm memory (NUL-terminated): [ptr, len]. Caller frees ptr.
   str_in(s) {
-    const b = new TextEncoder().encode(s);
-    const p = this.alloc(b.length + 1);
-    this.u8.set(b, Number(p));
-    this.u8[Number(p) + b.length] = 0;
-    return [p, b.length];
+    const [p, n] = this.host.str_in(s);
+    return [p, Number(n)];
   }
   str_out(ptr, len) {
     if (!ptr) return '';
-    let n = len === STRLEN ? undefined : Number(len);
-    const start = Number(ptr);
-    if (n === undefined) { n = 0; while (this.u8[start + n]) n++; }
-    return new TextDecoder().decode(this.u8.subarray(start, start + n));
+    if (len === STRLEN) {
+      const start = Number(ptr);
+      let n = 0;
+      while (this.u8[start + n]) n++;
+      return this.host.str_out(ptr, n);
+    }
+    return this.host.str_out(ptr, len);
   }
 
   // ---- handles ----
@@ -133,17 +132,17 @@ export class Runtime {
   u32(v) { return v === U32_UNDEF ? undefined : v; }
 
   // ---- async results ----
-  defer(fn) { this.queue.push(fn); }
-  drain() {
-    // Callbacks may queue more work; those run on the next drain.
-    const batch = this.queue.splice(0);
-    for (const fn of batch) fn();
-  }
+  // Results are queued with defer() and applied by drain() (wgpuInstanceProcessEvents runs it),
+  // the only place a callback may call into wasm (host.mjs enforces the re-entry rule).
+  defer(fn) { this.host.defer(fn); }
+  drain() { this.host.drain(); }
   // Call a C callback (a function-table index from c_fn_ptr). i64 params are BigInt.
   call_fn(cb, ...args) {
-    if (this.depth === 0) throw new Error('wgpu: re-entry into wasm from a microtask (call_fn outside a wasm call)');
-    const f = this.table.get(BigInt(cb));
-    try { return f(...args); } catch (e) { throw new Error(`call_fn(${cb}) with ${f.length} params, args ${args.map((a) => typeof a + ':' + a)}: ${e.message}`); }
+    try { return this.host.call_fn(cb, ...args); }
+    catch (e) {
+      if (/re-entry/.test(e.message)) throw e;
+      throw new Error(`call_fn(${cb}) args ${args.map((a) => typeof a + ':' + a)}: ${e.message}`);
+    }
   }
 
   newFuture() { return this.futures++; }
