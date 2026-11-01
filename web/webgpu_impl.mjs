@@ -238,7 +238,7 @@ export const impl = {
     rt.get(q).queue.submit(rt.u64s(ptr, count).map((h) => rt.get(h).cmd));
   },
   wgpuQueueWriteBuffer(rt, q, buf, off, data, size) {
-    rt.get(q).queue.writeBuffer(bufferOf(rt, buf), Number(off), rt.bytes(data, size).slice());
+    rt.get(q).queue.writeBuffer(bufferOf(rt, buf), Number(off), rt.bytes(data, size));   // writeBuffer copies synchronously, so a view onto wasm memory is safe
   },
 };
 
