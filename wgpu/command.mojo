@@ -165,6 +165,60 @@ struct CommandEncoder(Movable, not Deinitable else "Must call finish() or abando
         rp_desc_p.unsafe_free()
         return FrameRenderPass(self._lib, result, view^)
 
+    def begin_render_pass_clear_depth(
+        self,
+        var view: TextureView,
+        depth_view: TextureView,
+        clear_color: WGPUColor,
+        depth_clear: Float32 = 1.0,
+        label: String = "",
+    ) -> FrameRenderPass:
+        """`begin_render_pass_clear` plus a depth attachment, cleared to `depth_clear`.
+
+        `depth_view` is borrowed: keep it alive until the pass ends. Depth is
+        cleared on load and stored; stencil is unused. Pipelines drawn in this
+        pass need the depth view's format (`create_render_pipeline(depth_format=...)`).
+        """
+        var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
+
+        var color_att_p = raw_alloc[WGPURenderPassColorAttachment](1)
+        color_att_p[unsafe_offset=0] = WGPURenderPassColorAttachment(
+            null_opaque(),
+            view.handle().raw,
+            UInt32(0xFFFFFFFF),
+            null_opaque(),
+            UInt32(2),
+            UInt32(1),
+            clear_color,
+        )
+        var depth_att_p = raw_alloc[WGPURenderPassDepthStencilAttachment](1)
+        depth_att_p[unsafe_offset=0] = WGPURenderPassDepthStencilAttachment(
+            null_opaque(),
+            depth_view.handle().raw,
+            UInt32(2),  # depth load: Clear
+            UInt32(1),  # depth store: Store
+            depth_clear,
+            UInt32(0),
+            UInt32(0), UInt32(0), UInt32(0), UInt32(0),  # stencil: unused
+        )
+
+        var rp_desc_p = raw_alloc[WGPURenderPassDescriptor](1)
+        rp_desc_p[unsafe_offset=0] = WGPURenderPassDescriptor(
+            null_opaque(),
+            label_sv,
+            UInt(1),
+            color_att_p,
+            depth_att_p,
+            null_opaque(),
+            null_ptr[WGPUPassTimestampWrites](),
+        )
+
+        var result = self._lib[].command_encoder_begin_render_pass(self._handle, rp_desc_p)
+        color_att_p.unsafe_free()
+        depth_att_p.unsafe_free()
+        rp_desc_p.unsafe_free()
+        return FrameRenderPass(self._lib, result, view^)
+
     def begin_surface_clear_pass(
         self,
         surface_texture: WGPUTextureHandle,
@@ -182,6 +236,22 @@ struct CommandEncoder(Movable, not Deinitable else "Must call finish() or abando
         )
         var view = TextureView(self._lib, view_h)
         return self.begin_render_pass_clear(view^, clear_color, label)
+
+    def begin_surface_clear_pass_depth(
+        self,
+        surface_texture: WGPUTextureHandle,
+        depth_view: TextureView,
+        clear_color: WGPUColor,
+        depth_clear: Float32 = 1.0,
+        label: String = "",
+    ) -> FrameRenderPass:
+        """`begin_surface_clear_pass` plus a depth attachment (see `begin_render_pass_clear_depth`)."""
+        var view_h = self._lib[].texture_create_view(
+            surface_texture,
+            null_ptr[WGPUTextureViewDescriptor](),
+        )
+        var view = TextureView(self._lib, view_h)
+        return self.begin_render_pass_clear_depth(view^, depth_view, clear_color, depth_clear, label)
 
     # ------------------------------------------------------------------
     # Copy operations

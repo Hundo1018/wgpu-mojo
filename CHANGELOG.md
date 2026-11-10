@@ -24,6 +24,12 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   adapter and device setup one frame at a time. `tests/test_async.mojo` checks
   each against its blocking twin.
 - `wgpu.capture.FrameCapture`: non-blocking frame read-back, for video export.
+- **Depth through the high-level helpers** (#25): `Device.create_render_pipeline(...,
+  depth_format=, depth_write=, depth_compare=)` and
+  `CommandEncoder.begin_render_pass_clear_depth` / `begin_surface_clear_pass_depth`.
+  `tests/test_render_pipeline.mojo` draws a near triangle and then a far one over
+  it and reads the pixel back, with and without the depth attachment.
+- `InputState.release_all()`: let go of every held key and button, for focus loss (#26).
 - `wgpu.surface.create_surface_canvas` (web), and `Surface.configure(extra_usage=)`.
 - Gates: `check-web-imports`, `check-web-struct-layout`, and
   `check-wasm-fnptr`, which now also builds the web callbacks and checks they
@@ -52,6 +58,10 @@ upstream's own version bump looks. wgpu-native renumbered its entire
   Chrome. New gates: `check-enum-strings`, `check-webgpu-js`; `check-web-imports`
   also audits import signatures. `WGPULib` value `WGPUWGSLLanguageFeatureName.LinearIndexing`
   (10) was missing and is added.
+
+### Fixed
+
+- `InputState`: the first cursor event no longer reports a delta from (0, 0) (#26).
 
 ## [0.4.0] — 2026-11-01
 

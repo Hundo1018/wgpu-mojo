@@ -50,6 +50,8 @@ struct InputState(Movable):
     var mouse_y:  Float64
     var mouse_dx: Float64
     var mouse_dy: Float64
+    # False until the first cursor event: that one only places the cursor.
+    var _has_cursor: Bool
 
     # Scroll accumulator (reset each frame)
     var scroll_x: Float64
@@ -77,6 +79,7 @@ struct InputState(Movable):
         self.mouse_y  = 0.0
         self.mouse_dx = 0.0
         self.mouse_dy = 0.0
+        self._has_cursor = False
         self.scroll_x = 0.0
         self.scroll_y = 0.0
 
@@ -91,6 +94,7 @@ struct InputState(Movable):
         self.mouse_y  = move.mouse_y
         self.mouse_dx = move.mouse_dx
         self.mouse_dy = move.mouse_dy
+        self._has_cursor = move._has_cursor
         self.scroll_x = move.scroll_x
         self.scroll_y = move.scroll_y
 
@@ -125,6 +129,21 @@ struct InputState(Movable):
         while Bool(glfw.poll_input_event(evt)):
             self._process_event(evt[])
         evt.unsafe_free()
+
+    def release_all(mut self):
+        """Release every held key and mouse button, as if each got a release event.
+
+        Call when the window loses focus: a key let go while another window
+        has focus never reports its release, so it would stay pressed.
+        """
+        for i in range(_MAX_KEYS):
+            if self._keys_pressed.unsafe_offset(i)[]:
+                self._keys_pressed.unsafe_offset(i)[]       = False
+                self._keys_just_released.unsafe_offset(i)[] = True
+        for i in range(_MAX_MOUSE_BUTTONS):
+            if self._mouse_pressed.unsafe_offset(i)[]:
+                self._mouse_pressed.unsafe_offset(i)[]       = False
+                self._mouse_just_released.unsafe_offset(i)[] = True
 
     def process_event(mut self, event: MojoInputEvent):
         """Process a single input event (public, for testing without GLFW)."""
@@ -215,8 +234,12 @@ struct InputState(Movable):
                 var old_y = self.mouse_y
                 self.mouse_x = event.x
                 self.mouse_y = event.y
-                self.mouse_dx += event.x - old_x
-                self.mouse_dy += event.y - old_y
+                # The first event has no previous position: without this guard it
+                # would report a delta from (0, 0) to wherever the cursor is.
+                if self._has_cursor:
+                    self.mouse_dx += event.x - old_x
+                    self.mouse_dy += event.y - old_y
+                self._has_cursor = True
             case InputEventType.SCROLL:
                 self.scroll_x += event.x
                 self.scroll_y += event.y

@@ -35,7 +35,7 @@ from wgpu._ffi.structs import (
     WGPUVertexState, WGPUFragmentState,
     WGPUPrimitiveState, WGPUMultisampleState,
     WGPUColorTargetState, WGPUBlendState,
-    WGPUVertexBufferLayout, WGPUDepthStencilState,
+    WGPUVertexBufferLayout, WGPUDepthStencilState, WGPUStencilFaceState,
     WGPUCommandEncoderDescriptor,
     WGPUQuerySetDescriptor,
     WGPUExtent3D, WGPUTexelCopyBufferLayout, WGPUTexelCopyTextureInfo,
@@ -549,6 +549,9 @@ struct Device(Movable, Boolable):
         layout: PipelineLayout,
         primitive_topology: UInt32 = 4,  # TriangleList (4); LineStrip=3, TriangleStrip=5
         label: String = "",
+        depth_format: UInt32 = 0,  # WGPUTextureFormat of the depth attachment; 0 = no depth state
+        depth_write: Bool = True,
+        depth_compare: UInt32 = 4,  # WGPUCompareFunction.LessEqual
     ) raises -> RenderPipeline:
         """High-level render pipeline creation for the common case.
 
@@ -564,6 +567,13 @@ struct Device(Movable, Boolable):
             layout: Pipeline layout.
             primitive_topology: Primitive topology (default 4 = TriangleList).
             label: Optional label.
+            depth_format: Depth attachment format (e.g. WGPUTextureFormat.Depth32Float).
+                0 (default) builds a pipeline with no depth state, for passes
+                without a depth attachment. Every pipeline used in a pass that
+                has a depth attachment needs the same format here.
+            depth_write: Whether fragments write depth (ignored without depth_format).
+            depth_compare: WGPUCompareFunction (default LessEqual; Always = 8 for
+                overlays drawn on top in the same pass, with depth_write=False).
         """
         var label_sv = str_to_sv(label) if label.byte_length() > 0 else WGPUStringView.null_view()
         var vs_sv = str_to_sv(vs_entry_point)
@@ -592,15 +602,29 @@ struct Device(Movable, Boolable):
         var multisample = WGPUMultisampleState(
             null_opaque(), UInt32(1), UInt32(0xFFFFFFFF), UInt32(0),
         )
+        var depth_p = null_ptr[WGPUDepthStencilState]()
+        if depth_format != 0:
+            # Stencil unused: compare Always, every op Keep.
+            var face = WGPUStencilFaceState(UInt32(8), UInt32(1), UInt32(1), UInt32(1))
+            var dp = raw_alloc[WGPUDepthStencilState](1)
+            dp[unsafe_offset=0] = WGPUDepthStencilState(
+                null_opaque(), depth_format,
+                UInt32(1) if depth_write else UInt32(0), depth_compare,
+                face, face, UInt32(0xFFFFFFFF), UInt32(0xFFFFFFFF),
+                Int32(0), Float32(0.0), Float32(0.0),
+            )
+            depth_p = dp
         var desc = WGPURenderPipelineDescriptor(
             null_opaque(), label_sv, layout.handle().raw,
             vertex_state, primitive,
-            null_ptr[WGPUDepthStencilState](),
+            depth_p,
             multisample, fragment_p,
         )
         var result = self.create_render_pipeline(desc^)
         target_p.unsafe_free()
         fragment_p.unsafe_free()
+        if depth_format != 0:
+            depth_p.unsafe_free()
         return result^
 
     def create_command_encoder(self, label: String = "") raises -> CommandEncoder:
