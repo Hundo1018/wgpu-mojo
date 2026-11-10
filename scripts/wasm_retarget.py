@@ -1,4 +1,4 @@
-"""Retarget Modular host IR to wasm for a recent llc (LLVM >= 23). From ludens-engine tools/wasm/poc.
+"""Retarget Modular host IR to wasm for a recent llc (LLVM >= 23). From ludens-core tools/wasm/poc.
 usage: python3 -I retarget.py in.ll out.ll [wasm64|wasm32]
 Only: triple/datalayout swap, strip x86 target-cpu/features, stub x86 MXCSR intrinsics.
 """
