@@ -12,6 +12,7 @@ FILES=(
   tests/test_structs.mojo
   tests/test_native_ext.mojo
   tests/test_callback_abi.mojo
+  tests/test_input_state.mojo
   tests/test_gpu_compile.mojo
   tests/test_instance.mojo
   tests/test_device.mojo

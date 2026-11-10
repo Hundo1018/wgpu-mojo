@@ -123,10 +123,11 @@ check-recipe = { cmd = "bash scripts/check-recipe.sh" }
 check-consume-channel = { cmd = "bash scripts/check-consume-channel.sh" }
 
 # Run all non-GPU tests
-test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_callback_abi.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
+test = { cmd = "mojo run -I . tests/test_types.mojo && mojo run -I . tests/test_alloc_guard.mojo && mojo run -I . tests/test_handle_newtypes.mojo && mojo run -I . tests/test_lifetimes_string_view.mojo && mojo run -I . tests/test_structs.mojo && mojo run -I . tests/test_native_ext.mojo && mojo run -I . tests/test_callback_abi.mojo && mojo run -I . tests/test_input_state.mojo", depends-on = ["build-callbacks", "build-callback-probe"] }
 
 # Run only non-GPU tests (no hardware required)
 test-types       = { cmd = "mojo run -I . tests/test_types.mojo", depends-on = ["build-callbacks"] }
+test-input-state = { cmd = "mojo run -I . tests/test_input_state.mojo", depends-on = ["build-callbacks"] }
 test-alloc-guard = { cmd = "mojo run -I . tests/test_alloc_guard.mojo", depends-on = ["build-callbacks"] }
 test-handle-newtypes = { cmd = "mojo run -I . tests/test_handle_newtypes.mojo", depends-on = ["build-callbacks"] }
 test-lifetimes-string-view = { cmd = "mojo run -I . tests/test_lifetimes_string_view.mojo", depends-on = ["build-callbacks"] }
