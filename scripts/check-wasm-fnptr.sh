@@ -2,7 +2,7 @@
 # Pin what `c_fn_ptr` yields on a wasm64 build (issue #13, request item 3),
 # and that the callbacks' import-facing signature is what the JS side calls (#15).
 #
-# Route (measured in ludens-engine tools/wasm/poc/FINDINGS.md): Mojo host IR ->
+# Route (measured in ludens-core tools/wasm/poc/FINDINGS.md): Mojo host IR ->
 # scripts/wasm_retarget.py -> llc -> wasm-ld -mwasm64, then run under node.
 # llc and wasm-ld must share an LLVM major, and Node >= 24 is needed for
 # table64, so the tools come from `pixi exec`, pinned, and not from the default env.
