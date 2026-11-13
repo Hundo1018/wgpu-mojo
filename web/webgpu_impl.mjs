@@ -399,6 +399,39 @@ Object.assign(impl, {
   },
   wgpuTextureViewRelease(rt, h) { rt.drop(h); },
 
+  // Zero in an enum field means "undefined": the browser's default applies (clamp-to-edge, nearest).
+  wgpuDeviceCreateSampler(rt, dev, ptr) {
+    const d = ptr ? rt.read('WGPUSamplerDescriptor', ptr) : null, desc = {};
+    if (d) {
+      Object.assign(desc, lbl(d.label));
+      for (const [field, type] of [['addressModeU', 'AddressMode'], ['addressModeV', 'AddressMode'], ['addressModeW', 'AddressMode'],
+                                   ['magFilter', 'FilterMode'], ['minFilter', 'FilterMode'], ['mipmapFilter', 'MipmapFilterMode'],
+                                   ['compare', 'CompareFunction']]) {
+        const v = rt.optEnum(type, d[field]);
+        if (v) desc[field] = v;
+      }
+      desc.lodMinClamp = d.lodMinClamp;
+      desc.lodMaxClamp = d.lodMaxClamp;
+      if (d.maxAnisotropy > 1) desc.maxAnisotropy = d.maxAnisotropy;
+    }
+    return rt.put({ kind: 'sampler', sampler: rt.get(dev).device.createSampler(desc) });
+  },
+  wgpuSamplerRelease(rt, h) { rt.drop(h); },
+
+  wgpuQueueWriteTexture(rt, q, dstPtr, data, size, layoutPtr, sizePtr) {
+    const d = rt.read('WGPUTexelCopyTextureInfo', dstPtr), l = rt.read('WGPUTexelCopyBufferLayout', layoutPtr);
+    const sz = rt.read('WGPUExtent3D', sizePtr), o = d.origin;
+    const dest = { texture: rt.get(d.texture).texture, mipLevel: d.mipLevel, origin: { x: o.x, y: o.y, z: o.z } };
+    const aspect = rt.optEnum('TextureAspect', d.aspect);
+    if (aspect) dest.aspect = aspect;
+    const layout = { offset: Number(l.offset) };
+    if (def(l.bytesPerRow) !== undefined) layout.bytesPerRow = l.bytesPerRow;
+    if (def(l.rowsPerImage) !== undefined) layout.rowsPerImage = l.rowsPerImage;
+    // writeTexture copies synchronously, so a view onto wasm memory is safe (as for writeBuffer)
+    rt.get(q).queue.writeTexture(dest, rt.bytes(data, size), layout,
+      { width: sz.width, height: sz.height, depthOrArrayLayers: sz.depthOrArrayLayers });
+  },
+
   wgpuDeviceCreateRenderPipeline(rt, dev, ptr) {
     const d = rt.read('WGPURenderPipelineDescriptor', ptr);
     return rt.put({ kind: 'rpipeline', pipeline: rt.get(dev).device.createRenderPipeline(renderPipelineDesc(rt, d)) });
