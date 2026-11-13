@@ -257,9 +257,9 @@ struct Device(Movable, Boolable):
         address_mode_u: UInt32 = 1,  # ClampToEdge
         address_mode_v: UInt32 = 1,
         address_mode_w: UInt32 = 1,
-        mag_filter: UInt32 = 1,      # Linear
+        mag_filter: UInt32 = 1,      # Nearest (WGPUFilterMode: 1 Nearest, 2 Linear)
         min_filter: UInt32 = 1,
-        mipmap_filter: UInt32 = 0,   # Nearest
+        mipmap_filter: UInt32 = 0,   # Undefined: the backend's default, nearest
         lod_min_clamp: Float32 = 0.0,
         lod_max_clamp: Float32 = 32.0,
         compare: UInt32 = 0,         # Undefined

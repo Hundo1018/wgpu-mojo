@@ -180,7 +180,7 @@ build-web   = { cmd = "bash scripts/build-web.sh" }
 test-web    = { cmd = "bash scripts/test-web.sh", depends-on = ["build-web"] }
 serve-web   = { cmd = "python3 -m http.server 8000 --bind 127.0.0.1 --directory build/web" }
 # The web IR calls only standard webgpu.h; target.mojo's native-only list is current.
-check-web-imports = { cmd = "python3 scripts/check_web_imports.py build/web/triangle.ll build/web/compute.ll", depends-on = ["build-web"] }
+check-web-imports = { cmd = "python3 scripts/check_web_imports.py build/web/triangle.ll build/web/compute.ll build/web/texture.ll", depends-on = ["build-web"] }
 
 # Regenerate / verify web/webgpu_layout.json and web/webgpu_host.mjs from webgpu.h + web/implemented.txt.
 gen-webgpu-js   = { cmd = "python3 scripts/gen_webgpu_js.py" }

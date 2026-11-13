@@ -14,7 +14,7 @@ TOOLS=(pixi exec --spec "llvm-tools=$LLVM" --spec "lld=$LLVM" --spec "clang=$LLV
 OUT=build/web
 mkdir -p "$OUT"
 APPS=("$@")
-[ ${#APPS[@]} -gt 0 ] || APPS=(triangle compute)
+[ ${#APPS[@]} -gt 0 ] || APPS=(triangle compute texture)
 
 "${TOOLS[@]}" clang --target=wasm64-unknown-unknown -O2 -nostdlib -ffreestanding -fno-builtin -mbulk-memory \
   -c ffi/wasm/wasm_rt.c -o "$OUT/wasm_rt.o"

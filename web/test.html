@@ -114,6 +114,22 @@ try {
     rt.free(src);
   }
 
+  // 1d. A sampled texture: QueueWriteTexture per layer and mip level, CreateSampler (repeat), a 2D-array view.
+  // Drawn into an app-owned target, so it runs before the canvas is touched (see ?canvas-lost).
+  {
+    const T = await loadWasm('./texture.wasm');
+    const tapp = T.texture_start();
+    if (!tapp) fail('texture_start');
+    let ts = 0, tf = 0;
+    while ((ts = T.texture_step(tapp)) === 0 && tf < 600) { tf++; await frame(); }
+    if (ts !== 1) fail('texture_step=' + ts);
+    const tpx = (x, y) => [0, 1, 2, 3].map((c) => T.texture_pixel(tapp, x, y, c)).join();
+    const got = { 'layer 0 level 0': tpx(0, 0), 'layer 1 level 0': tpx(3, 0), 'layer 0 level 1': tpx(0, 1), 'layer 1 level 1': tpx(3, 1) };
+    const want = { 'layer 0 level 0': '255,0,0,255', 'layer 1 level 0': '0,255,0,255', 'layer 0 level 1': '0,0,255,255', 'layer 1 level 1': '255,255,255,255' };
+    log('texture: ' + Object.entries(got).map(([k, v]) => `${k}=${v}`).join(' ') + ` polls=${T.texture_polls(tapp)}`);
+    for (const k of Object.keys(want)) if (got[k] !== want[k]) fail(`texture ${k}: got ${got[k]}, want ${want[k]}`);
+  }
+
   // 2. Clear + triangle on a canvas, checked through the frame-capture hook.
   const canvas = document.getElementById('canvas');
   const host = await startApp(await loadWasm('./triangle.wasm'), canvas);

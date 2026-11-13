@@ -30,6 +30,7 @@ wgpuDeviceCreateCommandEncoder
 wgpuDeviceCreateComputePipeline
 wgpuDeviceCreatePipelineLayout
 wgpuDeviceCreateRenderPipeline
+wgpuDeviceCreateSampler
 wgpuDeviceCreateShaderModule
 wgpuDeviceCreateTexture
 wgpuDeviceGetQueue
@@ -42,6 +43,7 @@ wgpuPipelineLayoutRelease
 wgpuQueueRelease
 wgpuQueueSubmit
 wgpuQueueWriteBuffer
+wgpuQueueWriteTexture
 wgpuRenderPassEncoderDraw
 wgpuRenderPassEncoderDrawIndexed
 wgpuRenderPassEncoderEnd
@@ -51,6 +53,7 @@ wgpuRenderPassEncoderSetIndexBuffer
 wgpuRenderPassEncoderSetPipeline
 wgpuRenderPassEncoderSetVertexBuffer
 wgpuRenderPipelineRelease
+wgpuSamplerRelease
 wgpuShaderModuleRelease
 wgpuSurfaceCapabilitiesFreeMembers
 wgpuSurfaceConfigure
