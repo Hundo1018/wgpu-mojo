@@ -73,6 +73,54 @@ struct FrameRenderPass(Movable, not Deinitable else "Must call end() or abandon(
             self._handle, vertex_count, instance_count, first_vertex, first_instance
         )
 
+    def set_vertex_buffer(
+        self,
+        slot: UInt32,
+        buffer: WGPUBufferHandle,
+        offset: UInt64 = 0,
+        size: UInt64 = 0,
+    ):
+        self._lib[].render_pass_set_vertex_buffer(self._handle, slot, buffer, offset, size)
+
+    def set_vertex_buffer(
+        self,
+        slot: UInt32,
+        buffer: Buffer,
+        offset: UInt64 = 0,
+        size: UInt64 = 0,
+    ):
+        self._lib[].render_pass_set_vertex_buffer(self._handle, slot, buffer.handle().raw, offset, size)
+
+    def set_index_buffer(
+        self,
+        buffer: WGPUBufferHandle,
+        format: UInt32,
+        offset: UInt64 = 0,
+        size: UInt64 = 0,
+    ):
+        self._lib[].render_pass_set_index_buffer(self._handle, buffer, format, offset, size)
+
+    def set_index_buffer(
+        self,
+        buffer: Buffer,
+        format: UInt32,
+        offset: UInt64 = 0,
+        size: UInt64 = 0,
+    ):
+        self._lib[].render_pass_set_index_buffer(self._handle, buffer.handle().raw, format, offset, size)
+
+    def draw_indexed(
+        self,
+        index_count: UInt32,
+        instance_count: UInt32 = 1,
+        first_index: UInt32 = 0,
+        base_vertex: Int32 = 0,
+        first_instance: UInt32 = 0,
+    ):
+        self._lib[].render_pass_draw_indexed(
+            self._handle, index_count, instance_count, first_index, base_vertex, first_instance
+        )
+
     def end(deinit self):
         self._lib[].render_pass_end(self._handle)
         self._lib[].render_pass_release(self._handle)
