@@ -159,6 +159,11 @@ def api_index() -> String:
   WGPUTexelCopyBufferInfo     — { layout, buffer }
   WGPUTexelCopyTextureInfo    — { texture, mipLevel, origin, aspect }
   WGPUAdapterInfo             — vendor, architecture, device, description + type fields
+  WGPUPassTimestampWrites     — timestamp query writes for a render / compute pass descriptor
+  WGPUTextureHandle           — the raw texture handle (the newtype is TextureHandle)
+  null_opaque()               — a null OpaquePointer[MutUntrackedOrigin]
+  null_ptr[T]()               — a null Pointer[T, MutUntrackedOrigin]
+  raw_alloc[T](count)         — heap storage for `count` T that the caller frees (descriptor arrays)
   WGPUStringView              — FFI string type { data, length }
   str_to_sv(ref s: String)    — borrow a String as WGPUStringView for FFI calls
   wgpu_limits_default()       — return WGPULimits with all fields set to UNDEFINED

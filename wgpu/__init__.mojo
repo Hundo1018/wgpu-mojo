@@ -86,6 +86,14 @@ from wgpu._ffi.structs import (
     WGPUAdapterInfo,
 )
 
+# Helpers a consumer needs to fill raw descriptors (they were reachable only through the private `_ffi` /
+# `_backend` paths, which ludens-engine imported at 76 places): null pointers, heap storage for descriptor
+# arrays, the raw texture handle, and the timestamp-writes descriptor.
+from wgpu._ffi.nulls import null_opaque, null_ptr
+from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
+from wgpu._ffi.types import WGPUTextureHandle
+from wgpu._ffi.structs import WGPUPassTimestampWrites
+
 # New Layer 3 high-level API
 from wgpu.gpu         import GPU, WgpuComputeProgram
 from wgpu.descriptors import BGL
