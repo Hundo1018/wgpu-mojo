@@ -11,16 +11,16 @@ Run:
     pixi run example-texture-sample
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu.instance import Instance
 from wgpu.rendercanvas import RenderCanvas
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPUBufferUsage, WGPUTextureUsage, WGPUTextureFormat,
     WGPUShaderStage, WGPUSamplerBindingType, WGPUTextureSampleType,
     WGPUTextureViewDimension, WGPUTextureAspect,
     WGPU_COPY_STRIDE_UNDEFINED, WGPU_WHOLE_SIZE,
 )
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUBindGroupLayoutEntry,
     WGPUBindGroupEntry,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,

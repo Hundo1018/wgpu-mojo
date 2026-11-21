@@ -3,10 +3,10 @@ QuerySet RAII wrapper.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import WGPUQuerySetHandle
-from wgpu._ffi.structs import WGPUStringView, str_to_sv
-from wgpu._ffi.handles import QuerySetHandle
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import WGPUQuerySetHandle
+from wgpu._backend.wgpu_native.structs import WGPUStringView, str_to_sv
+from wgpu._backend.wgpu_native.handles import QuerySetHandle
 
 
 struct QuerySet(Movable, Boolable):

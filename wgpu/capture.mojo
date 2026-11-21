@@ -14,13 +14,13 @@ Rows are padded to 256 bytes, as texture-to-buffer copies require. Pixels are
 in the texture's own format: a surface is usually BGRA8.
 """
 
-from wgpu._ffi.nulls import null_opaque
-from wgpu._ffi.types import WGPUBufferUsage, WGPUMapMode, WGPUTextureHandle
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.nulls import null_opaque
+from wgpu._backend.wgpu_native.types import WGPUBufferUsage, WGPUMapMode, WGPUTextureHandle
+from wgpu._backend.wgpu_native.structs import (
     WGPUTexelCopyBufferInfo, WGPUTexelCopyBufferLayout, WGPUTexelCopyTextureInfo,
     WGPUOrigin3D, WGPUExtent3D,
 )
-from wgpu._ffi.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 from wgpu.buffer import Buffer, MapRequest
 from wgpu.device import Device
 

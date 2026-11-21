@@ -11,6 +11,15 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+### Removed
+
+- **`wgpu._ffi` and `wgpu._native`**, the backward-compatibility shims that
+  re-exported `wgpu._backend.wgpu_native.{types, structs, handles, nulls,
+  alloc_guard, loader}` and `native_ext`. Import the names from the top-level
+  `wgpu` package (its public surface, `tests/test_public_surface.mojo`), or,
+  inside this repository, from `wgpu._backend.wgpu_native.*`. 79 files in this
+  repository moved over; ludens-engine already imports only from `wgpu`.
+
 ### Added
 
 - **Browser target** (`-D WGPU_TARGET=web`, #14): wasm64 + emdawnwebgpu.

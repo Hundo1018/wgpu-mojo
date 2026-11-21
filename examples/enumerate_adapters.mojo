@@ -8,11 +8,11 @@ Run from project root:
     pixi run example-enumerate
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import WGPUAdapterType, WGPUBackendType
-from wgpu._ffi.structs import WGPUInstanceDescriptor, WGPUAdapterInfo, WGPUStringView
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import WGPUAdapterType, WGPUBackendType
+from wgpu._backend.wgpu_native.structs import WGPUInstanceDescriptor, WGPUAdapterInfo, WGPUStringView
 
 
 def backend_name(t: UInt32) -> String:

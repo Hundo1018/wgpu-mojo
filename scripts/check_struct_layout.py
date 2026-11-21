@@ -105,7 +105,7 @@ def main():
     # --- Mojo side: same sizes via pointer arithmetic ---
     msrc = os.path.join(tmp, "sz.mojo")
     with open(msrc, "w") as f:
-        f.write("from wgpu._ffi.nulls import null_ptr\n")
+        f.write("from wgpu._backend.wgpu_native.nulls import null_ptr\n")
         for n in names:
             f.write("from %s import %s\n" % (module_of[n], n))
         f.write("\ndef _sz[T: AnyType]() -> Int:\n    var p = null_ptr[T]()\n    return Int(p + 1) - Int(p)\n\ndef main() raises:\n")

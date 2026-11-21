@@ -1,4 +1,4 @@
-"""wgpu._native — wgpu-native extension types and structs."""
+"""wgpu._backend.wgpu_native.native_ext — wgpu-native extension types and structs."""
 
 from wgpu._backend.wgpu_native.types import WGPUFlags
 

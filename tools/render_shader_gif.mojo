@@ -21,7 +21,7 @@ from wgpu import (
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE,
     WGPUBindGroupEntry, BGL,
 )
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 from wgpu.device import Device
 
 comptime W = 480

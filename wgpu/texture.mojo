@@ -3,11 +3,11 @@ Texture and TextureView RAII wrappers.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
-from wgpu._ffi.types import WGPUTextureHandle, WGPUTextureViewHandle
-from wgpu._ffi.structs import WGPUTextureViewDescriptor, WGPUStringView, str_to_sv
-from wgpu._ffi.handles import TextureHandle, TextureViewHandle
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.types import WGPUTextureHandle, WGPUTextureViewHandle
+from wgpu._backend.wgpu_native.structs import WGPUTextureViewDescriptor, WGPUStringView, str_to_sv
+from wgpu._backend.wgpu_native.handles import TextureHandle, TextureViewHandle
 
 
 struct TextureView(Movable, Boolable):

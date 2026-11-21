@@ -190,7 +190,7 @@ fn shade(frag_coord: vec2<f32>) -> vec3<f32> {
 
 ```mojo
 from wgpu.instance import Instance
-from wgpu._ffi.structs import WGPUColor
+from wgpu import WGPUColor
 from wgpu.rendercanvas import RenderCanvas
 
 def main() raises:

@@ -3,8 +3,8 @@
 This only validates struct construction, not Mojo-function-to-pointer conversion.
 """
 
-from wgpu._ffi.structs import WGPURequestAdapterCallbackInfo
-from wgpu._ffi.types import WGPUCallbackMode
+from wgpu._backend.wgpu_native.structs import WGPURequestAdapterCallbackInfo
+from wgpu._backend.wgpu_native.types import WGPUCallbackMode
 
 
 def _dummy_ptr(addr: Int) -> OpaquePointer[MutUntrackedOrigin]:

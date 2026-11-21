@@ -3,13 +3,13 @@ Tests for debug group/marker methods on encoders.
 Requires GPU hardware.
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from std.testing import assert_true
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.types import WGPUTextureUsage, WGPUTextureFormat
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.types import WGPUTextureUsage, WGPUTextureFormat
+from wgpu._backend.wgpu_native.structs import (
     WGPURenderPassDescriptor, WGPURenderPassColorAttachment,
     WGPURenderPassDepthStencilAttachment, WGPUPassTimestampWrites,
     WGPUColor, WGPUStringView,

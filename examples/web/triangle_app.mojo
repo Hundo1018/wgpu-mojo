@@ -12,8 +12,8 @@ CLEAR at the corners, TRIANGLE at the centre.
 
 from wgpu.device import Device
 from wgpu.pipeline import RenderPipeline
-from wgpu._ffi.types import WGPUTextureHandle
-from wgpu._ffi.structs import WGPUColor
+from wgpu._backend.wgpu_native.types import WGPUTextureHandle
+from wgpu._backend.wgpu_native.structs import WGPUColor
 
 # Exact in 8 bits (n/255 only for n = 0 and 255), so pixel checks are exact.
 comptime CLEAR = WGPUColor(0.0, 0.0, 1.0, 1.0)

@@ -12,8 +12,8 @@ that issues them.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import WGPUInstanceHandle, WGPUDeviceHandle
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import WGPUInstanceHandle, WGPUDeviceHandle
 from wgpu._backend.wgpu_native.callbacks import CallbackResult
 
 

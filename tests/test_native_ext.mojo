@@ -3,14 +3,14 @@ Unit tests for wgpu-native extension types.
 No GPU required.
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_equal, assert_true, assert_false
-from wgpu._native import (
+from wgpu._backend.wgpu_native.native_ext import (
     WGPUNativeSType, WGPUNativeFeature, WGPULogLevel,
     WGPUInstanceBackend, WGPUInstanceFlag,
     WGPUInstanceExtras, WGPUNativeDisplayHandle, NativeDisplayHandleData,
 )
-from wgpu._ffi.structs import WGPUChainedStruct, WGPUStringView
+from wgpu._backend.wgpu_native.structs import WGPUChainedStruct, WGPUStringView
 
 
 def test_native_stype_values() raises:

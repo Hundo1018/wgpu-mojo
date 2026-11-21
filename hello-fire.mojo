@@ -9,8 +9,8 @@ Run:
 """
 
 from wgpu.instance import Instance
-from wgpu._ffi.types import WGPUBufferUsage
-from wgpu._ffi.structs import WGPUColor
+from wgpu._backend.wgpu_native.types import WGPUBufferUsage
+from wgpu._backend.wgpu_native.structs import WGPUColor
 from wgpu.rendercanvas import RenderCanvas
 from std import io
 

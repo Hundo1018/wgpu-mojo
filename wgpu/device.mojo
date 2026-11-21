@@ -4,10 +4,10 @@ High-level Device + Queue RAII wrapper.
 
 from std.sys import size_of
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
+from wgpu._backend.wgpu_native.loader import WGPULib
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.types import (
     WGPU_TRUE,
     WGPUDeviceHandle, WGPUQueueHandle, WGPUInstanceHandle,
     WGPUBufferHandle, WGPUTextureHandle, WGPUSamplerHandle,
@@ -17,8 +17,8 @@ from wgpu._ffi.types import (
     WGPURenderBundleEncoderHandle,
     WGPUBufferUsage, WGPUTextureUsage, WGPUShaderStage,
 )
-from wgpu._ffi.handles import DeviceHandle, QueueHandle, InstanceHandle as InstanceHandleNewtype
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.handles import DeviceHandle, QueueHandle, InstanceHandle as InstanceHandleNewtype
+from wgpu._backend.wgpu_native.structs import (
     WGPUStringView, WGPUExtent3D, WGPULimits, WGPUSupportedFeatures,
     wgpu_limits_default,
     WGPUBufferDescriptor,
@@ -44,11 +44,11 @@ from wgpu._ffi.structs import (
     WGPUPopErrorScopeCallbackInfo,
     str_to_sv,
 )
-from wgpu._ffi.types import WGPUCallbackMode, WGPUErrorFilter, WGPUErrorType
-from wgpu._ffi.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.types import WGPUCallbackMode, WGPUErrorFilter, WGPUErrorType
+from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 from wgpu._backend.wgpu_native.callbacks import _PopErrorResult, _WorkDoneResult
 from wgpu.pending import Pending
-from wgpu._ffi.types import WGPUSType
+from wgpu._backend.wgpu_native.types import WGPUSType
 from wgpu.buffer import Buffer
 from wgpu.instance_owner import InstanceOwner
 from wgpu.texture import Texture, TextureView
@@ -60,7 +60,7 @@ from wgpu.pipeline import ComputePipeline, RenderPipeline
 from wgpu.command import CommandEncoder, CommandBuffer
 from wgpu.query_set import QuerySet
 from wgpu.render_bundle import RenderBundle, RenderBundleEncoder
-from wgpu._ffi.structs import WGPURenderBundleEncoderDescriptor
+from wgpu._backend.wgpu_native.structs import WGPURenderBundleEncoderDescriptor
 
 
 struct ErrorScopeRequest(Movable):

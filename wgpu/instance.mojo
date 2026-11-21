@@ -4,21 +4,21 @@ Wgpu.instance — Instance wrapper (owns WGPULib + WGPUInstance).
 
 from std.memory import ArcPointer
 from wgpu.adapter import Adapter
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import (
     WGPUAdapterHandle, WGPUInstanceHandle, WGPUStatus,
 )
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUInstanceDescriptor,
     WGPUInstanceLimits,
 )
-from wgpu._ffi.structs import WGPURequestAdapterOptions
+from wgpu._backend.wgpu_native.structs import WGPURequestAdapterOptions
 from wgpu.instance_owner import InstanceOwner
 from wgpu.pending import Pending
 from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 from wgpu._backend.wgpu_native.callbacks import _AdapterResult
-from wgpu._ffi.types import WGPURequestAdapterStatus
+from wgpu._backend.wgpu_native.types import WGPURequestAdapterStatus
 
 
 struct AdapterRequest(Movable):

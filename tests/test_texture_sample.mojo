@@ -3,18 +3,18 @@ Validate sampled texture bind group and render pipeline creation.
 Requires GPU hardware.
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true
 from std.memory import alloc
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPUTextureUsage, WGPUTextureFormat, WGPUBufferUsage,
     WGPUShaderStage, WGPUSamplerBindingType, WGPUTextureSampleType,
     WGPUTextureViewDimension, WGPUTextureAspect, WGPUBufferBindingType,
     WGPU_WHOLE_SIZE,
 )
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
     WGPUBindGroupEntry, WGPUBindGroupDescriptor,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,

@@ -9,13 +9,13 @@ these tests would crash or fail rather than quietly pass.
 Requires GPU hardware.
 """
 
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
 from wgpu.shader import ShaderModule
-from wgpu._ffi.types import WGPUShaderStage
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.types import WGPUShaderStage
+from wgpu._backend.wgpu_native.structs import (
     WGPUBindGroupLayoutEntry, WGPUBufferBindingLayout,
     WGPUSamplerBindingLayout, WGPUTextureBindingLayout,
     WGPUStorageTextureBindingLayout,

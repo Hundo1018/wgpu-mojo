@@ -102,7 +102,7 @@ MOJO
 # ---------------------------------------------------------------------------
 cat > "$PROJECT/compute.mojo" <<'MOJO'
 from wgpu.gpu import GPU
-from wgpu._ffi.types import WGPUBufferUsage
+from wgpu import WGPUBufferUsage
 
 comptime N = 1024
 comptime ADD_WGSL = """

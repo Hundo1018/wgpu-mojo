@@ -16,7 +16,7 @@ from wgpu.rendercanvas.glfw import (
     GLFW_KEY_SPACE,
     GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT,
 )
-from wgpu._ffi.structs import WGPUColor
+from wgpu._backend.wgpu_native.structs import WGPUColor
 
 
 def main() raises:

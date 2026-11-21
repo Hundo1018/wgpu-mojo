@@ -25,7 +25,7 @@ from max.gpu import global_idx
 from max.gpu.host import DeviceContext
 from layout import TileTensor, row_major
 
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 from wgpu import (
     Instance,
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE,

@@ -6,7 +6,7 @@ Requires GPU hardware.
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.types import WGPUErrorFilter, WGPUBufferUsage
+from wgpu._backend.wgpu_native.types import WGPUErrorFilter, WGPUBufferUsage
 
 
 def create_test_device() raises -> Device:

@@ -1,7 +1,7 @@
 """Tests/test_alloc_guard.mojo — Unit tests for scoped FFI allocations."""
 
 from std.testing import assert_equal, assert_true
-from wgpu._ffi.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 
 
 def test_alloc_guard_basic() raises:

@@ -1,5 +1,5 @@
 """
-wgpu._ffi.structs — C struct layouts mirroring webgpu.h for FFI.
+wgpu._backend.wgpu_native.structs — C struct layouts mirroring webgpu.h for FFI.
 All structs match the C ABI layout exactly (field order, types).
 """
 

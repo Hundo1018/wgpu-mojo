@@ -15,17 +15,17 @@ white.
     pixi run build-web && pixi run test-web
 """
 
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu import (
     WGPUShaderStage, WGPUBindGroupLayoutEntry, WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout, WGPUBindGroupEntry,
 )
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPUTextureUsage, WGPUTextureFormat, WGPUSamplerBindingType, WGPUTextureSampleType, WGPUTextureViewDimension,
     WGPUTextureAspect, WGPUAddressMode, WGPUFilterMode, WGPUMipmapFilterMode,
 )
-from wgpu._ffi.structs import WGPUColor, WGPUOrigin3D, WGPUStringView, WGPUTextureViewDescriptor
+from wgpu._backend.wgpu_native.structs import WGPUColor, WGPUOrigin3D, WGPUStringView, WGPUTextureViewDescriptor
 from wgpu.buffer import MapRequest
 from wgpu.capture import FrameCapture
 from wgpu.texture import Texture

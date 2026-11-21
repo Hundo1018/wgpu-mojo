@@ -11,7 +11,7 @@ Run:
 """
 
 from wgpu.instance import Instance
-from wgpu._native import WGPUNativeFeature
+from wgpu._backend.wgpu_native.native_ext import WGPUNativeFeature
 
 
 def main() raises:

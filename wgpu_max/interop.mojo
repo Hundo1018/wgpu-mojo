@@ -40,7 +40,7 @@ from std.sys import size_of
 from max.gpu.host import DeviceContext, DeviceBuffer
 
 from wgpu import Buffer, Device
-from wgpu._ffi.types import WGPUBufferUsage
+from wgpu._backend.wgpu_native.types import WGPUBufferUsage
 
 
 def device_buffer_to_list[

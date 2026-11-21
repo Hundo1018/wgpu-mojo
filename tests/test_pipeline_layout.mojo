@@ -3,12 +3,12 @@ Tests for PipelineLayout creation.
 Requires GPU hardware.
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.types import WGPUShaderStage
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.types import WGPUShaderStage
+from wgpu._backend.wgpu_native.structs import (
     WGPUBindGroupLayoutEntry, WGPUBindGroupLayoutDescriptor,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout,

@@ -20,7 +20,7 @@ Usage (typical render loop):
 The title String must not be empty (GLFW requirement).
 """
 
-from wgpu._ffi.types import WGPUTextureHandle
+from wgpu._backend.wgpu_native.types import WGPUTextureHandle
 from wgpu.adapter import Adapter
 from wgpu.device import Device
 from wgpu.surface import Surface, SurfaceFrame

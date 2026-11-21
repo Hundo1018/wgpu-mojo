@@ -3,15 +3,15 @@ RenderPassEncoder RAII wrapper.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.types import (
     WGPURenderPassEncoderHandle, WGPURenderPipelineHandle,
     WGPUBindGroupHandle, WGPUBufferHandle, WGPURenderBundleHandle,
     WGPUQuerySetHandle,
 )
-from wgpu._ffi.structs import WGPUStringView, WGPUColor, str_to_sv
-from wgpu._ffi.handles import RenderPassEncoderHandle
+from wgpu._backend.wgpu_native.structs import WGPUStringView, WGPUColor, str_to_sv
+from wgpu._backend.wgpu_native.handles import RenderPassEncoderHandle
 from wgpu.pipeline import RenderPipeline
 from wgpu.bind_group import BindGroup
 from wgpu.buffer import Buffer

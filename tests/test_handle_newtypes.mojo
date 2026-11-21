@@ -1,10 +1,8 @@
 """Phase 1 strong-handle groundwork tests."""
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_true, assert_false
-from wgpu._ffi import (
-    BufferHandle, TextureHandle, DeviceHandle, CommandBufferHandle,
-)
+from wgpu._backend.wgpu_native.handles import BufferHandle, TextureHandle, DeviceHandle, CommandBufferHandle
 
 
 def test_null_constructors() raises:
