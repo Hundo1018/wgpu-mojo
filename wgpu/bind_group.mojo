@@ -3,12 +3,12 @@ BindGroupLayout and BindGroup RAII wrappers.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import (
     WGPUBindGroupHandle, WGPUBindGroupLayoutHandle,
 )
-from wgpu._ffi.structs import WGPUStringView, str_to_sv
-from wgpu._ffi.handles import BindGroupHandle, BindGroupLayoutHandle
+from wgpu._backend.wgpu_native.structs import WGPUStringView, str_to_sv
+from wgpu._backend.wgpu_native.handles import BindGroupHandle, BindGroupLayoutHandle
 
 
 struct BindGroupLayout(Movable, Boolable):

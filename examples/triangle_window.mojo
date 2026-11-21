@@ -10,7 +10,7 @@ Run:
 """
 
 from wgpu.instance import Instance
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUColor,
 )
 from wgpu.rendercanvas import RenderCanvas

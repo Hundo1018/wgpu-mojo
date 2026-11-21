@@ -32,7 +32,7 @@ from wgpu import (
     WGPUColor, BGL,
 )
 from wgpu.rendercanvas import RenderCanvas
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 from std import io
 
 # ---------------------------------------------------------------------------

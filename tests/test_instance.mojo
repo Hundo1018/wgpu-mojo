@@ -3,15 +3,15 @@ Integration tests for Instance creation.
 Requires: libwgpu_native.so, libwgpu_mojo_cb.so, GPU hardware.
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from std.testing import assert_true, assert_false, assert_equal, assert_not_equal
 from wgpu.instance import Instance, instance_limits
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import (
     WGPUAdapterHandle, WGPUAdapterType, WGPUBackendType,
 )
-from wgpu._ffi.structs import WGPUInstanceDescriptor
+from wgpu._backend.wgpu_native.structs import WGPUInstanceDescriptor
 
 
 def test_wgpu_lib_loads() raises:

@@ -3,12 +3,12 @@ ComputePipeline and RenderPipeline RAII wrappers.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import (
     WGPUComputePipelineHandle, WGPURenderPipelineHandle,
 )
-from wgpu._ffi.structs import WGPUStringView, str_to_sv
-from wgpu._ffi.handles import ComputePipelineHandle, RenderPipelineHandle
+from wgpu._backend.wgpu_native.structs import WGPUStringView, str_to_sv
+from wgpu._backend.wgpu_native.handles import ComputePipelineHandle, RenderPipelineHandle
 from wgpu.bind_group import BindGroupLayout
 
 

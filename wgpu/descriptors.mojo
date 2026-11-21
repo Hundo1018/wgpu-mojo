@@ -16,19 +16,19 @@ Replace verbose WGPUBindGroupLayoutEntry construction with named factories:
     BGL.buffer_storage(binding=0, visibility=ShaderStage.COMPUTE)
 """
 
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUBindGroupLayoutEntry,
     WGPUBufferBindingLayout,
     WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout,
     WGPUStorageTextureBindingLayout,
 )
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPUBufferBindingType, WGPUSamplerBindingType, WGPUTextureSampleType,
     WGPUStorageTextureAccess, WGPUTextureFormat, WGPUTextureViewDimension,
     WGPUShaderStage,
 )
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 
 
 # ---------------------------------------------------------------------------

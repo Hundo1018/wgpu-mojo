@@ -8,14 +8,14 @@ page's main thread is never blocked waiting for the GPU.
     pixi run build-web && pixi run test-web
 """
 
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 from wgpu import (
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE, WGPUBufferBindingType,
     WGPUBindGroupLayoutEntry, WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout, WGPUBindGroupEntry,
 )
-from wgpu._ffi.types import WGPUMapMode
+from wgpu._backend.wgpu_native.types import WGPUMapMode
 from wgpu.buffer import Buffer, MapRequest
 from wgpu.web.boot import GPUBoot
 

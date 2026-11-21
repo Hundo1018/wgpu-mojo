@@ -9,8 +9,8 @@ hardware.
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.alloc_guard import AllocGuard
-from wgpu._ffi.types import WGPUBufferUsage, WGPUMapMode
+from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.types import WGPUBufferUsage, WGPUMapMode
 
 
 

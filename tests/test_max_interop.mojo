@@ -15,7 +15,7 @@ from max.gpu.host import DeviceContext
 from wgpu.device import Device
 from wgpu.buffer import Buffer
 from wgpu.instance import Instance
-from wgpu._ffi.types import WGPUBufferUsage
+from wgpu._backend.wgpu_native.types import WGPUBufferUsage
 from wgpu_max import (
     device_buffer_to_list,
     list_to_device_buffer,

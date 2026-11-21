@@ -19,7 +19,7 @@ Usage:
 """
 
 from std.ffi import OwnedDLHandle
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 
 
 # ---------------------------------------------------------------------------

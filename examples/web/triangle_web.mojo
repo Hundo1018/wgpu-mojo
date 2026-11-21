@@ -11,7 +11,7 @@ Build and run:
 """
 
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
-from wgpu._ffi.types import WGPUTextureUsage
+from wgpu._backend.wgpu_native.types import WGPUTextureUsage
 from wgpu.texture import Texture
 from wgpu.buffer import MapRequest
 from wgpu.capture import FrameCapture, padded_row_pitch

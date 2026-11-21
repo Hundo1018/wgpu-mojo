@@ -3,8 +3,8 @@ Wgpu.instance_owner — Shared owner for WGPULib + WGPUInstance.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import WGPUInstanceHandle
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import WGPUInstanceHandle
 
 
 struct InstanceOwner(Movable):

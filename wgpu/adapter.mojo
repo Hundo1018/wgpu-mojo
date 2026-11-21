@@ -6,13 +6,13 @@ device creation, adapter info queries, and surface creation.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
+from wgpu._backend.wgpu_native.loader import WGPULib
 from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.types import (
     WGPUAdapterHandle, WGPUDeviceHandle, WGPUInstanceHandle, WGPURequestDeviceStatus,
 )
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUAdapterInfo, WGPUDeviceDescriptor, WGPUDeviceLostCallbackInfo,
     WGPUQueueDescriptor, WGPUStringView, WGPUUncapturedErrorCallbackInfo,
     WGPULimits, str_to_sv,

@@ -12,7 +12,7 @@ Run from project root:
     pixi run example-compute
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from wgpu import (
     Instance,
     WGPUBufferUsage, WGPUShaderStage, WGPU_WHOLE_SIZE,

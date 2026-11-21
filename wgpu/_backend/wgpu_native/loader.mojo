@@ -1,5 +1,5 @@
 """
-wgpu._ffi.lib — Dynamic library loader and raw function dispatcher.
+wgpu._backend.wgpu_native.loader — Dynamic library loader and raw function dispatcher.
 
 Loads libwgpu_native.so (and libwgpu_mojo_cb.so, the C log bridge) at
 runtime and exposes every webgpu.h + wgpu.h function as a method call. The

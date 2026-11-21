@@ -3,9 +3,9 @@ Unit tests for FFI type definitions.
 No GPU required.
 """
 
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
 from std.testing import assert_equal, assert_true, assert_false
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPU_FALSE, WGPU_TRUE, WGPU_STRLEN, WGPU_WHOLE_SIZE,
     WGPU_LIMIT_U32_UNDEFINED, WGPU_LIMIT_U64_UNDEFINED,
     WGPU_MIP_LEVEL_COUNT_UNDEFINED, WGPU_ARRAY_LAYER_COUNT_UNDEFINED,

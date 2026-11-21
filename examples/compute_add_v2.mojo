@@ -12,7 +12,7 @@ Run with:
 """
 
 from wgpu.gpu import GPU
-from wgpu._ffi.types import WGPUBufferUsage
+from wgpu._backend.wgpu_native.types import WGPUBufferUsage
 
 comptime N = 1024
 comptime WORKGROUP_SIZE = 64

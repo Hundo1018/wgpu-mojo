@@ -3,10 +3,10 @@ PipelineLayout RAII wrapper.
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.types import WGPUPipelineLayoutHandle
-from wgpu._ffi.structs import WGPUStringView, str_to_sv
-from wgpu._ffi.handles import PipelineLayoutHandle
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.types import WGPUPipelineLayoutHandle
+from wgpu._backend.wgpu_native.structs import WGPUStringView, str_to_sv
+from wgpu._backend.wgpu_native.handles import PipelineLayoutHandle
 
 
 struct PipelineLayout(Movable, Boolable):

@@ -4,15 +4,15 @@ Buffer RAII wrapper with map/read/write helpers.
 
 from std.sys import size_of
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.nulls import null_opaque, null_ptr, null_any_ptr
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.nulls import null_opaque, null_ptr, null_any_ptr
+from wgpu._backend.wgpu_native.types import (
     WGPUInstanceHandle, WGPUDeviceHandle, WGPUBufferHandle,
     WGPUBufferUsage, WGPUMapMode, WGPU_WHOLE_SIZE,
     WGPUMapAsyncStatus,
 )
-from wgpu._ffi.structs import WGPUStringView, str_to_sv
-from wgpu._ffi.handles import BufferHandle
+from wgpu._backend.wgpu_native.structs import WGPUStringView, str_to_sv
+from wgpu._backend.wgpu_native.handles import BufferHandle
 from wgpu.pending import Pending
 from wgpu._backend.wgpu_native.callbacks import _MapResult
 

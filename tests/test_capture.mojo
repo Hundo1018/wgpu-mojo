@@ -6,8 +6,8 @@ Requires GPU hardware.
 from std.testing import assert_true, assert_equal
 from wgpu.instance import Instance
 from wgpu.capture import FrameCapture, padded_row_pitch
-from wgpu._ffi.types import WGPUTextureUsage, WGPUTextureFormat
-from wgpu._ffi.structs import WGPUColor
+from wgpu._backend.wgpu_native.types import WGPUTextureUsage, WGPUTextureFormat
+from wgpu._backend.wgpu_native.structs import WGPUColor
 
 
 def test_row_pitch() raises:

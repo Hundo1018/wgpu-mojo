@@ -2,7 +2,7 @@
 
 from std.testing import assert_equal, assert_true
 from std.sys import align_of
-from wgpu._ffi import WGPUBorrowedStringView, str_to_borrowed_sv
+from wgpu._backend.wgpu_native.structs import WGPUBorrowedStringView, str_to_borrowed_sv
 
 
 def test_borrowed_view_roundtrip() raises:

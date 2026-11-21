@@ -18,18 +18,18 @@ Usage:
 """
 
 from std.memory import ArcPointer
-from wgpu._ffi.lib import WGPULib
-from wgpu._ffi.nulls import null_opaque
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.loader import WGPULib
+from wgpu._backend.wgpu_native.nulls import null_opaque
+from wgpu._backend.wgpu_native.types import (
     WGPURenderBundleHandle, WGPURenderBundleEncoderHandle,
     WGPURenderPipelineHandle, WGPUBindGroupHandle,
     WGPUBufferHandle, WGPUIndexFormat,
 )
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUStringView, WGPURenderBundleDescriptor, str_to_sv,
 )
-from wgpu._ffi.handles import RenderBundleHandle, RenderBundleEncoderHandle
-from wgpu._ffi.alloc_guard import AllocGuard
+from wgpu._backend.wgpu_native.handles import RenderBundleHandle, RenderBundleEncoderHandle
+from wgpu._backend.wgpu_native.alloc_guard import AllocGuard
 from wgpu.pipeline import RenderPipeline
 from wgpu.bind_group import BindGroup
 from wgpu.buffer import Buffer

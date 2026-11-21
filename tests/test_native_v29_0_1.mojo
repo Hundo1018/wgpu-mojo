@@ -13,21 +13,21 @@ Requires GPU hardware.
 """
 
 from std.testing import assert_equal
-from wgpu._ffi.nulls import null_opaque
+from wgpu._backend.wgpu_native.nulls import null_opaque
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPUBufferUsage, WGPUShaderStage, WGPUTextureUsage, WGPUTextureFormat,
     WGPU_WHOLE_SIZE,
 )
-from wgpu._ffi.structs import (
+from wgpu._backend.wgpu_native.structs import (
     WGPUBindGroupLayoutEntry,
     WGPUBufferBindingLayout, WGPUSamplerBindingLayout,
     WGPUTextureBindingLayout, WGPUStorageTextureBindingLayout,
     WGPUBindGroupEntry, WGPUOrigin3D,
 )
 from wgpu._backend.wgpu_native.structs import wgpu_limits_default
-from wgpu._native import WGPUNativeFeature, WGPUShaderRuntimeChecks
+from wgpu._backend.wgpu_native.native_ext import WGPUNativeFeature, WGPUShaderRuntimeChecks
 
 
 comptime IMMEDIATE_WGSL = """

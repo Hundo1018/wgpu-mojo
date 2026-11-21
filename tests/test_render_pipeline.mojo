@@ -6,11 +6,11 @@ Requires GPU hardware.
 from std.testing import assert_true, assert_equal
 from wgpu.device import Device
 from wgpu.instance import Instance
-from wgpu._ffi.types import (
+from wgpu._backend.wgpu_native.types import (
     WGPUTextureUsage, WGPUTextureFormat,
     WGPUBufferUsage,
 )
-from wgpu._ffi.structs import WGPUColor
+from wgpu._backend.wgpu_native.structs import WGPUColor
 from wgpu.capture import FrameCapture
 
 
