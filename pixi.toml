@@ -68,6 +68,9 @@ env = { LD_LIBRARY_PATH = "ffi/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH", DYLD_LIB
 [dependencies]
 mojo = ">=1.2.0,<2"
 glfw = ">=3.4,<4"
+# Dev only (`pixi run lint`, scripts/lint.py): the package's own dependencies are the [package.*] tables above.
+ruff = ">=0.17.6,<0.18"
+shellcheck = ">=0.11.0,<0.12"
 
 # ---------------------------------------------------------------------------
 # Opt-in: interop with Mojo's built-in GPU stack
@@ -93,6 +96,8 @@ maxinterop = ["maxinterop"]
 wasm = { features = ["wasm"], no-default-feature = true }
 
 [tasks]
+# Fast static checks, no GPU and no build: ruff (bug-finding rules in ruff.toml) and shellcheck (scripts/lint.py).
+lint = "python3 scripts/lint.py"
 # Build the C callback bridge (must be run before any GPU test/example)
 build-callbacks = "bash scripts/build-callbacks.sh"
 build-callback-probe = "mkdir -p ffi/lib && gcc -shared -fPIC -o ffi/lib/libmojo_callback_probe.so ffi/mojo_callback_probe.c -Wl,-rpath,'$ORIGIN'"

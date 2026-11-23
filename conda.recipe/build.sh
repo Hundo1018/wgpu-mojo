@@ -17,10 +17,12 @@ set -euo pipefail
 case "$(uname -s)" in
     Linux)
         LIB_EXT="so"
+        # shellcheck disable=SC2016,SC2054  # one -Wl argument (commas are the linker's), '$ORIGIN' left for ld.so
         RPATH_FLAGS=(-Wl,-rpath,'$ORIGIN')
         ;;
     Darwin)
         LIB_EXT="dylib"
+        # shellcheck disable=SC2054  # one -Wl argument: the commas are the linker's separators
         RPATH_FLAGS=(-Wl,-rpath,@loader_path)
         ;;
     *)

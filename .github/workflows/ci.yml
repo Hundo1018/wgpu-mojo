@@ -54,6 +54,9 @@ jobs:
           cache: true
           activate-environment: true   # exports CONDA_PREFIX/PATH so setup-native.sh works
 
+      - name: Lint (ruff bug-finding rules, shellcheck)
+        run: pixi run lint
+
       - name: Install wgpu-native + build C bridges
         run: bash scripts/setup-native.sh
 

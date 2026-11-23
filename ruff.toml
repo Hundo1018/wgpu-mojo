@@ -1,0 +1,16 @@
+# ruff for the repo's Python (scripts/), run by `pixi run lint`. Only rules that find
+# bugs, not style (the same set as ludens-core's ruff.toml):
+#   F        pyflakes: undefined names, unused imports and variables
+#   E9       syntax errors
+#   B        bugbear, including B905: zip() says strict=; a silent truncation can hide a crashed side of a
+#            comparison (the Mojo against C header checks)
+#   BLE      a bare `except Exception` must say why (noqa with a reason)
+#   PLE      pylint errors
+#   PLW1510  subprocess.run must say check=True or check=False: check=True where a failure must not be ignored,
+#            check=False where the caller reads returncode
+target-version = "py311"
+line-length = 120
+extend-exclude = [".pixi", "build"]
+
+[lint]
+select = ["F", "E9", "B", "BLE", "PLE", "PLW1510"]

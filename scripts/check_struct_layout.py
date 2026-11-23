@@ -47,7 +47,6 @@ def read(p):
 
 
 def main():
-    web = None
     sources = [(read(os.path.join(ROOT, p)), mod) for p, mod in STRUCT_SOURCES]
     mojo = "\n".join(src for src, _ in sources)
     module_of = {}
@@ -96,11 +95,11 @@ def main():
     exe = os.path.join(tmp, "sz")
     # gcc's LP64 layout is wasm64's too (8-byte pointers and size_t, 4-byte enums).
     r = subprocess.run(["gcc", "-I", os.path.join(ROOT, "ffi/include"), csrc, "-o", exe],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, check=False)
     if r.returncode:
         print("check-struct-layout: C probe failed to build:\n" + r.stderr, file=sys.stderr)
         return 1
-    c_sizes = dict(l.split() for l in subprocess.run([exe], capture_output=True, text=True).stdout.split("\n") if l)
+    c_sizes = dict(l.split() for l in subprocess.run([exe], capture_output=True, text=True, check=True).stdout.split("\n") if l)
 
     # --- Mojo side: same sizes via pointer arithmetic ---
     msrc = os.path.join(tmp, "sz.mojo")
@@ -111,7 +110,7 @@ def main():
         f.write("\ndef _sz[T: AnyType]() -> Int:\n    var p = null_ptr[T]()\n    return Int(p + 1) - Int(p)\n\ndef main() raises:\n")
         for n in names:
             f.write('    print("%s", _sz[%s]())\n' % (n, n))
-    r = subprocess.run(["mojo", "run", "-I", ".", msrc], cwd=ROOT, capture_output=True, text=True)
+    r = subprocess.run(["mojo", "run", "-I", ".", msrc], cwd=ROOT, capture_output=True, text=True, check=False)
     m_sizes = dict(l.split() for l in r.stdout.split("\n") if l.startswith("WGPU") and len(l.split()) == 2)
     if not m_sizes:
         print("check-struct-layout: Mojo probe produced nothing:\n" + r.stderr[-2000:], file=sys.stderr)
@@ -133,7 +132,7 @@ def main():
             else:
                 def norm(x):
                     return x.replace("_", "").lower()
-                for k, (a, b) in enumerate(zip(mf, cf)):
+                for k, (a, b) in enumerate(zip(mf, cf, strict=True)):
                     if norm(a) != norm(b):
                         bad.append((n, "order", f"#{k+1} {a}", f"#{k+1} {b}"))
                         break

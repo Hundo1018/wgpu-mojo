@@ -24,6 +24,7 @@ It refuses to run if that file, `scripts/setup-native.sh` and
 A change is ready when these pass. None of them needs a GPU:
 
 ```bash
+pixi run lint                 # ruff (bug-finding rules in ruff.toml) + shellcheck, ~1 s
 pixi run test                 # non-GPU unit tests
 pixi run check-compile        # every test and example still compiles
 pixi run check-symbols        # FFI symbols resolve, and none is an upstream stub

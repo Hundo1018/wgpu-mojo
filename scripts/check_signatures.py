@@ -184,10 +184,10 @@ def measure_c_sizes(types):
         f.write("  return 0;\n}\n")
     exe = os.path.join(tmp, "t")
     r = subprocess.run(["gcc", "-I", os.path.join(ROOT, "ffi/include"), src, "-o", exe],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, check=False)
     if r.returncode:
         return None, r.stderr
-    out = subprocess.run([exe], capture_output=True, text=True).stdout.split("\n")
+    out = subprocess.run([exe], capture_output=True, text=True, check=True).stdout.split("\n")
     sizes = {}
     for line in out:
         if not line.strip():
@@ -214,7 +214,7 @@ def measure_mojo_sizes(types):
         f.write("\ndef _sz[T: AnyType]() -> Int:\n    var p = null_ptr[T]()\n    return Int(p.unsafe_offset(1)) - Int(p)\n\ndef main() raises:\n")
         for i, t in enumerate(concrete):
             f.write('    print("%d", _sz[%s]())\n' % (i, t))
-    r = subprocess.run(["mojo", "run", "-I", ".", src], cwd=ROOT, capture_output=True, text=True)
+    r = subprocess.run(["mojo", "run", "-I", ".", src], cwd=ROOT, capture_output=True, text=True, check=False)
     sizes = {}
     for line in r.stdout.split("\n"):
         parts = line.split()
@@ -273,7 +273,7 @@ def main():
         if mojo_types is None:
             unchecked += 1
             continue
-        for k, (mt, ct) in enumerate(zip(mojo_types, ptypes)):
+        for k, (mt, ct) in enumerate(zip(mojo_types, ptypes, strict=True)):
             ms, cs = m_sizes.get(mt), c_sizes.get(ct)
             if ms is None or cs is None or ms != cs:
                 bad.append((line, sym, f"arg {k+1}",
@@ -289,7 +289,7 @@ def main():
                         else "def returns None", f"{td} returns {ret}")); continue
         if len(mt) != len(ct):
             bad.append((where, name, "arity", f"def takes {len(mt)}", f"{td} takes {len(ct)}")); continue
-        for k, (a, b) in enumerate(zip(mt, ct)):
+        for k, (a, b) in enumerate(zip(mt, ct, strict=True)):
             ms, cs = m_sizes.get(a), c_sizes.get(b)
             if ms is None or cs is None or ms != cs:
                 bad.append((where, name, f"arg {k+1}", f"{a} = {ms}B", f"{b} = {cs}B"))

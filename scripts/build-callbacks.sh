@@ -13,6 +13,7 @@ cd "$(dirname "$0")/.."
 
 mkdir -p ffi/lib
 
+# shellcheck disable=SC2016  # '$ORIGIN' is for the dynamic linker, not the shell: it must stay unexpanded
 gcc -shared -fPIC -o ffi/lib/libwgpu_mojo_cb.so ffi/wgpu_callbacks.c \
     -Iffi/include -Lffi/lib -L"$CONDA_PREFIX/lib" -lwgpu_native \
     -Wl,-rpath,'$ORIGIN' -Wl,-rpath,"$CONDA_PREFIX/lib"
@@ -22,6 +23,7 @@ gcc -c -fPIC -o ffi/lib/wgpu_callbacks.o ffi/wgpu_callbacks.c -Iffi/include
 ar rcs ffi/lib/libwgpu_mojo_cb.a ffi/lib/wgpu_callbacks.o
 rm ffi/lib/wgpu_callbacks.o
 
+# shellcheck disable=SC2016  # '$ORIGIN' is for the dynamic linker, not the shell: it must stay unexpanded
 gcc -shared -fPIC -o ffi/lib/libglfw_input_cb.so \
     rendercanvas-mojo/ffi/glfw_input_callbacks.c \
     -L"$CONDA_PREFIX/lib" -lglfw \
