@@ -27,9 +27,9 @@ def clang_layouts():
     open(os.path.join(inc, "math.h"), "w").write("#define INFINITY (1.0f/0.0f)\n#define NAN (0.0f/0.0f)\n")
     cmd = ["clang", "--target=wasm64-unknown-unknown", "-ffreestanding", "-fsyntax-only", "-isystem", inc,
            "-Xclang", "-fdump-record-layouts-complete", HDR]
-    if subprocess.run(["which", "clang"], capture_output=True).returncode:
+    if subprocess.run(["which", "clang"], capture_output=True, check=False).returncode:
         cmd = ["pixi", "exec", "--spec", "clang=" + LLVM, "--"] + cmd
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, check=True)
     structs, cur = {}, None
     for line in r.stdout.splitlines():
         m = re.match(r"^\s*(\d+)(?::\d+-\d+)? \| (\s*)(.*)$", line)
