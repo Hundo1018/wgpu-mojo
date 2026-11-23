@@ -317,11 +317,11 @@ struct MojoInputEvent(TrivialRegisterPassable):
       float64 x, float64 y
     Total: 32 bytes.
     """
-    var type: Int32           # InputEventType: 1=key, 2=mouse_button, 3=cursor_pos, 4=scroll
-    var key_or_button: Int32  # GLFW key code or mouse button ID
-    var action: Int32         # GLFW_PRESS / GLFW_RELEASE / GLFW_REPEAT
+    var type: Int32           # InputEventType: 1=key, 2=mouse_button, 3=cursor_pos, 4=scroll, 5=axis
+    var key_or_button: Int32  # GLFW key code, mouse button ID, or axis index (AXIS)
+    var action: Int32         # GLFW_PRESS / GLFW_RELEASE / GLFW_REPEAT, or device index (AXIS)
     var mods: Int32           # Modifier bitmask (GLFW_MOD_*)
-    var x: Float64            # cursor x or scroll x offset
+    var x: Float64            # cursor x, scroll x offset, or axis value (AXIS)
     var y: Float64            # cursor y or scroll y offset
 
 
@@ -331,3 +331,6 @@ struct InputEventType:
     comptime MOUSE_BUTTON: Int32 = 2
     comptime CURSOR_POS: Int32 = 3
     comptime SCROLL: Int32 = 4
+    # Analog axis: key_or_button = axis index, action = device index,
+    # x = value (-1..1, 0..1 for triggers), y unused.
+    comptime AXIS: Int32 = 5

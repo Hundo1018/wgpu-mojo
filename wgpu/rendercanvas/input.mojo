@@ -26,6 +26,8 @@ from wgpu._backend.wgpu_native.alloc_guard import raw_alloc
 
 comptime _MAX_KEYS: Int = 512
 comptime _MAX_MOUSE_BUTTONS: Int = 8
+comptime _MAX_AXIS_DEVICES: Int = 4
+comptime _MAX_AXES: Int = 8
 
 
 struct InputState(Movable):
@@ -57,6 +59,9 @@ struct InputState(Movable):
     var scroll_x: Float64
     var scroll_y: Float64
 
+    # Latest analog axis values, indexed device * _MAX_AXES + axis.
+    var _axes: Pointer[Float64, MutUntrackedOrigin]
+
     def __init__(out self):
         self._keys_pressed       = raw_alloc[Bool](_MAX_KEYS)
         self._keys_just_pressed  = raw_alloc[Bool](_MAX_KEYS)
@@ -82,6 +87,9 @@ struct InputState(Movable):
         self._has_cursor = False
         self.scroll_x = 0.0
         self.scroll_y = 0.0
+        self._axes = raw_alloc[Float64](_MAX_AXIS_DEVICES * _MAX_AXES)
+        for i in range(_MAX_AXIS_DEVICES * _MAX_AXES):
+            self._axes.unsafe_offset(i)[] = 0.0
 
     def __init__(out self, *, deinit move: Self):
         self._keys_pressed       = move._keys_pressed
@@ -97,6 +105,7 @@ struct InputState(Movable):
         self._has_cursor = move._has_cursor
         self.scroll_x = move.scroll_x
         self.scroll_y = move.scroll_y
+        self._axes = move._axes
 
     def __deinit__(deinit self):
         self._keys_pressed.unsafe_free()
@@ -105,6 +114,7 @@ struct InputState(Movable):
         self._mouse_pressed.unsafe_free()
         self._mouse_just_pressed.unsafe_free()
         self._mouse_just_released.unsafe_free()
+        self._axes.unsafe_free()
 
     # ------------------------------------------------------------------
     # Frame lifecycle
@@ -132,6 +142,7 @@ struct InputState(Movable):
 
     def release_all(mut self):
         """Release every held key and mouse button, as if each got a release event.
+        Every analog axis is set to 0.
 
         Call when the window loses focus: a key let go while another window
         has focus never reports its release, so it would stay pressed.
@@ -144,6 +155,8 @@ struct InputState(Movable):
             if self._mouse_pressed.unsafe_offset(i)[]:
                 self._mouse_pressed.unsafe_offset(i)[]       = False
                 self._mouse_just_released.unsafe_offset(i)[] = True
+        for i in range(_MAX_AXIS_DEVICES * _MAX_AXES):
+            self._axes.unsafe_offset(i)[] = 0.0
 
     def process_event(mut self, event: MojoInputEvent):
         """Process a single input event (public, for testing without GLFW)."""
@@ -196,6 +209,23 @@ struct InputState(Movable):
             return False
         return self._mouse_just_released.unsafe_offset(idx)[]
 
+    # ------------------------------------------------------------------
+    # Analog axis queries
+    # ------------------------------------------------------------------
+
+    def get_axis(self, device: Int32, axis: Int32) -> Float64:
+        """Latest value of an axis, or 0.0 for an index out of range.
+
+        Axis indices follow GLFW_GAMEPAD_AXIS_* / the W3C Gamepad API:
+        0/1 left stick x/y, 2/3 right stick x/y, 4/5 triggers. y is
+        positive downward. The value holds until the next AXIS event.
+        """
+        var d = Int(device)
+        var a = Int(axis)
+        if d < 0 or d >= _MAX_AXIS_DEVICES or a < 0 or a >= _MAX_AXES:
+            return 0.0
+        return self._axes.unsafe_offset(d * _MAX_AXES + a)[]
+
     # Mouse position/delta/scroll — access the public fields directly:
     #   input.mouse_x, input.mouse_y
     #   input.mouse_dx, input.mouse_dy
@@ -243,5 +273,10 @@ struct InputState(Movable):
             case InputEventType.SCROLL:
                 self.scroll_x += event.x
                 self.scroll_y += event.y
+            case InputEventType.AXIS:
+                var d = Int(event.action)
+                var a = Int(event.key_or_button)
+                if d >= 0 and d < _MAX_AXIS_DEVICES and a >= 0 and a < _MAX_AXES:
+                    self._axes.unsafe_offset(d * _MAX_AXES + a)[] = event.x
             case _:
                 pass  # unknown event type from the C bridge: ignore
