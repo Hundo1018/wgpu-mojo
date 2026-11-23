@@ -11,6 +11,15 @@ upstream's own version bump looks. wgpu-native renumbered its entire
 
 ## [Unreleased]
 
+### Added
+
+- **Analog axis input** (#29): `InputEventType.AXIS = 5` and
+  `InputState.get_axis(device, axis) -> Float64`. An `AXIS` event carries the
+  axis index in `key_or_button`, the device index in `action` and the value in
+  `x`, with no change to the 32-byte `MojoInputEvent` layout. `InputState`
+  keeps 4 devices by 8 axes, holds each value until the next event, ignores
+  out-of-range indices, and `release_all()` sets every axis to 0.
+
 ### Removed
 
 - **`wgpu._ffi` and `wgpu._native`**, the backward-compatibility shims that

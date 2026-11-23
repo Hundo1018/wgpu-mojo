@@ -9,6 +9,7 @@ from wgpu.rendercanvas.input import InputState
 comptime KEY: Int32 = 1
 comptime BUTTON: Int32 = 2
 comptime CURSOR: Int32 = 3
+comptime AXIS: Int32 = 5
 comptime RELEASE: Int32 = 0
 comptime PRESS: Int32 = 1
 
@@ -57,8 +58,57 @@ def test_release_all() raises:
     assert_false(s.is_key_just_released(65))
 
 
+def test_axis_events() raises:
+    """AXIS events: latest value per (device, axis), held across frames."""
+    var s = InputState()
+    assert_equal(s.get_axis(0, 0), 0.0)
+    s.process_event(MojoInputEvent(AXIS, 0, 0, 0, 0.3, 0.0))
+    s.process_event(MojoInputEvent(AXIS, 1, 0, 0, -0.75, 0.0))
+    s.process_event(MojoInputEvent(AXIS, 5, 1, 0, 1.0, 0.0))
+    assert_equal(s.get_axis(0, 0), 0.3)
+    assert_equal(s.get_axis(0, 1), -0.75)
+    assert_equal(s.get_axis(1, 5), 1.0)
+    assert_equal(s.get_axis(1, 0), 0.0)  # other device untouched
+    s.process_event(MojoInputEvent(AXIS, 0, 0, 0, 1.0, 0.0))
+    assert_equal(s.get_axis(0, 0), 1.0)  # latest value wins
+    s.begin_frame()
+    assert_equal(s.get_axis(0, 0), 1.0)  # holds across frames
+    assert_equal(s.get_axis(0, 1), -0.75)
+    assert_false(s.is_key_pressed(0))  # no key or button side effects
+    assert_false(s.is_mouse_button_pressed(0))
+
+
+def test_axis_out_of_range_ignored() raises:
+    var s = InputState()
+    s.process_event(MojoInputEvent(AXIS, 8, 0, 0, 0.5, 0.0))   # axis too high
+    s.process_event(MojoInputEvent(AXIS, -1, 0, 0, 0.5, 0.0))  # axis negative
+    s.process_event(MojoInputEvent(AXIS, 0, 4, 0, 0.5, 0.0))   # device too high
+    s.process_event(MojoInputEvent(AXIS, 0, -1, 0, 0.5, 0.0))  # device negative
+    for d in range(4):
+        for a in range(8):
+            assert_equal(s.get_axis(Int32(d), Int32(a)), 0.0)
+    assert_equal(s.get_axis(8, 0), 0.0)
+    assert_equal(s.get_axis(0, 8), 0.0)
+    assert_equal(s.get_axis(-1, 0), 0.0)
+    assert_equal(s.get_axis(0, -1), 0.0)
+    s.process_event(MojoInputEvent(AXIS, 7, 3, 0, 0.5, 0.0))   # last valid slot
+    assert_equal(s.get_axis(3, 7), 0.5)
+
+
+def test_release_all_zeroes_axes() raises:
+    var s = InputState()
+    s.process_event(MojoInputEvent(AXIS, 0, 0, 0, 0.6, 0.0))
+    s.process_event(MojoInputEvent(AXIS, 3, 2, 0, -0.2, 0.0))
+    s.release_all()
+    assert_equal(s.get_axis(0, 0), 0.0)
+    assert_equal(s.get_axis(2, 3), 0.0)
+
+
 def main() raises:
     test_first_cursor_event_has_no_delta()
     test_key_edges()
     test_release_all()
+    test_axis_events()
+    test_axis_out_of_range_ignored()
+    test_release_all_zeroes_axes()
     print("test_input_state: ALL PASSED")
